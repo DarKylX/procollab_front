@@ -2,7 +2,7 @@
 
 import { CommonModule } from "@angular/common";
 import { Component, Input, OnInit, inject, ChangeDetectorRef } from "@angular/core";
-import { FormGroup, ReactiveFormsModule } from "@angular/forms";
+import { AbstractControl, FormGroup, ReactiveFormsModule } from "@angular/forms";
 import {
   InputComponent,
   CheckboxComponent,
@@ -73,6 +73,10 @@ export class ProjectAdditionalStepComponent implements OnInit {
 
   get errorAssignProjectToProgramModalMessage() {
     return this.projectAdditionalService.getErrorAssignProjectToProgramModalMessage();
+  }
+
+  getControl(fieldName: string): AbstractControl {
+    return this.additionalForm.get(fieldName) as AbstractControl;
   }
 
   /** Наличие подсказки */

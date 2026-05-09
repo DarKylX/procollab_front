@@ -19,6 +19,7 @@ import { IndustryService } from "@office/services/industry.service";
 import { AvatarComponent } from "@ui/components/avatar/avatar.component";
 import { AdvertCardComponent } from "@office/shared/advert-card/advert-card.component";
 import { TruncatePipe } from "projects/core/src/lib/pipes/truncate.pipe";
+import { Skill } from "@models/skill.model";
 
 /**
  *
@@ -59,6 +60,10 @@ import { TruncatePipe } from "projects/core/src/lib/pipes/truncate.pipe";
 })
 export class OpenVacancyComponent implements AfterViewInit {
   @Input() feedItem!: Vacancy;
+
+  get requiredSkills(): Skill[] {
+    return this.feedItem?.requiredSkills ?? [];
+  }
 
   /**
    *
