@@ -1,10 +1,11 @@
 /** @format */
 
 import { Component, OnDestroy, OnInit } from "@angular/core";
+import { HttpErrorResponse } from "@angular/common/http";
 import { ActivatedRoute, Router } from "@angular/router";
 import { map, Subscription } from "rxjs";
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from "@angular/forms";
-import { ProgramDataSchema } from "@office/program/models/program.model";
+import { LegalDocument, ProgramDataSchema } from "@office/program/models/program.model";
 import { ControlErrorPipe, ValidationService } from "projects/core";
 import { ProgramService } from "@office/program/services/program.service";
 import { BarComponent, ButtonComponent, InputComponent } from "@ui/components";
@@ -68,15 +69,27 @@ export class ProgramRegisterComponent implements OnInit, OnDestroy {
   ngOnInit(): void {
     const route$ = this.route.data.pipe(map(r => r["data"])).subscribe(schema => {
       this.schema = schema;
+      this.registrationSchema = this.filterRegistrationSchema(schema);
 
       const group: Record<string, any> = {};
-      for (const cKey in schema) {
+      for (const cKey in this.registrationSchema) {
         group[cKey] = ["", [Validators.required]];
       }
+      group[this.consentControlName] = [false, [Validators.requiredTrue]];
 
       this.registerForm = this.fb.group(group);
     });
     this.subscriptions$.push(route$);
+
+    const legalDocuments$ = this.programService.getActiveLegalDocuments().subscribe({
+      next: documents => {
+        this.legalDocuments = documents;
+      },
+      error: () => {
+        this.legalDocuments = [];
+      },
+    });
+    this.subscriptions$.push(legalDocuments$);
   }
 
   ngOnDestroy(): void {
@@ -89,17 +102,101 @@ export class ProgramRegisterComponent implements OnInit, OnDestroy {
 
   schema?: ProgramDataSchema;
 
+  registrationSchema?: ProgramDataSchema;
+
+  legalDocuments: LegalDocument[] = [];
+
+  isSubmitting = false;
+
+  serverError = "";
+
+  readonly consentControlName = "personalDataConsent";
+
+  readonly registrationConsentKeys = new Set([
+    "personal_data_consent",
+    "personalDataConsent",
+    "legal_consent",
+    "legalConsent",
+    "participant_consent",
+    "participantConsent",
+  ]);
+
+  legalDocument(type: LegalDocument["type"]): LegalDocument | null {
+    return this.legalDocuments.find(document => document.type === type) ?? null;
+  }
+
+  legalDocumentHref(type: LegalDocument["type"]): string {
+    return this.legalDocument(type)?.contentUrl ?? "";
+  }
+
+  legalDocumentTitle(type: LegalDocument["type"], fallback: string): string {
+    const document = this.legalDocument(type);
+
+    return document?.version ? `${document.title} (${document.version})` : document?.title ?? fallback;
+  }
+
   onSubmit(): void {
+    this.serverError = "";
+
     if (this.registerForm && !this.validationService.getFormValidation(this.registerForm)) {
       return;
     }
+    if (!this.registerForm) {
+      return;
+    }
+
+    const formValue = this.registerForm.getRawValue();
+    const { [this.consentControlName]: personalDataConsent, ...registrationData } = formValue;
+    if (personalDataConsent !== true) {
+      this.registerForm.get(this.consentControlName)?.setErrors({ required: true });
+      this.serverError = "Необходимо согласиться на обработку персональных данных.";
+      return;
+    }
+
+    this.isSubmitting = true;
 
     this.programService
-      .register(this.route.snapshot.params["programId"], this.registerForm?.value)
-      .subscribe(() => {
-        this.router
-          .navigateByUrl(`/office/program/${this.route.snapshot.params["programId"]}`)
-          .then(() => console.debug("Route changed from ProgramRegisterComponent"));
+      .register(this.route.snapshot.params["programId"], {
+        ...registrationData,
+        personalDataConsent: true,
+      })
+      .subscribe({
+        next: () => {
+          this.router
+            .navigateByUrl(`/office/program/${this.route.snapshot.params["programId"]}`)
+            .then(() => console.debug("Route changed from ProgramRegisterComponent"));
+        },
+        error: (error: HttpErrorResponse) => {
+          this.isSubmitting = false;
+          this.serverError = this.getRegistrationError(error);
+          this.registerForm?.get(this.consentControlName)?.setErrors({ server: true });
+        },
       });
+  }
+
+  private filterRegistrationSchema(schema: ProgramDataSchema): ProgramDataSchema {
+    const filteredSchema = new ProgramDataSchema();
+    for (const key in schema) {
+      if (!this.registrationConsentKeys.has(key)) {
+        filteredSchema[key] = schema[key];
+      }
+    }
+
+    return filteredSchema;
+  }
+
+  private getRegistrationError(error: HttpErrorResponse): string {
+    const errorBody = error.error;
+    if (errorBody?.personal_data_consent) {
+      return String(errorBody.personal_data_consent);
+    }
+    if (errorBody?.personalDataConsent) {
+      return String(errorBody.personalDataConsent);
+    }
+    if (errorBody?.detail) {
+      return String(errorBody.detail);
+    }
+
+    return "Не удалось зарегистрироваться в чемпионате. Проверьте данные и попробуйте еще раз.";
   }
 }
