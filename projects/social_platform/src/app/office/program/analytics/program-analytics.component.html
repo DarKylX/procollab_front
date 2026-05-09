@@ -39,6 +39,19 @@
     >
       {{ downloading ? "Скачиваем..." : "Скачать XLSX" }}
     </button>
+    <button
+      class="analytics__download"
+      type="button"
+      [disabled]="downloadingContacts || !analytics.canExportContacts"
+      [title]="
+        analytics.canExportContacts
+          ? 'Скачать контактную выгрузку'
+          : 'Экспорт контактных данных доступен после подтверждения компании'
+      "
+      (click)="downloadContactXlsx()"
+    >
+      {{ downloadingContacts ? "Скачиваем..." : "Контактный XLSX" }}
+    </button>
   </header>
 
   @if (errorMessage) {
