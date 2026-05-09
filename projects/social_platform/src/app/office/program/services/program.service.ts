@@ -53,8 +53,8 @@ export class ProgramService {
   getAll(skip: number, take: number, params?: HttpParams): Observable<ApiPagination<Program>> {
     let httpParams = new HttpParams();
 
-    httpParams.set("limit", take);
-    httpParams.set("offset", skip);
+    httpParams = httpParams.set("limit", take);
+    httpParams = httpParams.set("offset", skip);
 
     if (params) {
       params.keys().forEach(key => {
@@ -69,7 +69,7 @@ export class ProgramService {
   }
 
   getActualPrograms(): Observable<ApiPagination<Program>> {
-    return this.apiService.get(`${this.PROGRAMS_URL}/`);
+    return this.getAll(0, 10, new HttpParams({ fromObject: { status: "published" } }));
   }
 
   getOne(programId: number): Observable<Program> {

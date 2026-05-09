@@ -29,6 +29,11 @@
             <h3 class="text-body-12 about__title">о программе</h3>
             <i appIcon icon="folder" appSquare="12" class="about__head--icon"></i>
           </div>
+          @if (program.companyName) {
+          <p class="text-body-10 about__company">
+            Организатор: {{ program.companyName }}
+          </p>
+          }
           @if (program.description) {
           <div class="text-body-10 about__text">
             <p #descEl [innerHTML]="program.description | parseLinks | parseBreaks"></p>

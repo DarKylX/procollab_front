@@ -8,6 +8,11 @@
 
   <div class="card__info">
     <p class="text-body-10 card__name" style="padding-left: 25px">{{ program.name }}</p>
+    @if (program.companyName) {
+    <p class="text-body-10 card__company" style="padding-left: 25px">
+      {{ program.companyName }}
+    </p>
+    }
 
     <p
       class="text-body-10 card__description card__registration"
