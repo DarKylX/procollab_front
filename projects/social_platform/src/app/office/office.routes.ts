@@ -6,6 +6,7 @@ import { ProfileEditComponent } from "./profile/edit/edit.component";
 import { MembersComponent } from "./members/members.component";
 import { MembersResolver } from "./members/members.resolver";
 import { OfficeResolver } from "./office.resolver";
+import { ExpertEvaluationsComponent } from "./expert/evaluations/expert-evaluations.component";
 
 /**
  * Конфигурация маршрутов для модуля офиса
@@ -62,6 +63,10 @@ export const OFFICE_ROUTES: Routes = [
       {
         path: "program",
         loadChildren: () => import("./program/program.routes").then(c => c.PROGRAM_ROUTES),
+      },
+      {
+        path: "expert/evaluations",
+        component: ExpertEvaluationsComponent,
       },
       {
         path: "admin/moderation",

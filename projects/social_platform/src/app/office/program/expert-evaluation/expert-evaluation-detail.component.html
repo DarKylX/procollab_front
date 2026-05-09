@@ -1,0 +1,229 @@
+<!-- @format -->
+
+<section class="expert-detail">
+  @if (forbidden) {
+  <div class="expert-detail__state">
+    <h1>Доступ запрещен</h1>
+    <p>Вы не назначены экспертом этого чемпионата.</p>
+  </div>
+  } @else if (notFound) {
+  <div class="expert-detail__state">
+    <h1>Проект недоступен</h1>
+    <p>Проект не найден, не сдан или недоступен для вашей оценки.</p>
+  </div>
+  } @else if (errorMessage) {
+  <div class="expert-detail__state">
+    <h1>Не удалось открыть оценку</h1>
+    <p>{{ errorMessage }}</p>
+  </div>
+  } @else if (loading) {
+  <div class="expert-detail__state">
+    <p>Загружаем проект и критерии оценки...</p>
+  </div>
+  } @else {
+  @if (submission; as item) {
+  <button type="button" class="expert-detail__back" (click)="backToList()">
+    <span aria-hidden="true">←</span>
+    К списку проектов
+  </button>
+
+  <header class="expert-detail__header">
+    <div>
+      <h1>Оценка проекта</h1>
+      <p>{{ item.program.name }}</p>
+    </div>
+  </header>
+
+  <div class="expert-detail__layout">
+    <aside class="expert-detail__sidebar">
+      <article class="expert-detail__card expert-detail__project-card">
+        <div class="expert-detail__project-heading">
+          <span class="expert-detail__file-icon">□</span>
+          <div>
+            <h2>{{ item.projectName }}</h2>
+            <p>{{ item.teamName || item.teamLabel }}</p>
+          </div>
+          <span class="expert-detail__submitted-chip">Проект сдан</span>
+        </div>
+
+        <dl class="expert-detail__meta">
+          <div>
+            <dt>Дата сдачи</dt>
+            <dd>
+              {{
+                item.submittedAt ? (item.submittedAt | date: "d MMMM yyyy") : "дата не указана"
+              }}
+            </dd>
+          </div>
+        </dl>
+
+        <div class="expert-detail__participants">
+          <p>Участники команды</p>
+          <div>
+            @for (participant of item.participants.slice(0, 6); track participant.userId) {
+            <span class="expert-detail__avatar">{{ participantInitials(participant) }}</span>
+            }
+            <strong>{{ participantsCountLabel(item.participantsCount) }}</strong>
+          </div>
+        </div>
+      </article>
+
+      <article class="expert-detail__card">
+        <h2>Описание проекта</h2>
+        <p class="expert-detail__description">
+          {{ item.projectDescription || "Описание проекта не заполнено." }}
+        </p>
+      </article>
+
+      <article class="expert-detail__card">
+        <h2>Материалы проекта</h2>
+        @if (item.materials.length) {
+        <ul class="expert-detail__materials">
+          @for (material of item.materials; track material.url) {
+          <li>
+            <span>{{ materialKindLabel(material) }}</span>
+            <a [href]="material.url" target="_blank" rel="noopener noreferrer">
+              {{ material.title }}
+            </a>
+          </li>
+          }
+        </ul>
+        } @else {
+        <p class="expert-detail__muted">Материалы пока не приложены.</p>
+        }
+      </article>
+    </aside>
+
+    <section class="expert-detail__form-card">
+      <div class="expert-detail__form-head">
+        <div>
+          <h2>Оценка проекта</h2>
+          <p>Заполните баллы по критериям и добавьте комментарий для команды.</p>
+        </div>
+      </div>
+
+      <div
+        class="expert-detail__form-status"
+        [class.expert-detail__form-status--submitted]="isReadonly"
+      >
+        <strong>{{ formStatusText }}</strong>
+        <span>{{ formStatusHint }}</span>
+      </div>
+
+      <div class="expert-detail__criteria">
+        @for (criterion of item.criteria; track criterion.id; let index = $index) {
+        <article
+          class="expert-detail__criterion"
+          [class.expert-detail__criterion--readonly]="isReadonly"
+        >
+          <div class="expert-detail__criterion-main">
+            <h3>{{ index + 1 }}. {{ criterion.name }}</h3>
+            <p>{{ criterion.description }}</p>
+          </div>
+
+          <div class="expert-detail__criterion-meta">
+            <span>Вес</span>
+            <strong>{{ criterionWeight(criterion) }}</strong>
+          </div>
+
+          <div class="expert-detail__criterion-meta">
+            <span>Шкала</span>
+            <strong>{{ criterionScale(criterion) }}</strong>
+          </div>
+
+          <div class="expert-detail__criterion-input">
+            <span>Баллы</span>
+            @if (isReadonly) {
+            <strong class="expert-detail__readonly-value">{{ readonlyValue(criterion) }}</strong>
+            } @else if (isNumericCriterion(criterion)) {
+            <input
+              type="number"
+              [attr.min]="criterion.minValue"
+              [attr.max]="criterion.maxValue"
+              [attr.step]="criterion.type === 'float' ? '0.1' : '1'"
+              [ngModel]="scoreValue(criterion.id)"
+              (ngModelChange)="setScoreValue(criterion.id, $event)"
+            />
+            } @else if (criterion.type === "bool") {
+            <select
+              [ngModel]="scoreValue(criterion.id)"
+              (ngModelChange)="setScoreValue(criterion.id, $event)"
+            >
+              <option [ngValue]="null">Не выбрано</option>
+              <option [ngValue]="true">Да</option>
+              <option [ngValue]="false">Нет</option>
+            </select>
+            } @else {
+            <input
+              type="text"
+              [ngModel]="scoreValue(criterion.id)"
+              (ngModelChange)="setScoreValue(criterion.id, $event)"
+            />
+            }
+          </div>
+
+          @if (criterionError(criterion)) {
+          <p class="expert-detail__field-error">{{ criterionError(criterion) }}</p>
+          }
+        </article>
+        }
+      </div>
+
+      <label class="expert-detail__comment">
+        <span>Общий комментарий</span>
+        @if (isReadonly) {
+        <p class="expert-detail__readonly-comment">{{ comment || "Комментарий не заполнен." }}</p>
+        } @else {
+        <textarea
+          rows="4"
+          [ngModel]="comment"
+          (ngModelChange)="comment = $event; backendTotalScore = null"
+        ></textarea>
+        }
+      </label>
+
+      <div class="expert-detail__total">
+        <span>Итоговая оценка:</span>
+        <strong>{{ displayTotalScore }}</strong>
+        <span>/ 10</span>
+        @if (isPreviewTotal) {
+        <em>предварительно</em>
+        }
+      </div>
+
+      @if (formError) {
+      <p class="expert-detail__form-error">{{ formError }}</p>
+      }
+    </section>
+  </div>
+
+  <footer class="expert-detail__footer">
+    @if (isReadonly) {
+    <p>Оценка зафиксирована и недоступна для редактирования.</p>
+    <button type="button" class="expert-detail__primary" (click)="backToList()">
+      Вернуться к списку проектов
+    </button>
+    } @else {
+    <p>Вы можете сохранить черновик оценки и вернуться к ней позже.</p>
+    <div>
+      <button
+        type="button"
+        class="expert-detail__secondary"
+        [disabled]="saving || submitting"
+        (click)="saveDraft()"
+      >
+        {{ saving ? "Сохраняем..." : "Сохранить черновик" }}
+      </button>
+      <button
+        type="button"
+        class="expert-detail__primary"
+        [disabled]="saving || submitting"
+        (click)="submitEvaluation()"
+      >
+        {{ submitting ? "Отправляем..." : "Отправить оценку" }}
+      </button>
+    </div>
+    }
+  </footer>
+  } }
+</section>
