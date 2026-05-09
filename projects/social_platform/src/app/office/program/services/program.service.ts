@@ -10,6 +10,7 @@ import {
   ProgramVerificationState,
   ProgramVerificationSubmitPayload,
 } from "@office/program/models/program-verification.model";
+import { ProgramAnalytics } from "@office/program/models/program-analytics.model";
 import { Project } from "@models/project.model";
 import { ApiPagination } from "@models/api-pagination.model";
 import { User } from "@auth/models/user.model";
@@ -84,6 +85,14 @@ export class ProgramService {
     return this.apiService.get<ProgramVerificationState>(
       `${this.PROGRAMS_URL}/${programId}/verification/`
     );
+  }
+
+  getAnalytics(programId: number): Observable<ProgramAnalytics> {
+    return this.apiService.get<ProgramAnalytics>(`${this.PROGRAMS_URL}/${programId}/analytics/`);
+  }
+
+  exportAnalytics(programId: number): Observable<Blob> {
+    return this.apiService.getFile(`${this.PROGRAMS_URL}/${programId}/analytics/export/`);
   }
 
   submitVerification(

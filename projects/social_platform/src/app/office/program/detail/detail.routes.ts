@@ -11,6 +11,7 @@ import { ProgramDetailResolver } from "./detail.resolver";
 import { DeatilComponent } from "@office/features/detail/detail.component";
 import { ExpertEvaluationDetailComponent } from "@office/program/expert-evaluation/expert-evaluation-detail.component";
 import { ExpertEvaluationListComponent } from "@office/program/expert-evaluation/expert-evaluation-list.component";
+import { ProgramAnalyticsComponent } from "@office/program/analytics/program-analytics.component";
 
 /**
  * Маршруты для детальной страницы программы
@@ -33,6 +34,10 @@ export const PROGRAM_DETAIL_ROUTES: Routes = [
   {
     path: "projects-rating",
     component: ExpertEvaluationListComponent,
+  },
+  {
+    path: "analytics",
+    component: ProgramAnalyticsComponent,
   },
   {
     path: "",

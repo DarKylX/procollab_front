@@ -1,0 +1,181 @@
+<!-- @format -->
+
+<section class="analytics">
+  @if (forbidden) {
+  <div class="analytics__state">
+    <h1>Доступ запрещен</h1>
+    <p>Аналитика доступна только организаторам этого чемпионата и сотрудникам платформы.</p>
+    <a [routerLink]="['/office/program', programId]">К чемпионату</a>
+  </div>
+  } @else if (loading) {
+  <div class="analytics__state">
+    <p>Загружаем аналитику...</p>
+  </div>
+  } @else if (analytics) {
+  <header class="analytics__header">
+    <div class="analytics__heading">
+      <a class="analytics__back" [routerLink]="['/office/program', analytics.programId]">
+        <span aria-hidden="true">←</span>
+        К чемпионату
+      </a>
+      <h1>Аналитика чемпионата</h1>
+      <p>{{ analytics.title }}</p>
+      <div class="analytics__badges">
+        <span>{{ statusLabel(analytics.status) }}</span>
+        <span>{{ analytics.currentStage || "Экспертная оценка" }}</span>
+        <span>
+          @if (analytics.evaluationDeadline) { Дедлайн оценки до
+          {{ analytics.evaluationDeadline | date: "d MMMM yyyy" }}
+          } @else { Дедлайн оценки не указан }
+        </span>
+      </div>
+    </div>
+
+    <button
+      class="analytics__download"
+      type="button"
+      [disabled]="downloading"
+      (click)="downloadXlsx()"
+    >
+      {{ downloading ? "Скачиваем..." : "Скачать XLSX" }}
+    </button>
+  </header>
+
+  @if (errorMessage) {
+  <p class="analytics__error">{{ errorMessage }}</p>
+  }
+
+  <div class="analytics__cards" aria-label="Сводные показатели">
+    <article class="analytics-card">
+      <span class="analytics-card__icon analytics-card__icon--participants"></span>
+      <div>
+        <p>Участники</p>
+        <strong>{{ analytics.participantsCount }}</strong>
+      </div>
+    </article>
+    <article class="analytics-card">
+      <span class="analytics-card__icon analytics-card__icon--submitted"></span>
+      <div>
+        <p>Сданные проекты</p>
+        <strong>{{ analytics.submittedProjectsCount }}</strong>
+      </div>
+    </article>
+    <article class="analytics-card">
+      <span class="analytics-card__icon analytics-card__icon--evaluated"></span>
+      <div>
+        <p>Оценено проектов</p>
+        <strong
+          >{{ analytics.evaluatedProjectsCount }} из {{ analytics.submittedProjectsCount }}</strong
+        >
+      </div>
+    </article>
+    <article class="analytics-card">
+      <span class="analytics-card__icon analytics-card__icon--score"></span>
+      <div>
+        <p>Средний балл</p>
+        <strong>{{ formatScore(analytics.averageScore) }}</strong>
+      </div>
+    </article>
+  </div>
+
+  <div class="analytics__filters">
+    <label class="analytics__search">
+      <span>Поиск</span>
+      <input
+        type="search"
+        [(ngModel)]="searchValue"
+        placeholder="Поиск по названию проекта или участникам"
+      />
+    </label>
+
+    <label>
+      <span>Статус проекта</span>
+      <select [(ngModel)]="projectStatusFilter">
+        <option value="all">Все</option>
+        <option value="not_submitted">Не сдан</option>
+        <option value="submitted">Сдан</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Статус оценки</span>
+      <select [(ngModel)]="evaluationStatusFilter">
+        <option value="all">Все</option>
+        <option value="not_evaluated">Не оценено</option>
+        <option value="partially_evaluated">Частично оценено</option>
+        <option value="evaluated">Оценено</option>
+      </select>
+    </label>
+
+    <label>
+      <span>Сортировка</span>
+      <select [(ngModel)]="sortKey">
+        <option value="averageScore">По среднему баллу</option>
+        <option value="submittedAt">По дате сдачи</option>
+        <option value="projectTitle">По названию</option>
+      </select>
+    </label>
+  </div>
+
+  <section class="analytics__table-card">
+    <h2>Проекты и результаты</h2>
+
+    @if (emptyState; as state) {
+    <div class="analytics__empty">
+      <h3>{{ state.title }}</h3>
+      <p>{{ state.text }}</p>
+    </div>
+    } @else if (shouldShowTable) {
+    <div class="analytics__table" role="table" aria-label="Проекты и результаты">
+      <div class="analytics__row analytics__row--head" role="row">
+        <span role="columnheader">Проект</span>
+        <span role="columnheader">Участники</span>
+        <span role="columnheader">Дата сдачи</span>
+        <span role="columnheader">Оценки</span>
+        <span role="columnheader">Средний балл</span>
+        <span role="columnheader">Статус</span>
+        <span role="columnheader">Действие</span>
+      </div>
+
+      @for (submission of displayedSubmissions; track submission.programProjectId) {
+      <div class="analytics__row" role="row">
+        <div class="analytics__project" role="cell">
+          <strong>{{ submission.projectTitle }}</strong>
+          <p>{{ submission.participantLabel }}</p>
+          @if (submission.participantsPreview) {
+          <small>{{ submission.participantsPreview }}</small>
+          }
+        </div>
+        <span role="cell">{{ submission.participantsCount }}</span>
+        <time role="cell" [attr.datetime]="submission.submittedAt">
+          {{ submission.submittedAt ? (submission.submittedAt | date: "dd.MM.yyyy, HH:mm") : "—" }}
+        </time>
+        <span role="cell">
+          {{ submission.evaluationsReceived }} из {{ submission.evaluationsRequired }}
+        </span>
+        <span role="cell">{{ formatScore(submission.averageScore) }}</span>
+        <span role="cell">
+          <span [class]="evaluationStatusClass(submission.evaluationStatus)">
+            {{ evaluationStatusLabel(submission.evaluationStatus) }}
+          </span>
+        </span>
+        <span role="cell">
+          <button class="analytics__open" type="button" (click)="openProject(submission)">
+            Открыть
+          </button>
+        </span>
+      </div>
+      }
+    </div>
+    <p class="analytics__shown">
+      Показано {{ displayedSubmissions.length }} из {{ analytics.submissions.length }} проектов
+    </p>
+    }
+  </section>
+  } @else if (errorMessage) {
+  <div class="analytics__state">
+    <p>{{ errorMessage }}</p>
+    <a [routerLink]="['/office/program', programId]">К чемпионату</a>
+  </div>
+  }
+</section>
