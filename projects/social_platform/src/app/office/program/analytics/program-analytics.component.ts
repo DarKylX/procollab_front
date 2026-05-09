@@ -40,6 +40,7 @@ export class ProgramAnalyticsComponent implements OnInit, OnDestroy {
   analytics: ProgramAnalytics | null = null;
   loading = false;
   downloading = false;
+  downloadingContacts = false;
   forbidden = false;
   errorMessage = "";
   searchValue = "";
@@ -169,6 +170,28 @@ export class ProgramAnalyticsComponent implements OnInit, OnDestroy {
         next: blob => saveFile(blob, "analytics", this.analytics?.title ?? `${this.programId}`),
         error: () => {
           this.errorMessage = "Не удалось скачать XLSX-отчет.";
+        },
+      });
+
+    this.subscriptions.add(exportSub);
+  }
+
+  downloadContactXlsx(): void {
+    if (!this.programId || this.downloadingContacts || !this.analytics?.canExportContacts) {
+      return;
+    }
+
+    this.downloadingContacts = true;
+    const exportSub = this.programService
+      .exportAnalyticsContacts(this.programId)
+      .pipe(finalize(() => (this.downloadingContacts = false)))
+      .subscribe({
+        next: blob => saveFile(blob, "analytics", this.analytics?.title ?? `${this.programId}`),
+        error: error => {
+          this.errorMessage =
+            error instanceof HttpErrorResponse && typeof error.error?.detail === "string"
+              ? error.error.detail
+              : "Контактная выгрузка доступна только после подтверждения компании.";
         },
       });
 
