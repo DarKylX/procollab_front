@@ -51,6 +51,7 @@ import { AsyncPipe, DatePipe } from "@angular/common";
 import { AvatarComponent } from "@uilib";
 import { NewsCardComponent } from "@office/features/news-card/news-card.component";
 import { AuthService } from "@auth/services";
+import { ProgramVerificationPanelComponent } from "./components/program-verification-panel/program-verification-panel.component";
 
 @Component({
   selector: "app-main",
@@ -71,6 +72,7 @@ import { AuthService } from "@auth/services";
     ProgramLinksComponent,
     RouterModule,
     DatePipe,
+    ProgramVerificationPanelComponent,
   ],
 })
 export class ProgramDetailMainComponent implements OnInit, OnDestroy {

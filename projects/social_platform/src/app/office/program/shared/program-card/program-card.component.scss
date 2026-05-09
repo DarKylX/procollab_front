@@ -55,6 +55,14 @@
     white-space: nowrap;
   }
 
+  &__verified {
+    margin-top: 2px;
+    overflow: hidden;
+    color: var(--green);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   &__dates {
     display: flex;
     gap: 2px;

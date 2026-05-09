@@ -1,5 +1,7 @@
 /** @format */
 
+import type { VerificationStatus } from "./program-verification.model";
+
 /**
  * Основная модель программы в системе
  *
@@ -97,6 +99,9 @@ export class Program {
   isUserMember!: boolean;
   company!: ProgramCompany | null;
   companyName!: string;
+  verificationStatus!: VerificationStatus;
+  isVerified!: boolean;
+  verifiedCompanyName!: string;
   participationFormat!: ProgramParticipationFormat;
   projectTeamMinSize!: number | null;
   projectTeamMaxSize!: number | null;
@@ -137,6 +142,9 @@ export class Program {
       isUserManager: false,
       company: null,
       companyName: "",
+      verificationStatus: "not_requested",
+      isVerified: false,
+      verifiedCompanyName: "",
       participationFormat: "team",
       projectTeamMinSize: 1,
       projectTeamMaxSize: null,

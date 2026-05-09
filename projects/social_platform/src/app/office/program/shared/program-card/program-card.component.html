@@ -13,6 +13,11 @@
       {{ program.companyName }}
     </p>
     }
+    @if (program.isVerified) {
+    <p class="text-body-10 card__verified" style="padding-left: 25px">
+      Официальная компания
+    </p>
+    }
     @if (participationText) {
     <p class="text-body-10 card__participation" style="padding-left: 25px">
       {{ participationText }}
