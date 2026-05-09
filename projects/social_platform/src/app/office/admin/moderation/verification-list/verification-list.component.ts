@@ -41,6 +41,7 @@ export class VerificationListComponent implements OnInit {
   readonly isLoading = signal(false);
   readonly response = signal<ModerationVerificationPage | null>(null);
   readonly pendingCount = signal(0);
+  readonly programPendingCount = signal(0);
   readonly revisionCount = signal<number | null>(null);
   readonly activeMobileFilter = signal<MobileFilter>("new");
   readonly profile$ = this.authService.profile;
@@ -58,6 +59,7 @@ export class VerificationListComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadPendingCount();
+    this.loadProgramPendingCount();
 
     this.searchControl.valueChanges
       .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.destroyRef))
@@ -198,6 +200,16 @@ export class VerificationListComponent implements OnInit {
           }
         },
         error: () => this.response.set({ count: 0, next: "", previous: "", results: [] }),
+      });
+  }
+
+  private loadProgramPendingCount(): void {
+    this.moderationService
+      .getPrograms({ status: "pending_moderation", page: 1, pageSize: 1 })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: response => this.programPendingCount.set(response.count),
+        error: () => this.programPendingCount.set(0),
       });
   }
 

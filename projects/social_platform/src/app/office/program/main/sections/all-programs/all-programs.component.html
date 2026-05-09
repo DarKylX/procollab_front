@@ -1,0 +1,133 @@
+<!-- @format -->
+
+<section class="program-showcase">
+  <a class="program-showcase__cta" routerLink="/office/program/new">
+    <span class="program-showcase__cta-plus" aria-hidden="true">+</span>
+    <span class="program-showcase__cta-copy">
+      <strong>Начните создание чемпионата</strong>
+      <span>Создайте черновик за несколько минут, а затем добавьте материалы, критерии и отправьте его на модерацию.</span>
+      <em>Черновик · 3 шага</em>
+    </span>
+    <span class="program-showcase__new">NEW</span>
+  </a>
+
+  <div class="program-showcase__filters">
+    <button
+      class="program-showcase__filter-button"
+      [class.program-showcase__filter-button--active]="registrationSort"
+      type="button"
+      (click)="toggleRegistrationSort()"
+    >
+      <span
+        class="program-showcase__sort-icon"
+        [class.program-showcase__sort-icon--asc]="registrationSort === 'asc'"
+        [class.program-showcase__sort-icon--desc]="registrationSort === 'desc'"
+        aria-hidden="true"
+      ></span>
+      {{ registrationSortLabel }}
+    </button>
+
+    <button
+      class="program-showcase__toggle text-body-12-bold"
+      [class.program-showcase__toggle--active]="verifiedOnly"
+      type="button"
+      role="checkbox"
+      [attr.aria-checked]="verifiedOnly"
+      (click)="onVerifiedOnlyToggle(!verifiedOnly)"
+    >
+      <span class="program-showcase__checkbox" aria-hidden="true">
+        @if (verifiedOnly) { ✓ }
+      </span>
+      Официальная компания
+    </button>
+
+    <button
+      class="program-showcase__toggle text-body-12-bold"
+      [class.program-showcase__toggle--active]="registrationOpenOnly"
+      type="button"
+      role="checkbox"
+      [attr.aria-checked]="registrationOpenOnly"
+      (click)="onRegistrationOpenOnlyToggle(!registrationOpenOnly)"
+    >
+      <span class="program-showcase__checkbox" aria-hidden="true">
+        @if (registrationOpenOnly) { ✓ }
+      </span>
+      Идет регистрация
+    </button>
+
+    <button class="program-showcase__invite" type="button" (click)="openInviteCodeModal()">
+      Присоединиться по коду
+    </button>
+  </div>
+
+  @if (loading && !filteredPrograms.length) {
+  <h2 class="program-showcase__section-title">Все чемпионаты</h2>
+  <div class="program-showcase__grid" aria-busy="true">
+    @for (item of [1, 2, 3, 4]; track item) {
+    <article class="program-showcase__skeleton">
+      <span class="program-showcase__skeleton-avatar"></span>
+      <span class="program-showcase__skeleton-line program-showcase__skeleton-line--title"></span>
+      <span class="program-showcase__skeleton-line"></span>
+      <span class="program-showcase__skeleton-line program-showcase__skeleton-line--short"></span>
+    </article>
+    }
+  </div>
+  } @else if (filteredPrograms.length) {
+  <h2 class="program-showcase__section-title">
+    Все чемпионаты @if (verifiedOnly || registrationOpenOnly) {
+    <span>— найдено {{ filteredPrograms.length }}</span>
+    }
+  </h2>
+  <div class="program-showcase__grid">
+    @for (program of filteredPrograms; track program.id) {
+    <a class="program-showcase__link" [routerLink]="['/office/program', program.id]">
+      <app-program-card
+        [program]="program"
+        [showRegistrationDeadline]="true"
+        [showProjectsAndExperts]="false"
+        [showStatus]="false"
+      ></app-program-card>
+    </a>
+    }
+  </div>
+  } @else if (hasLoaded) {
+  <div class="program-showcase__empty text-body-14">Подходящих чемпионатов пока нет.</div>
+  }
+
+  <app-modal
+    [open]="inviteCodeModalOpen"
+    (openChange)="inviteCodeModalOpen = $event"
+    bodyClass="modal__body--no-flex"
+  >
+    <form class="invite-code-modal" (ngSubmit)="continueInviteCode()">
+      <header class="invite-code-modal__header">
+        <h2>Присоединиться по коду</h2>
+        <p>Введите код приглашения, который вы получили от организатора или участника проекта.</p>
+      </header>
+
+      <label class="invite-code-modal__field">
+        <span>Код приглашения</span>
+        <input
+          name="inviteCode"
+          type="text"
+          [(ngModel)]="inviteCode"
+          placeholder="Например, CASE-2026"
+          autocomplete="off"
+        />
+      </label>
+
+      @if (inviteCodeError) {
+      <p class="invite-code-modal__error">{{ inviteCodeError }}</p>
+      }
+
+      <div class="invite-code-modal__actions">
+        <button class="invite-code-modal__button" type="button" (click)="closeInviteCodeModal()">
+          Отмена
+        </button>
+        <button class="invite-code-modal__button invite-code-modal__button--primary" type="submit">
+          Продолжить
+        </button>
+      </div>
+    </form>
+  </app-modal>
+</section>

@@ -257,3 +257,76 @@
     }
   }
 }
+
+@media (max-width: 767px) {
+  .card {
+    padding: 16px;
+    border-radius: 8px;
+
+    &__head {
+      align-items: flex-start;
+      margin-bottom: 14px;
+    }
+
+    &__avatar {
+      width: 48px;
+      height: 48px;
+      margin-right: 12px;
+    }
+
+    &__title {
+      min-width: 0;
+    }
+
+    &__top {
+      gap: 8px;
+      align-items: flex-start;
+    }
+
+    &__info {
+      min-width: 0;
+    }
+
+    &__name {
+      overflow: hidden;
+      font-size: 13px;
+      font-weight: 800;
+      line-height: 1.25;
+      color: var(--black);
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &__date {
+      margin-top: 2px;
+      font-size: 12px;
+      line-height: 1.25;
+    }
+
+    &__text {
+      font-size: 13px;
+      line-height: 1.45;
+
+      p {
+        margin: 0;
+        line-height: 1.45;
+      }
+    }
+
+    &__footer {
+      margin-top: 16px;
+    }
+  }
+
+  .footer {
+    &__left {
+      gap: 10px;
+    }
+
+    &__item,
+    .card__views {
+      font-size: 12px;
+      line-height: 1.3;
+    }
+  }
+}

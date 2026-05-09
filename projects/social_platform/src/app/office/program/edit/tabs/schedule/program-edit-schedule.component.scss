@@ -1,0 +1,439 @@
+/** @format */
+
+@use "../../edit-form";
+
+.schedule-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.schedule-lock {
+  padding: 12px 14px;
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--grey-for-text);
+  background: color-mix(in srgb, var(--accent) 7%, var(--white));
+  border: 0.5px solid color-mix(in srgb, var(--accent) 24%, var(--medium-grey-for-outline));
+  border-radius: var(--rounded-md);
+}
+
+.schedule-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 16px 18px;
+  background: var(--white);
+  border: 0.5px solid var(--medium-grey-for-outline);
+  border-radius: var(--rounded-lg);
+
+  &__header {
+    display: grid;
+    gap: 4px;
+
+    h2,
+    p {
+      margin: 0;
+    }
+
+    h2 {
+      font-size: 16px;
+      font-weight: 800;
+      line-height: 1.2;
+    }
+
+    p {
+      font-size: 12px;
+      line-height: 1.35;
+      color: var(--grey-for-text);
+    }
+  }
+
+  &__title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+}
+
+.schedule-dates {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px 18px;
+
+  @media (min-width: 900px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.schedule-date-field,
+.schedule-field {
+  display: grid;
+  gap: 6px;
+  min-width: 0;
+
+  &__label {
+    font-size: 12px;
+    font-weight: 800;
+    line-height: 1.3;
+    color: var(--black);
+
+    em {
+      font-style: normal;
+      color: var(--red);
+    }
+  }
+
+  &__control {
+    width: 100%;
+    min-height: 36px;
+    padding: 8px 12px;
+    font-family: Mont, sans-serif;
+    font-size: 13px;
+    line-height: 1.35;
+    color: var(--black);
+    background: var(--white);
+    border: 0.5px solid var(--medium-grey-for-outline);
+    border-radius: var(--rounded-md);
+    outline: none;
+
+    &:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+    }
+
+    &:disabled {
+      color: var(--grey-for-text);
+      cursor: default;
+      background: var(--grey-button);
+    }
+  }
+}
+
+.schedule-date-field__control {
+  position: relative;
+  display: block;
+
+  input {
+    width: 100%;
+    min-height: 36px;
+    padding: 8px 40px 8px 12px;
+    font-family: Mont, sans-serif;
+    font-size: 13px;
+    color: var(--black);
+    background: var(--white);
+    border: 0.5px solid var(--medium-grey-for-outline);
+    border-radius: var(--rounded-md);
+    outline: none;
+
+    &:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 12%, transparent);
+    }
+
+    &:disabled {
+      color: var(--grey-for-text);
+      cursor: default;
+      background: var(--grey-button);
+    }
+
+    &::-webkit-calendar-picker-indicator {
+      position: absolute;
+      inset: 0;
+      width: auto;
+      height: auto;
+      cursor: pointer;
+      opacity: 0;
+    }
+  }
+
+  i {
+    position: absolute;
+    top: 50%;
+    right: 12px;
+    color: var(--grey-for-text);
+    pointer-events: none;
+    transform: translateY(-50%);
+  }
+}
+
+.schedule-error,
+.schedule-field__error {
+  margin: 0;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--red);
+}
+
+.schedule-panel--timeline {
+  gap: 12px;
+}
+
+.schedule-timeline {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(76px, 1fr));
+  gap: 8px;
+  min-width: 0;
+  padding-top: 2px;
+  overflow-x: auto;
+
+  &::before {
+    position: absolute;
+    top: 11px;
+    right: 9%;
+    left: 9%;
+    height: 4px;
+    content: "";
+    background: var(--medium-grey-for-outline);
+    border-radius: var(--rounded-xxl);
+  }
+
+  &__step {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    gap: 6px;
+    justify-items: center;
+    min-width: 76px;
+    color: var(--grey-for-text);
+    text-align: center;
+
+    strong,
+    em {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    strong {
+      font-size: 11px;
+      font-weight: 800;
+      line-height: 1.2;
+      color: currentcolor;
+    }
+
+    em {
+      font-size: 10px;
+      font-style: normal;
+      line-height: 1.2;
+    }
+
+    &--completed {
+      color: var(--green);
+    }
+
+    &--active {
+      color: var(--accent);
+    }
+  }
+
+  &__dot {
+    display: block;
+    width: 16px;
+    height: 16px;
+    background: currentcolor;
+    border: 4px solid var(--white);
+    border-radius: 50%;
+    box-shadow: 0 0 0 2px currentcolor;
+  }
+}
+
+.participation-options {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+
+  @media (min-width: 900px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.participation-option {
+  display: grid;
+  grid-template-columns: 18px 22px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  min-height: 48px;
+  padding: 12px;
+  font-family: Mont, sans-serif;
+  color: var(--black);
+  text-align: left;
+  background: var(--white);
+  border: 0.5px solid var(--medium-grey-for-outline);
+  border-radius: var(--rounded-md);
+
+  &:disabled {
+    cursor: default;
+    opacity: 1;
+  }
+
+  &--active {
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 6%, var(--white));
+    border-color: var(--accent);
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
+
+    .participation-option__radio {
+      border-color: var(--accent);
+
+      &::after {
+        opacity: 1;
+      }
+    }
+  }
+
+  &__radio {
+    position: relative;
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid var(--grey-for-text);
+    border-radius: 50%;
+
+    &::after {
+      position: absolute;
+      inset: 3px;
+      content: "";
+      background: var(--accent);
+      border-radius: 50%;
+      opacity: 0;
+    }
+  }
+
+  i {
+    color: currentcolor;
+  }
+
+  strong {
+    min-width: 0;
+    overflow: hidden;
+    font-size: 13px;
+    font-weight: 800;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+  }
+}
+
+.team-settings,
+.competition-settings {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px 24px;
+
+  @media (min-width: 900px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.schedule-switch {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  min-width: 0;
+  cursor: pointer;
+
+  input {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+  }
+
+  &__track {
+    position: relative;
+    width: 31px;
+    height: 18px;
+    margin-top: 1px;
+    background: var(--medium-grey-for-outline);
+    border-radius: var(--rounded-xxl);
+    transition:
+      background 0.15s ease,
+      box-shadow 0.15s ease;
+
+    &::after {
+      position: absolute;
+      top: 3px;
+      left: 3px;
+      width: 12px;
+      height: 12px;
+      content: "";
+      background: var(--white);
+      border-radius: 50%;
+      transition: transform 0.15s ease;
+    }
+  }
+
+  input:checked + &__track {
+    background: var(--accent);
+    box-shadow: 0 5px 12px color-mix(in srgb, var(--accent) 26%, transparent);
+
+    &::after {
+      transform: translateX(13px);
+    }
+  }
+
+  input:disabled + &__track {
+    cursor: default;
+  }
+
+  strong,
+  em {
+    display: block;
+    min-width: 0;
+    line-height: 1.3;
+  }
+
+  strong {
+    overflow: hidden;
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--black);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  em {
+    margin-top: 2px;
+    font-size: 10px;
+    font-style: normal;
+    color: var(--grey-for-text);
+  }
+
+  &--disabled {
+    cursor: default;
+
+    strong,
+    em {
+      color: var(--grey-for-text);
+    }
+  }
+}
+
+.competition-settings {
+  &__toggles,
+  &__fields {
+    display: grid;
+    gap: 12px;
+    align-content: start;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 640px) {
+  .schedule-panel {
+    padding: 14px;
+  }
+
+  .participation-option {
+    grid-template-columns: 18px 20px minmax(0, 1fr);
+  }
+
+  .team-settings,
+  .competition-settings {
+    gap: 14px;
+  }
+}

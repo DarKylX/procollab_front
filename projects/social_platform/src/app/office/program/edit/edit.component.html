@@ -1,0 +1,266 @@
+<!-- @format -->
+
+@if (program; as p) {
+<main class="program-edit">
+  <header class="program-edit__header">
+    <a class="program-edit__back" [routerLink]="['/office/program', p.id]">
+      <i appIcon icon="left-arrow" appSquare="12"></i>
+      К чемпионату
+    </a>
+
+    <div class="program-edit__title-row">
+      <div>
+        <h1>Редактирование чемпионата</h1>
+        <p>{{ p.name }}</p>
+      </div>
+      <app-program-status-badge [status]="programStatus"></app-program-status-badge>
+    </div>
+
+    <nav class="program-edit__tabs" aria-label="Разделы редактирования чемпионата">
+      @for (tab of tabs; track tab.key) {
+      <a
+        class="program-edit__tab"
+        [routerLink]="[tab.route]"
+        routerLinkActive="program-edit__tab--active"
+      >
+        <span>{{ tab.label }}</span>
+      </a>
+      }
+    </nav>
+  </header>
+
+  <section class="program-edit__layout">
+    <div class="program-edit__content">
+      <router-outlet></router-outlet>
+    </div>
+
+    <aside class="program-edit__aside">
+      <section class="program-edit__panel program-edit__panel--readiness">
+        <h2>Готовность к модерации</h2>
+        <div class="program-edit__readiness-body">
+          <div
+            class="program-edit__readiness-circle"
+            [style.--progress]="moderationReadinessPercentage"
+          >
+            <strong>{{ moderationReadinessPercentage }}%</strong>
+            <span>готово</span>
+          </div>
+
+          <div class="program-edit__readiness-list">
+            @for (item of moderationReadinessItems; track item.key) {
+            <button
+              class="program-edit__readiness-item"
+              type="button"
+              [class.program-edit__readiness-item--done]="item.completed"
+              [class.program-edit__readiness-item--optional]="item.optional && !item.completed"
+              [class.program-edit__readiness-item--fix]="isSectionToFix(item.key) && !isRevisionSectionFixed(item.key)"
+              (click)="onReadinessBlockClick(item.key)"
+            >
+              <span aria-hidden="true"></span>
+              <b>
+                {{ item.label }}
+                @if (item.optional) {
+                <small>Необязательно</small>
+                }
+              </b>
+              <i appIcon icon="arrowright" appSquare="12"></i>
+            </button>
+            }
+          </div>
+        </div>
+
+        @if (optionalReadinessItems.length) {
+        <div class="program-edit__optional-block">
+          <span>Необязательные настройки</span>
+          <div class="program-edit__operation-list">
+            @for (item of optionalReadinessItems; track item.key) {
+            <button
+              class="program-edit__operation-item program-edit__operation-item--optional"
+              type="button"
+              [class.program-edit__operation-item--done]="item.completed"
+              (click)="onReadinessBlockClick(item.key)"
+            >
+              <span aria-hidden="true"></span>
+              <strong>
+                {{ item.label }} · необязательно
+              </strong>
+              <i appIcon icon="arrowright" appSquare="12"></i>
+            </button>
+            }
+          </div>
+        </div>
+        }
+      </section>
+
+      <section class="program-edit__panel program-edit__status">
+        <h2>Статус и доступ</h2>
+        <dl>
+          <div>
+            <dt>
+              <i appIcon icon="deadline" appSquare="14"></i>
+              Статус чемпионата:
+            </dt>
+            <dd>
+              <app-program-status-badge
+                [status]="programStatus"
+                size="small"
+              ></app-program-status-badge>
+            </dd>
+          </div>
+          <div>
+            <dt>
+              <i appIcon icon="lock" appSquare="14"></i>
+              Редактирование:
+            </dt>
+            <dd class="program-edit__access-cell">
+              <span>{{ editAccessText }}</span>
+              @if (p.status === "published") {
+              <button type="button" (click)="toggleAccessHelp()">Что можно менять?</button>
+              @if (showAccessHelp) {
+              <div class="program-edit__access-popover" role="tooltip">
+                После публикации можно дозаполнять материалы, критерии, экспертов, сертификат и верификацию.
+                Публичные поля и структура участия могут быть ограничены или потребовать повторной модерации.
+              </div>
+              }
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>
+              <i appIcon icon="file" appSquare="14"></i>
+              Верификация:
+            </dt>
+            <dd>
+              <span
+                class="program-edit__verification-state"
+                [class.program-edit__verification-state--verified]="verificationStatus === 'verified'"
+                [class.program-edit__verification-state--pending]="verificationStatus === 'pending'"
+                [class.program-edit__verification-state--rejected]="verificationStatus === 'rejected' || verificationStatus === 'revoked'"
+              >
+                {{ verificationStatusLabel }}
+              </span>
+            </dd>
+          </div>
+          <div>
+            <dt>
+              <i appIcon icon="people" appSquare="14"></i>
+              Участники:
+            </dt>
+            <dd>{{ p.participantsCount ?? p.participants?.length ?? 0 }}</dd>
+          </div>
+          @if (activeRejection?.reasonLabel) {
+          <div>
+            <dt>
+              <i appIcon icon="deadline" appSquare="14"></i>
+              Причина:
+            </dt>
+            <dd>{{ activeRejection?.reasonLabel }}</dd>
+          </div>
+          }
+        </dl>
+
+        @if (activeRejection; as rejection) {
+        <div class="program-edit__moderation-result">
+          <strong>Правки для модерации</strong>
+          @if (rejection.reasonLabel) {
+          <span>Причина: {{ rejection.reasonLabel }}</span>
+          }
+          @if (rejectionDateText()) {
+          <span>Дата отклонения: {{ rejectionDateText() }}</span>
+          }
+          <p>{{ rejection.comment || "Комментарий модератора не указан." }}</p>
+          @if (sectionsToFix.length) {
+          <div>
+            <b>Разделы для исправления:</b>
+            <ul>
+              @for (section of sectionsToFix; track section) {
+              <li [class.program-edit__fix-section--done]="isRevisionSectionFixed(section)">
+                {{ readinessLabel(section) }}
+                <em>{{ isRevisionSectionFixed(section) ? "изменения сохранены" : "ожидает изменений" }}</em>
+              </li>
+              }
+            </ul>
+          </div>
+          }
+        </div>
+        }
+
+        @if (p.status === "pending_moderation") {
+        <app-button
+          appearance="outline"
+          size="medium"
+          customTypographyClass="text-body-12"
+          (click)="withdrawModeration()"
+        >
+          Отозвать с модерации
+        </app-button>
+        }
+      </section>
+
+      <section class="program-edit__panel program-edit__actions-card">
+        <h2>Действия</h2>
+        <a class="program-edit__preview-link" [routerLink]="['/office/program', p.id]" target="_blank">
+          <i appIcon icon="world-wide" appSquare="18"></i>
+          <span>{{ p.status === "published" ? "Открыть страницу чемпионата" : "Предпросмотр страницы" }}</span>
+          <i appIcon icon="arrowright" appSquare="12"></i>
+        </a>
+
+        @if (canShowSubmitToModeration) {
+        <button
+          class="program-edit__moderation-button"
+          type="button"
+          [disabled]="!canSubmitToModeration || isSubmittingModeration"
+          (click)="submitToModeration()"
+        >
+          {{ submitButtonText }}
+        </button>
+
+        @if (!canSubmitToModeration && missingSectionsText) {
+        <p class="program-edit__missing">Заполните: {{ missingSectionsText }}</p>
+        }
+        @if (!canSubmitToModeration && revisionMissingText) {
+        <p class="program-edit__missing">Сохраните изменения в разделах: {{ revisionMissingText }}</p>
+        }
+        @if (canSubmitToModeration && sectionsToFix.length) {
+        <p class="program-edit__warning">
+          Проверьте разделы, отмеченные модератором, перед повторной отправкой.
+        </p>
+        }
+        }
+      </section>
+    </aside>
+  </section>
+
+  <footer class="program-edit__footer">
+    <div
+      class="program-edit__save-state"
+      [class.program-edit__save-state--dirty]="editState.hasChanges()"
+      [class.program-edit__save-state--error]="editState.saveError()"
+    >
+      <span aria-hidden="true"></span>
+      {{ autosaveText }}
+    </div>
+
+    <div class="program-edit__actions">
+      <app-button
+        appearance="outline"
+        size="medium"
+        customTypographyClass="text-body-12"
+        [disabled]="!editState.currentTabHasChanges() || editState.isSaving()"
+        (click)="reset()"
+      >
+        Отменить изменения
+      </app-button>
+      <app-button
+        size="medium"
+        customTypographyClass="text-body-12"
+        [disabled]="!editState.canSave()"
+        [loader]="editState.isSaving()"
+        (click)="save()"
+      >
+        {{ editState.isSaving() ? "Сохраняем..." : "Сохранить" }}
+      </app-button>
+    </div>
+  </footer>
+</main>
+}

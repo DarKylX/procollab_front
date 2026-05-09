@@ -1,59 +1,95 @@
 <!-- @format -->
 
 @if (program) {
-<div class="card">
-  <div class="card__photo">
-    <app-avatar [url]="program.imageAddress" [size]="100"></app-avatar>
+<article
+  class="program-card"
+  [class.program-card--with-readiness]="showReadiness"
+  [class.program-card--compact]="!showProjectsAndExperts"
+>
+  <div class="program-card__avatar">
+    <app-avatar [url]="program.imageAddress" [size]="52"></app-avatar>
   </div>
 
-  <div class="card__info">
-    <p class="text-body-10 card__name" style="padding-left: 25px">{{ program.name }}</p>
-    @if (program.companyName) {
-    <p class="text-body-10 card__company" style="padding-left: 25px">
-      {{ program.companyName }}
-    </p>
-    }
-    @if (program.isVerified) {
-    <p class="text-body-10 card__verified" style="padding-left: 25px">
-      Официальная компания
-    </p>
-    }
-    @if (participationText) {
-    <p class="text-body-10 card__participation" style="padding-left: 25px">
-      {{ participationText }}
-    </p>
-    }
-
-    <p
-      class="text-body-10 card__description card__registration"
-      [ngClass]="{
-        'card__registration--ended': registerDateExpired,
-        'card__registration--participating': !registerDateExpired && program.isUserMember,
-        'card__registration--actual':
-          !registerDateExpired && (!program.isUserMember || !program.isUserManager)
-      }"
-    >
-      <!-- ? "Регистрация до:" + " " + (program.datetimeRegistrationEnds | date: "dd MMMM") -->
-      {{
-        registerDateExpired
-          ? "регистрация завершена"
-          : program.isUserMember
-          ? "ты уже участвуешь!"
-          : "Регистрация до " + (program.datetimeRegistrationEnds | date: "dd MMMM")
-      }}
-    </p>
-
-    <div class="card__dates">
-      <p class="text-body-10 card__description" style="padding-left: 25px">
-        {{ program.datetimeStarted | date: "dd.MM.yyyy" }}
-      </p>
-      <p class="text-body-10 card__description">-</p>
-      <p class="text-body-10 card__description">
-        {{ program.datetimeFinished | date: "dd.MM.yyyy" }}
-      </p>
-      <!-- TODO: изменить когда на бэке для программ будет возможность для регионов поле -->
-      <p class="text-body-10 card__description">• для всей России</p>
+  <div class="program-card__body">
+    <div class="program-card__top">
+      <div class="program-card__heading">
+        <h3 class="program-card__title text-bold-body-14">{{ program.name }}</h3>
+        @if (isVerified) {
+        <span
+          class="program-card__company-mark program-card__company-mark--verified"
+          aria-label="Официальная компания"
+        >
+          ✓
+        </span>
+        }
+      </div>
     </div>
+
+    <div class="program-card__badges">
+      @if (showStatusBadge) {
+      <app-program-status-badge
+        [status]="programStatus"
+        size="small"
+      ></app-program-status-badge>
+      }
+      @if (isVerified) {
+      <span class="program-card__verified text-body-12-bold">Официальная компания</span>
+      } @else if (showVerificationStatus) {
+      <span class="program-card__unverified text-body-12-bold">{{ verificationStatusLabel }}</span>
+      } @if (showRegistrationDeadline && program.datetimeRegistrationEnds) {
+      <span class="program-card__deadline text-body-12">
+        Регистрация до {{ program.datetimeRegistrationEnds | date: "d MMMM yyyy" }}
+      </span>
+      }
+    </div>
+
+    <div class="program-card__meta text-body-12">
+      <span>{{ program.datetimeStarted | date: "dd.MM.yyyy" }}</span>
+      <span aria-hidden="true">-</span>
+      <span>{{ program.datetimeFinished | date: "dd.MM.yyyy" }}</span>
+      @if (program.city) {
+      <span aria-hidden="true">•</span>
+      <span>{{ program.city }}</span>
+      }
+      @if (!showProjectsAndExperts) {
+      <span class="program-card__participants">
+        <strong>{{ participantsCount }}</strong>
+        {{ participantsLabel }}
+      </span>
+      }
+    </div>
+
+    @if (showProjectsAndExperts) {
+    <div
+      class="program-card__stats"
+      [class.program-card__stats--participants-only]="!showProjectsAndExperts"
+    >
+      <div class="program-card__stat">
+        <strong>{{ participantsCount }}</strong>
+        <span>Участники</span>
+      </div>
+      @if (showProjectsAndExperts) {
+      <div class="program-card__stat">
+        <strong>{{ projectsCount }}</strong>
+        <span>Проекты</span>
+      </div>
+      <div class="program-card__stat">
+        <strong>{{ expertsCount }}</strong>
+        <span>Эксперты</span>
+      </div>
+      }
+    </div>
+    }
+
+    @if (showReadiness && program.isUserManager) {
+    <app-readiness-widget
+      class="program-card__readiness"
+      [programId]="program.id"
+      [initialData]="readinessData"
+      size="small"
+      [showLabels]="false"
+    ></app-readiness-widget>
+    }
   </div>
-</div>
+</article>
 }

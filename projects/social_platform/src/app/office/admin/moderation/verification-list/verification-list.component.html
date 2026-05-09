@@ -21,7 +21,23 @@
     </div>
   </header>
 
+  <nav class="verification-list__queue-tabs" aria-label="Очереди модерации">
+    <a class="verification-list__queue-tab" routerLink="/office/admin/moderation">
+      Чемпионаты
+    </a>
+    <a
+      class="verification-list__queue-tab verification-list__queue-tab--active"
+      routerLink="/office/admin/moderation/verification"
+    >
+      Верификация компаний
+    </a>
+  </nav>
+
   <section class="verification-list__stats">
+    <article>
+      <span>Чемпионаты</span>
+      <strong>{{ programPendingCount() }}</strong>
+    </article>
     <article>
       <span>Верификация</span>
       <strong>{{ pendingCount() }}</strong>

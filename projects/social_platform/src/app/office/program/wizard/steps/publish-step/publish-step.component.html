@@ -1,0 +1,91 @@
+<!-- @format -->
+
+<section class="publish-step">
+  <div class="publish-step__header">
+    <div>
+      <h2 class="text-heading-3">Проверка и создание</h2>
+      <p class="text-body-14">Проверьте данные перед созданием чемпионата</p>
+    </div>
+    <app-program-status-badge status="draft" size="small"></app-program-status-badge>
+  </div>
+
+  <div class="publish-step__notice">
+    <i appIcon icon="hint" appSquare="18"></i>
+    <p>
+      После создания чемпионат будет сохранен как черновик. Публикация на витрине произойдет только
+      после модерации и одобрения администратором.
+    </p>
+  </div>
+
+  <dl class="summary">
+    <div class="summary__row">
+      <dt class="text-body-12-bold">Название</dt>
+      <dd class="text-body-14">{{ state.name || "Не указано" }}</dd>
+      <button class="summary__link" type="button" (click)="editStep(1)">Изменить</button>
+    </div>
+
+    <div class="summary__row">
+      <dt class="text-body-12-bold">Описание</dt>
+      <dd class="text-body-14">
+        {{ description || "Не указано" }}
+        @if (state.description.length > 200) {
+        <button class="summary__inline-link" type="button" (click)="toggleDescription()">
+          {{ isDescriptionExpanded ? "Свернуть" : "Развернуть" }}
+        </button>
+        }
+      </dd>
+      <button class="summary__link" type="button" (click)="editStep(1)">Изменить</button>
+    </div>
+
+    <div class="summary__row">
+      <dt class="text-body-12-bold">Даты</dt>
+      <dd class="text-body-14">
+        {{ state.datetimeStarted | date: "dd.MM.yyyy" }} —
+        {{ state.datetimeFinished | date: "dd.MM.yyyy" }}
+      </dd>
+      <button class="summary__link" type="button" (click)="editStep(1)">Изменить</button>
+    </div>
+
+    <div class="summary__row">
+      <dt class="text-body-12-bold">Регистрация до</dt>
+      <dd class="text-body-14">{{ state.datetimeRegistrationEnds | date: "d MMMM yyyy" }}</dd>
+      <button class="summary__link" type="button" (click)="editStep(1)">Изменить</button>
+    </div>
+
+    <div class="summary__row">
+      <dt class="text-body-12-bold">Прием проектов до</dt>
+      <dd class="text-body-14">{{ state.datetimeProjectSubmissionEnds | date: "d MMMM yyyy" }}</dd>
+      <button class="summary__link" type="button" (click)="editStep(1)">Изменить</button>
+    </div>
+
+    <div class="summary__row">
+      <dt class="text-body-12-bold">Город</dt>
+      <dd class="text-body-14">{{ state.city || "Не указан" }}</dd>
+      <button class="summary__link" type="button" (click)="editStep(1)">Изменить</button>
+    </div>
+
+    <div class="summary__row">
+      <dt class="text-body-12-bold">Тип доступа</dt>
+      <dd class="text-body-14">{{ accessTypeLabel() }}</dd>
+      <button class="summary__link" type="button" (click)="editStep(2)">Изменить</button>
+    </div>
+
+    <div class="summary__row">
+      <dt class="text-body-12-bold">Способ регистрации</dt>
+      <dd class="text-body-14">{{ registrationLabel() }}</dd>
+      <button class="summary__link" type="button" (click)="editStep(2)">Изменить</button>
+    </div>
+  </dl>
+
+  <section class="publish-step__next">
+    <h3>Что будет дальше</h3>
+    <ul>
+      @for (item of nextItems; track item) {
+      <li>
+        <i appIcon icon="check" appSquare="12"></i>
+        <span>{{ item }}</span>
+      </li>
+      }
+    </ul>
+  </section>
+</section>

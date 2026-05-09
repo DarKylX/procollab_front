@@ -1,0 +1,448 @@
+<!-- @format -->
+
+<section class="certificate-tab">
+  <header class="certificate-tab__header">
+    <div>
+      <h2>Сертификаты участников</h2>
+      <p>Сертификаты не обязательны для публикации чемпионата. Их можно настроить позже.</p>
+    </div>
+    <span>Необязательно</span>
+  </header>
+
+  @if (isLoading) {
+  <div class="certificate-empty">
+    <i appIcon icon="file" appSquare="28"></i>
+    <h3>Загружаем настройки</h3>
+    <p>Проверяем шаблон и сгенерированные сертификаты.</p>
+  </div>
+  } @else { @if (!isEditing && !settings?.isConfigured && !settings?.isEnabled) {
+  <div class="certificate-note">
+    <i appIcon icon="circle-check" appSquare="16"></i>
+    <span>Сертификаты не обязательны для публикации чемпионата. Их можно настроить позже, до завершения чемпионата.</span>
+  </div>
+
+  <div class="certificate-empty">
+    <i appIcon icon="file" appSquare="34"></i>
+    <h3>Сертификаты не настроены</h3>
+    <p>Участники не увидят сертификаты, пока вы не включите и не сохраните выдачу.</p>
+    <button type="button" [disabled]="isReadonly" (click)="startSetup()">
+      Настроить сертификат
+    </button>
+  </div>
+  } @else { @if (isEditing) {
+  <form class="certificate-form" [formGroup]="form" novalidate>
+    <label class="certificate-toggle">
+      <input type="checkbox" formControlName="isEnabled" />
+      <span></span>
+      <strong>Включить сертификаты</strong>
+    </label>
+
+    <div class="certificate-form__grid">
+      <section class="certificate-section">
+        <h3>1. Правила выдачи</h3>
+
+        <label class="certificate-field">
+          <span>Кому выдавать сертификат</span>
+          <div class="certificate-readonly-select">
+            <strong>Только участникам, сдавшим проект</strong>
+            <small>Фиксированное правило MVP</small>
+          </div>
+        </label>
+
+        <label class="certificate-field">
+          <span>Когда открыть сертификаты</span>
+          <select formControlName="releaseMode">
+            <option value="after_program_end">После завершения чемпионата</option>
+            <option value="manual">Вручную</option>
+          </select>
+        </label>
+
+        <label class="certificate-field">
+          <span>Тип сертификата</span>
+          <div class="certificate-readonly-select">
+            <strong>Сертификат участника</strong>
+            <small>Победители и финалисты не входят в MVP</small>
+          </div>
+        </label>
+
+        <label class="certificate-check">
+          <input type="checkbox" formControlName="showProjectTitle" />
+          <span>Показывать название проекта</span>
+        </label>
+        <label class="certificate-check">
+          <input type="checkbox" formControlName="showTeamMembers" />
+          <span>Показывать участников проекта</span>
+        </label>
+        <label class="certificate-check certificate-check--disabled">
+          <input type="checkbox" formControlName="showRank" />
+          <span>Показывать место в рейтинге</span>
+        </label>
+      </section>
+
+      <section class="certificate-section">
+        <h3>2. Шаблон сертификата</h3>
+
+        <label class="certificate-field">
+          <span>Название шаблона</span>
+          <input type="text" formControlName="templateName" placeholder="Базовый шаблон A4" />
+        </label>
+
+        <label class="certificate-upload">
+          <input
+            type="file"
+            accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+            [disabled]="isReadonly || isUploading"
+            (change)="onFileSelected($event)"
+          />
+          <i appIcon icon="upload" appSquare="18"></i>
+          <strong>{{ isUploading ? "Загружаем..." : "Загрузить фон" }}</strong>
+          <span>PDF, PNG, JPG до 10 МБ. Рекомендовано: A4 horizontal.</span>
+        </label>
+
+        @if (form.controls.backgroundFile.value) {
+        <p class="certificate-uploaded">{{ backgroundFileName }}</p>
+        } @else {
+        <p class="certificate-uploaded certificate-uploaded--default">
+          Используется фон по умолчанию PROCOLLAB. Можно сохранить шаблон без загрузки фона.
+        </p>
+        }
+
+        <div class="certificate-assets">
+          <h4>Логотип компании, печать и подпись</h4>
+          <p>Добавьте PNG/JPG-файлы с прозрачным фоном. X и Y задают позицию от 0 до 1, размер — долю ширины листа.</p>
+          <div class="certificate-assets__grid">
+            <label class="certificate-asset-upload">
+              <input
+                type="file"
+                accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+                [disabled]="isReadonly || isUploading"
+                (change)="onAssetSelected($event, 'companyLogo')"
+              />
+              <i appIcon icon="upload" appSquare="16"></i>
+              <strong>{{ isUploadingTarget("companyLogo") ? "Загружаем..." : "Логотип компании" }}</strong>
+              @if (form.controls.companyLogoFile.value) {
+              <span>{{ assetFileName("companyLogo") }}</span>
+              }
+            </label>
+            <label class="certificate-asset-upload">
+              <input
+                type="file"
+                accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+                [disabled]="isReadonly || isUploading"
+                (change)="onAssetSelected($event, 'signature')"
+              />
+              <i appIcon icon="upload" appSquare="16"></i>
+              <strong>{{ isUploadingTarget("signature") ? "Загружаем..." : "Подпись" }}</strong>
+              @if (form.controls.signatureFile.value) {
+              <span>{{ assetFileName("signature") }}</span>
+              }
+            </label>
+            <label class="certificate-asset-upload">
+              <input
+                type="file"
+                accept=".png,.jpg,.jpeg,image/png,image/jpeg"
+                [disabled]="isReadonly || isUploading"
+                (change)="onAssetSelected($event, 'stamp')"
+              />
+              <i appIcon icon="upload" appSquare="16"></i>
+              <strong>{{ isUploadingTarget("stamp") ? "Загружаем..." : "Печать" }}</strong>
+              @if (form.controls.stampFile.value) {
+              <span>{{ assetFileName("stamp") }}</span>
+              }
+            </label>
+          </div>
+          <div class="certificate-assets__actions">
+            @if (form.controls.signatureFile.value) {
+            <button type="button" (click)="removeUploadedAsset('signature')">Убрать подпись</button>
+            }
+            @if (form.controls.stampFile.value) {
+            <button type="button" (click)="removeUploadedAsset('stamp')">Убрать печать</button>
+            }
+            @if (form.controls.companyLogoFile.value) {
+            <button type="button" (click)="removeUploadedAsset('companyLogo')">Убрать логотип компании</button>
+            }
+          </div>
+
+          <label class="certificate-field">
+            <span>Имя подписанта</span>
+            <input type="text" formControlName="signerName" placeholder="Анна Смирнова" />
+          </label>
+
+          <div class="certificate-assets-layout">
+            <div class="certificate-assets-layout__group">
+              <strong>Положение логотипа компании</strong>
+              <label>
+                <span>X</span>
+                <input type="number" min="0" max="1" step="0.01" formControlName="companyLogoX" />
+              </label>
+              <label>
+                <span>Y</span>
+                <input type="number" min="0" max="1" step="0.01" formControlName="companyLogoY" />
+              </label>
+              <label>
+                <span>Размер</span>
+                <input type="number" min="0.03" max="0.5" step="0.01" formControlName="companyLogoWidth" />
+              </label>
+            </div>
+            <div class="certificate-assets-layout__group">
+              <strong>Положение подписи</strong>
+              <label>
+                <span>X</span>
+                <input type="number" min="0" max="1" step="0.01" formControlName="signatureX" />
+              </label>
+              <label>
+                <span>Y</span>
+                <input type="number" min="0" max="1" step="0.01" formControlName="signatureY" />
+              </label>
+              <label>
+                <span>Размер</span>
+                <input type="number" min="0.03" max="0.5" step="0.01" formControlName="signatureWidth" />
+              </label>
+            </div>
+            <div class="certificate-assets-layout__group">
+              <strong>Положение печати</strong>
+              <label>
+                <span>X</span>
+                <input type="number" min="0" max="1" step="0.01" formControlName="stampX" />
+              </label>
+              <label>
+                <span>Y</span>
+                <input type="number" min="0" max="1" step="0.01" formControlName="stampY" />
+              </label>
+              <label>
+                <span>Размер</span>
+                <input type="number" min="0.03" max="0.5" step="0.01" formControlName="stampWidth" />
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <div class="certificate-form__two">
+          <label class="certificate-field">
+            <span>Цвет текста</span>
+            <input type="color" formControlName="textColor" />
+          </label>
+          <label class="certificate-field">
+            <span>Шрифт</span>
+            <select formControlName="fontFamily">
+              <option value="inter">Inter</option>
+              <option value="roboto">Roboto</option>
+              <option value="open_sans">Open Sans</option>
+              <option value="montserrat">Montserrat</option>
+              <option value="manrope">Manrope</option>
+            </select>
+          </label>
+        </div>
+      </section>
+    </div>
+
+    <section class="certificate-section certificate-section--fields">
+      <div class="certificate-section__title-row">
+        <h3>Динамические поля</h3>
+        <span>Позиции задаются числами от 0 до 1</span>
+      </div>
+
+      <div class="certificate-fields-table">
+        <div class="certificate-fields-table__head">
+          <span>Поле</span>
+          <span>Пример данных</span>
+          <span>Показ</span>
+          <span>X</span>
+          <span>Y</span>
+          <span>Размер</span>
+          <span>Align</span>
+        </div>
+        @for (row of fieldRows; track row.key) {
+        <div class="certificate-fields-table__row">
+          <div class="certificate-fields-table__field">
+            <strong>{{ row.label }}</strong>
+            <small>{{ row.key }}</small>
+          </div>
+          <span class="certificate-fields-table__sample">{{ row.sample }}</span>
+          <input
+            type="checkbox"
+            [checked]="row.visible"
+            [disabled]="isReadonly"
+            (change)="updateField(row, 'visible', $any($event.target).checked)"
+          />
+          <input
+            type="number"
+            min="0"
+            max="1"
+            step="0.01"
+            [value]="row.x"
+            [disabled]="isReadonly"
+            (input)="updateField(row, 'x', $any($event.target).value)"
+          />
+          <input
+            type="number"
+            min="0"
+            max="1"
+            step="0.01"
+            [value]="row.y"
+            [disabled]="isReadonly"
+            (input)="updateField(row, 'y', $any($event.target).value)"
+          />
+          <input
+            type="number"
+            min="6"
+            max="72"
+            step="1"
+            [value]="row.fontSize"
+            [disabled]="isReadonly"
+            (input)="updateField(row, 'fontSize', $any($event.target).value)"
+          />
+          <select
+            [value]="row.align"
+            [disabled]="isReadonly"
+            (change)="updateField(row, 'align', $any($event.target).value)"
+          >
+            <option value="left">left</option>
+            <option value="center">center</option>
+            <option value="right">right</option>
+          </select>
+        </div>
+        }
+      </div>
+    </section>
+
+    <footer class="certificate-actions">
+      <button type="button" class="certificate-actions__ghost" (click)="cancelEdit()">Отмена</button>
+      <button
+        type="button"
+        class="certificate-actions__ghost"
+        [disabled]="isPreviewLoading"
+        (click)="openPreview()"
+      >
+        {{ isPreviewLoading ? "Готовим..." : "Предпросмотр" }}
+      </button>
+      <button
+        type="button"
+        class="certificate-actions__primary"
+        [disabled]="isReadonly"
+        (click)="saveSettingsClick()"
+      >
+        Сохранить
+      </button>
+    </footer>
+  </form>
+  } @else {
+  <div class="certificate-summary">
+    <div class="certificate-note certificate-note--success">
+      <i appIcon icon="circle-check" appSquare="16"></i>
+      <span>{{ isGenerated ? "Сертификаты сгенерированы" : "Сертификаты включены" }}</span>
+    </div>
+
+    @if (isGenerated) {
+    <div class="certificate-metrics">
+      <article>
+        <strong>{{ stats?.generatedCount ?? certificates.length }}</strong>
+        <span>сертификатов</span>
+      </article>
+      <article>
+        <strong>{{ settings?.generatedAt ? formatDate(settings?.generatedAt) : formatDate(stats?.lastRun?.completedAt) }}</strong>
+        <span>дата генерации</span>
+      </article>
+      <article>
+        <strong>{{ stats?.errorCount ?? 0 }}</strong>
+        <span>ошибок</span>
+      </article>
+      <article>
+        <strong>{{ stats?.eligibleCount ?? 0 }}</strong>
+        <span>соответствует правилу</span>
+      </article>
+    </div>
+    } @else {
+    <dl class="certificate-details">
+      <div>
+        <dt>Кому выдавать</dt>
+        <dd>Только участникам, сдавшим проект</dd>
+      </div>
+      <div>
+        <dt>Когда открыть</dt>
+        <dd>{{ releaseModeLabel(settings?.releaseMode) }}</dd>
+      </div>
+      <div>
+        <dt>Тип сертификата</dt>
+        <dd>Сертификат участника</dd>
+      </div>
+      <div>
+        <dt>Шаблон</dt>
+        <dd>{{ settings?.templateName || "Базовый шаблон A4" }}</dd>
+      </div>
+      <div>
+        <dt>Последнее обновление</dt>
+        <dd>{{ formatDate(settings?.datetimeUpdated) }}</dd>
+      </div>
+    </dl>
+    }
+
+    <div class="certificate-next">
+      <strong>Что дальше?</strong>
+      @if (isGenerated) {
+      <p>Участники смогут скачать сертификаты после открытия доступа согласно выбранному режиму.</p>
+      } @else {
+      <p>Когда будут участники со сданным проектом, можно сгенерировать PDF сертификатов.</p>
+      }
+    </div>
+
+    <footer class="certificate-actions">
+      <button type="button" class="certificate-actions__ghost" (click)="openPreview()">
+        Предпросмотр
+      </button>
+      <button type="button" class="certificate-actions__ghost" (click)="editSettings()">
+        Изменить настройки
+      </button>
+      @if (canReleaseManual) {
+      <button
+        type="button"
+        class="certificate-actions__primary"
+        [disabled]="isReleasing"
+        (click)="releaseCertificates()"
+      >
+        {{ isReleasing ? "Открываем..." : "Открыть доступ участникам" }}
+      </button>
+      }
+      <button
+        type="button"
+        class="certificate-actions__primary"
+        [disabled]="!canGenerate || isGenerating"
+        (click)="generateCertificates()"
+      >
+        {{ isGenerating ? "Генерируем..." : isGenerated ? "Перегенерировать" : "Сгенерировать сертификаты" }}
+      </button>
+    </footer>
+  </div>
+  } } }
+</section>
+
+@if (previewOpen) {
+<section class="certificate-preview-modal" role="dialog" aria-modal="true" aria-labelledby="certificate-preview-title">
+  <div class="certificate-preview-modal__backdrop" (click)="closePreview()"></div>
+  <div class="certificate-preview-modal__dialog">
+    <button type="button" class="certificate-preview-modal__close" aria-label="Закрыть" (click)="closePreview()">
+      <i appIcon icon="cross" appSquare="14"></i>
+    </button>
+    <header>
+      <h2 id="certificate-preview-title">Предпросмотр сертификата</h2>
+      <p>Проверьте, как будет выглядеть PDF с тестовыми данными</p>
+    </header>
+
+    <iframe [src]="previewObjectUrl" title="Предпросмотр сертификата"></iframe>
+
+    <div class="certificate-preview-modal__data">
+      <span><b>ФИО</b> Иван Петров</span>
+      <span><b>Чемпионат</b> Финансовый форсайт 2026</span>
+      <span><b>Проект</b> AI-модель оценки рисков</span>
+      <span><b>ID</b> CERT-2026-000124</span>
+    </div>
+
+    <footer>
+      <button type="button" (click)="closePreview()">Закрыть</button>
+      <button type="button" class="certificate-preview-modal__primary" (click)="saveFromPreview()">
+        Сохранить шаблон
+      </button>
+    </footer>
+  </div>
+</section>
+}

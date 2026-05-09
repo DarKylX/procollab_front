@@ -1,29 +1,52 @@
 <!-- @format -->
 
-<div class="programs">
-  @if (programs) {
-  <div class="programs__list">
-    @for (p of searchedPrograms; track p.id) {
-    <a [routerLink]="['/office/program', p.id]">
-      <app-program-card [program]="p"></app-program-card>
+<section class="programs-page">
+  <header class="programs-page__header">
+    <div>
+      <h1 class="programs-page__subtitle">
+        Выберите чемпионат для участия или создайте свой собственный.
+      </h1>
+    </div>
+  </header>
+
+  <form class="programs-page__search" [formGroup]="searchForm">
+    <app-search
+      formControlName="search"
+      placeholder="Найти чемпионат"
+      [openable]="false"
+    ></app-search>
+  </form>
+
+  <nav class="programs-page__tabs" aria-label="Разделы чемпионатов">
+    <a
+      class="programs-page__tab"
+      routerLink="/office/program/all"
+      [class.programs-page__tab--active]="activeTab === 'all'"
+    >
+      Все чемпионаты
     </a>
-    }
-  </div>
+    <a
+      class="programs-page__tab"
+      routerLink="/office/program/my"
+      [class.programs-page__tab--active]="activeTab === 'my'"
+    >
+      Мои чемпионаты
+    </a>
+  </nav>
+
+  @if (activeTab === "my") {
+  <app-my-programs [programs]="searchedPrograms"></app-my-programs>
+  } @else {
+  <app-all-programs
+    [programs]="searchedPrograms"
+    [verifiedOnly]="verifiedOnly()"
+    [registrationOpenOnly]="registrationOpenOnly()"
+    [registrationSort]="registrationSort()"
+    [loading]="isLoadingPrograms()"
+    [hasLoaded]="hasLoadedPrograms()"
+    (verifiedOnlyChange)="onVerifiedOnlyChange($event)"
+    (registrationOpenOnlyChange)="onRegistrationOpenOnlyChange($event)"
+    (registrationSortChange)="onRegistrationSortChange($event)"
+  ></app-all-programs>
   }
-
-  <div class="programs__filter">
-    <p class="text-body-14">фильтры</p>
-
-    <label (click)="onTogglePparticipating()" class="programs__filter--block">
-      <app-checkbox [checked]="isPparticipating()"></app-checkbox>
-      <span class="text-body-12 programs__filter--text">участвую</span>
-    </label>
-
-    <app-select
-      size="big"
-      placeholder="все"
-      [options]="programOptionsFilter"
-      [isDisabled]="true"
-    ></app-select>
-  </div>
-</div>
+</section>

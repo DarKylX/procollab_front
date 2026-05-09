@@ -1,0 +1,37 @@
+<!-- @format -->
+
+@if (shouldShow) {
+<section class="verification-banner">
+  <div class="verification-banner__icon" aria-hidden="true">!</div>
+  <div class="verification-banner__content">
+    <h2>Подтвердите компанию</h2>
+    <p class="text-body-14">
+      Подтвержденные организаторы вызывают больше доверия у участников. После проверки на карточках
+      чемпионатов появится бейдж «Официальная компания».
+    </p>
+    @if (showDetails) {
+    <p class="verification-banner__details">
+      Верификация не обязательна для публикации чемпионата и не влияет на отправку на модерацию.
+    </p>
+    }
+  </div>
+  <div class="verification-banner__actions">
+    <button
+      class="verification-banner__button verification-banner__button--secondary"
+      type="button"
+      (click)="toggleDetails()"
+    >
+      Подробнее
+    </button>
+    <a
+      class="verification-banner__button verification-banner__button--primary"
+      [routerLink]="verificationLink"
+    >
+      Подтвердить компанию
+    </a>
+    <button class="verification-banner__close" type="button" aria-label="Закрыть" (click)="close()">
+      ×
+    </button>
+  </div>
+</section>
+}

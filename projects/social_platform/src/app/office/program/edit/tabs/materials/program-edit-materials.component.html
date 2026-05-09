@@ -1,0 +1,169 @@
+<!-- @format -->
+
+<section class="materials-tab">
+  <div class="materials-tab__header">
+    <div>
+      <h2>Материалы</h2>
+      <p>Файлы и ссылки, которые участники увидят на странице чемпионата.</p>
+    </div>
+  </div>
+
+  <section class="program-assets" [formGroup]="programInfoForm">
+    <label class="edit-field">
+      <span class="edit-field__label">Сайт чемпионата</span>
+      <input
+        class="edit-field__control"
+        type="url"
+        formControlName="websiteUrl"
+        placeholder="https://example.com"
+      />
+    </label>
+
+    <label class="edit-field">
+      <span class="edit-field__label">Положение</span>
+      <input
+        class="edit-field__control"
+        type="url"
+        formControlName="presentationAddress"
+        placeholder="Ссылка на документ или файл"
+      />
+    </label>
+
+    <label class="program-assets__upload">
+      <input
+        type="file"
+        [disabled]="isReadonly || isPresentationUploading"
+        (change)="onPresentationSelected($event)"
+      />
+      <i appIcon icon="upload" appSquare="16"></i>
+      <span>{{ isPresentationUploading ? "Загружаем..." : presentationFileName || "Загрузить положение" }}</span>
+    </label>
+
+    <label class="edit-field">
+      <span class="edit-field__label">Контакты</span>
+      <input
+        class="edit-field__control"
+        type="url"
+        formControlName="contactUrl"
+        placeholder="Ссылка на контакты или страницу организатора"
+      />
+    </label>
+  </section>
+
+  <form class="material-add" [formGroup]="newMaterialForm" novalidate>
+    <div class="material-add__type">
+      <label class="edit-radio">
+        <input type="radio" value="link" formControlName="type" />
+        <span>
+          <strong>Ссылка</strong>
+          <span>Внешний URL</span>
+        </span>
+      </label>
+      <label class="edit-radio">
+        <input type="radio" value="file" formControlName="type" />
+        <span>
+          <strong>Файл</strong>
+          <span>Загрузка через платформу</span>
+        </span>
+      </label>
+    </div>
+
+    <div class="material-add__fields">
+      <label class="edit-field">
+        <span class="edit-field__label">Название материала</span>
+        <input
+          class="edit-field__control"
+          type="text"
+          formControlName="title"
+          placeholder="Например, Положение о конкурсе"
+        />
+      </label>
+
+      @if (isFileMode) {
+      <label class="material-add__upload">
+        <input
+          type="file"
+          [disabled]="isReadonly || isUploading"
+          (change)="onFileSelected($event)"
+        />
+        <i appIcon icon="upload" appSquare="16"></i>
+        <span>{{ isUploading ? "Загружаем..." : "Выбрать файл" }}</span>
+      </label>
+      @if (newMaterialForm.controls.url.value) {
+      <p class="material-add__uploaded">
+        {{ materialFileName(newMaterialForm.controls.url.value) }}
+      </p>
+      } } @else {
+      <label class="edit-field">
+        <span class="edit-field__label">URL</span>
+        <input
+          class="edit-field__control"
+          type="url"
+          formControlName="url"
+          placeholder="https://example.com/material"
+        />
+      </label>
+      }
+    </div>
+
+    <button
+      class="material-add__submit"
+      type="button"
+      [disabled]="newMaterialForm.invalid || isReadonly || isUploading"
+      (click)="addMaterial()"
+    >
+      Добавить материал
+    </button>
+  </form>
+
+  @if (materials.length) {
+  <ul class="materials-list">
+    @for (material of materials; track material.url; let index = $index) {
+    <li class="materials-list__item">
+      <span class="materials-list__icon">
+        <i
+          appIcon
+          [icon]="materialKind(material.url) === 'Файл' ? 'file' : 'link'"
+          appSquare="14"
+        ></i>
+      </span>
+
+      <label class="materials-list__title">
+        <span>Название</span>
+        <input
+          type="text"
+          [value]="material.title"
+          [disabled]="isReadonly"
+          (input)="updateMaterialTitle(index, $any($event.target).value)"
+        />
+      </label>
+
+      <div class="materials-list__url">
+        <strong>{{ materialKind(material.url) }}</strong>
+        <span>{{ materialFileName(material.url) }}</span>
+      </div>
+
+      <a class="materials-list__open" [href]="material.url" target="_blank" rel="noreferrer">
+        Открыть
+      </a>
+
+      <button
+        class="materials-list__delete"
+        type="button"
+        [disabled]="isReadonly"
+        (click)="removeMaterial(index)"
+        aria-label="Удалить материал"
+      >
+        <i appIcon icon="basket" appSquare="14"></i>
+      </button>
+    </li>
+    }
+  </ul>
+  } @else {
+  <div class="materials-empty">
+    <i appIcon icon="folder" appSquare="26"></i>
+    <h3>Материалы еще не загружены</h3>
+    <p>Участники увидят их на странице чемпионата после публикации.</p>
+  </div>
+  }
+</section>

@@ -1,6 +1,6 @@
 /** @format */
 
-import type { VerificationStatus } from "./program-verification.model";
+import { ReadinessChecklist, ReadinessData } from "./readiness.model";
 
 /**
  * Основная модель программы в системе
@@ -34,48 +34,71 @@ import type { VerificationStatus } from "./program-verification.model";
  * Методы:
  * @method static default() - Возвращает объект программы с дефолтными значениями
  */
-export type ProgramStatus = "draft" | "published" | "completed" | "archived";
-export type ProgramParticipationFormat = "individual" | "team";
-export type ProgramParticipantProjectStatus = "not_linked" | "not_submitted" | "submitted";
-
-export interface ProgramCompany {
-  id: number;
-  name: string;
-  inn: string;
+export interface ProgramDataSchemaField {
+  type?: "text" | "email" | "phone" | "textarea" | "select" | "radio" | "checkbox" | "file";
+  name?: string;
+  label?: string;
+  placeholder?: string;
+  required?: boolean;
+  isRequired?: boolean;
+  is_required?: boolean;
+  helpText?: string;
+  help_text?: string;
+  hint?: string;
+  description?: string;
+  options?: string[];
+  order?: number;
+  asFilter?: boolean;
+  showFilter?: boolean;
+  show_filter?: boolean;
 }
 
-export interface ProgramParticipantProject {
-  id: number;
-  name: string;
-  description?: string;
-  shortDescription?: string;
-  imageAddress?: string;
-  coverImageAddress?: string;
-  presentationAddress?: string;
-  draft?: boolean;
-  partnerProgram?: {
-    programLinkId: number;
-    programId: number;
-    isSubmitted: boolean;
-    submitted?: boolean;
-    submittedAt?: string | null;
-  };
+export class ProgramDataSchema {
+  [key: string]: ProgramDataSchemaField;
 }
 
 export interface LegalDocument {
   id: number;
-  type: "privacy_policy" | "participant_consent" | "participation_terms";
+  type: "privacy_policy" | "participant_consent" | "participation_terms" | "organizer_terms";
   title: string;
   version: string;
   contentUrl?: string;
   contentHtml?: string;
+  isActive: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface ProgramLegalSettings {
+  participationRulesFile?: string | null;
+  participationRulesFileUrl?: string;
+  participationRulesLink?: string;
+  additionalTermsText?: string;
+  organizerTermsAcceptedBy?: {
+    id: number;
+    email: string;
+    fullName: string;
+  } | null;
+  organizerTermsAcceptedAt?: string | null;
+  organizerTermsVersion?: string;
+  termsVersion?: string;
+  updatedAt?: string;
 }
 
 export class Program {
   id!: number;
-  status!: ProgramStatus;
+  status?:
+    | "draft"
+    | "pending_moderation"
+    | "published"
+    | "rejected"
+    | "completed"
+    | "frozen"
+    | "archived";
+
   imageAddress!: string;
   coverImageAddress!: string;
+  mobileCoverImageAddress?: string;
   presentationAddress!: string;
   advertisementImageAddress!: string;
   name!: string;
@@ -85,6 +108,13 @@ export class Program {
   year!: number;
   links!: string[];
   registrationLink!: string | null;
+  registrationType?: "internal" | "external";
+  isPrivate?: boolean;
+  dataSchema?: ProgramDataSchema;
+  projectsAvailability?: "all_users" | "all" | "experts_only";
+  participationFormat?: "individual" | "team";
+  projectTeamMinSize?: number | null;
+  projectTeamMaxSize?: number | null;
   materials!: { title: string; url: string }[];
   shortDescription!: string;
   datetimeRegistrationEnds!: string;
@@ -92,23 +122,54 @@ export class Program {
   datetimeFinished!: string;
   datetimeProjectSubmissionEnds!: string;
   datetimeEvaluationEnds!: string;
+  isCompetitive?: boolean;
+  isDistributedEvaluation?: boolean;
+  maxProjectRates?: number | null;
   viewsCount!: number;
   likesCount!: number;
   isUserLiked!: boolean;
   isUserManager!: boolean;
   isUserMember!: boolean;
-  company!: ProgramCompany | null;
-  companyName!: string;
-  verificationStatus!: VerificationStatus;
-  isVerified!: boolean;
-  verifiedCompanyName!: string;
-  participationFormat!: ProgramParticipationFormat;
-  projectTeamMinSize!: number | null;
-  projectTeamMaxSize!: number | null;
-  programLinkId!: number | null;
-  participantProject!: ProgramParticipantProject | null;
-  participantProjectStatus!: ProgramParticipantProjectStatus;
-  participantProjectSubmittedAt!: string | null;
+  isVerified?: boolean;
+  verificationStatus?: "not_requested" | "pending" | "verified" | "rejected" | "revoked";
+  verifiedCompanyName?: string;
+  companyName?: string;
+  legalDocuments?: LegalDocument[];
+  legalSettings?: ProgramLegalSettings | null;
+  readiness?: ReadinessChecklist;
+  readinessData?: ReadinessData;
+  canExportContacts?: boolean;
+  managers?: { id: number }[];
+  experts?: { id: number }[];
+  participants?: { id: number }[];
+  participantsCount?: number;
+  participantsDeltaWeek?: number;
+  projectsCount?: number;
+  activeProjectsCount?: number;
+  expertsCount?: number;
+  expertsRemainingCount?: number;
+  unevaluatedProjectsCount?: number;
+  isUserExpert?: boolean;
+  participantProjectStatus?: "not_submitted" | "submitted";
+  participantProjectSubmittedAt?: string;
+  issuedCertificateUrl?: string | null;
+  freezeReason?: string;
+  moderationResult?: {
+    action?: string;
+    comment?: string;
+    reasonCode?: string;
+    reasonLabel?: string;
+    createdAt?: string;
+    rejectionReasonCode?: string;
+    rejectionComment?: string;
+    rejectedAt?: string;
+    sectionsToFix?: string[];
+    rejectedBy?: {
+      id?: number;
+      email?: string;
+      fullName?: string;
+    } | null;
+  } | null;
   publishProjectsAfterFinish!: boolean;
   courseId!: number | null;
   courses!: { id: number; title: string; isAvailable: boolean }[];
@@ -116,7 +177,6 @@ export class Program {
   static default(): Program {
     return {
       id: 1,
-      status: "draft",
       name: "",
       description: "",
       city: "",
@@ -125,7 +185,15 @@ export class Program {
       links: [],
       materials: [],
       registrationLink: null,
+      registrationType: "internal",
+      isPrivate: false,
+      dataSchema: {},
+      projectsAvailability: "all_users",
+      participationFormat: "team",
+      projectTeamMinSize: 1,
+      projectTeamMaxSize: null,
       coverImageAddress: "",
+      mobileCoverImageAddress: "",
       advertisementImageAddress: "",
       shortDescription: "",
       datetimeRegistrationEnds: "",
@@ -133,6 +201,9 @@ export class Program {
       datetimeFinished: "",
       datetimeProjectSubmissionEnds: "",
       datetimeEvaluationEnds: "",
+      isCompetitive: false,
+      isDistributedEvaluation: false,
+      maxProjectRates: 1,
       viewsCount: 1,
       tag: "",
       likesCount: 1,
@@ -140,53 +211,36 @@ export class Program {
       isUserLiked: false,
       isUserMember: false,
       isUserManager: false,
-      company: null,
-      companyName: "",
-      verificationStatus: "not_requested",
       isVerified: false,
+      verificationStatus: "not_requested",
       verifiedCompanyName: "",
-      participationFormat: "team",
-      projectTeamMinSize: 1,
-      projectTeamMaxSize: null,
-      programLinkId: null,
-      participantProject: null,
-      participantProjectStatus: "not_linked",
-      participantProjectSubmittedAt: null,
+      companyName: "",
+      legalDocuments: [],
+      legalSettings: null,
+      readiness: {},
+      readinessData: undefined,
+      canExportContacts: false,
+      managers: [],
+      experts: [],
+      participants: [],
+      participantsCount: 0,
+      participantsDeltaWeek: 0,
+      projectsCount: 0,
+      activeProjectsCount: 0,
+      expertsCount: 0,
+      expertsRemainingCount: 0,
+      unevaluatedProjectsCount: 0,
+      isUserExpert: false,
+      participantProjectStatus: "not_submitted",
+      participantProjectSubmittedAt: "",
+      issuedCertificateUrl: null,
+      freezeReason: "",
+      moderationResult: null,
       publishProjectsAfterFinish: false,
       courseId: null,
       courses: [],
     };
   }
-}
-
-export function formatProgramParticipation(program?: Pick<
-  Program,
-  "participationFormat" | "projectTeamMinSize" | "projectTeamMaxSize"
->): string {
-  if (!program) {
-    return "";
-  }
-
-  if (program.participationFormat === "individual") {
-    return "Индивидуальное участие";
-  }
-
-  const minSize = program.projectTeamMinSize ?? 1;
-  const maxSize = program.projectTeamMaxSize;
-
-  if (maxSize && maxSize === minSize) {
-    return `Команда: ${maxSize} участников`;
-  }
-
-  if (maxSize && maxSize > minSize) {
-    return `Команда: ${minSize}-${maxSize} участников`;
-  }
-
-  if (minSize > 1) {
-    return `Команда: от ${minSize} участников`;
-  }
-
-  return "Командное участие";
 }
 
 /**
@@ -198,14 +252,6 @@ export function formatProgramParticipation(program?: Pick<
  * @param {string} key - Ключ поля
  * @param {object} value - Объект с типом, названием и плейсхолдером поля
  */
-export class ProgramDataSchema {
-  [key: string]: {
-    type: "text";
-    name: string;
-    placeholder: string;
-  };
-}
-
 /**
  * Модель тега программы
  *

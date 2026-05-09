@@ -1,0 +1,352 @@
+<!-- @format -->
+
+<div class="context-actions">
+  @if (hasRole("organizer")) {
+  <section class="context-card">
+    <h2>Управление чемпионатом</h2>
+    <app-readiness-widget [programId]="program.id" size="medium"></app-readiness-widget>
+
+    <div class="context-card__actions">
+      @switch (status) { @case ("draft") {
+      <button
+        class="context-card__button context-card__button--primary"
+        type="button"
+        (click)="submitModeration.emit()"
+      >
+        Отправить на модерацию
+      </button>
+      <a class="context-card__button" [routerLink]="['/office/program', program.id, 'edit']"
+        >Редактировать</a
+      >
+      <button class="context-card__button context-card__button--text" type="button">Удалить</button>
+      } @case ("rejected") {
+      <p class="context-card__notice context-card__notice--rejected">
+        Чемпионат вернули на доработку.
+        @if (program.moderationResult?.reasonLabel) {
+        Причина: {{ program.moderationResult?.reasonLabel }}.
+        }
+      </p>
+      <a
+        class="context-card__button context-card__button--primary"
+        [routerLink]="['/office/program', program.id, 'edit']"
+        >Исправить</a
+      >
+      <button class="context-card__button context-card__button--text" type="button">Удалить</button>
+      } @case ("pending_moderation") {
+      <p class="context-card__notice">На проверке. Обычно занимает до 2 часов.</p>
+      <button class="context-card__button" type="button" (click)="withdrawModeration.emit()">
+        Отозвать с модерации
+      </button>
+      } @case ("frozen") {
+      <p class="context-card__notice">
+        Чемпионат заморожен.
+        {{ program.freezeReason || "Свяжитесь с поддержкой для уточнения деталей." }}
+      </p>
+      <button class="context-card__button" type="button" (click)="support.emit()">
+        Связаться с поддержкой
+      </button>
+      } @case ("completed") {
+      <a class="context-card__button" [routerLink]="['/office/program', program.id, 'results']"
+        >Просмотреть итоги</a
+      >
+      <button class="context-card__button" type="button">Скачать сертификаты</button>
+      <a class="context-card__button" [routerLink]="['/office/program', program.id, 'analytics']"
+        >Аналитика</a
+      >
+      } @case ("archived") {
+      <p class="context-card__notice">В архиве. Доступен только просмотр.</p>
+      } @default {
+      <a class="context-card__button" [routerLink]="['/office/program', program.id, 'edit']"
+        >Редактировать</a
+      >
+      <a class="context-card__button" [routerLink]="['/office/program', program.id, 'analytics']"
+        >Аналитика</a
+      >
+      <a class="context-card__button" [routerLink]="['/office/program', program.id, 'members']"
+        >Управление участниками</a
+      >
+      <button class="context-card__button" type="button">Скачать XLSX</button>
+      } }
+    </div>
+  </section>
+  } @if (!managementOnly && hasRole("expert")) {
+  <section class="context-card">
+    <h2>оценка проектов</h2>
+    @if (projectSubmissionOpen) {
+    <p class="context-card__notice">Дождитесь окончания приема проектов.</p>
+    } @else if ((program.unevaluatedProjectsCount ?? 0) > 0) {
+    <p class="context-card__text">
+      У вас {{ program.unevaluatedProjectsCount }} проектов, ожидающих оценки.
+    </p>
+    <a
+      class="context-card__button context-card__button--primary"
+      [routerLink]="['/office/program', program.id, 'evaluation']"
+    >
+      Перейти к оценке проектов
+    </a>
+    } @else {
+    <p class="context-card__success">✓ Все проекты оценены</p>
+    }
+  </section>
+  } @if (!managementOnly && !hasRole("admin") && hasRole("participant")) {
+  <section class="context-card context-card--participation">
+    <div class="participant-card__header">
+      <h2>Мое участие</h2>
+      <span class="participant-chip">Зарегистрирован</span>
+    </div>
+
+    @if (participantProjectLoading) {
+    <p class="context-card__notice">Загружаем данные участия...</p>
+    } @else { @if (participantProject; as project) {
+    <dl class="participant-summary">
+      <div>
+        <dt>Дедлайн подачи проекта</dt>
+        <dd>{{ program.datetimeProjectSubmissionEnds | date: "dd.MM.yyyy" }}</dd>
+      </div>
+      <div>
+        <dt>Проектная команда</dt>
+        <dd>{{ participantTeamName }}</dd>
+      </div>
+      <div>
+        <dt>Ваша роль</dt>
+        <dd>{{ participantRole }}</dd>
+      </div>
+      <div>
+        <dt>Проект</dt>
+        <dd>{{ project.name || "Проект без названия" }}</dd>
+      </div>
+      <div>
+        <dt>Статус проекта</dt>
+        <dd>
+          <span
+            class="participant-status"
+            [class.participant-status--submitted]="participantProjectSubmitted"
+          >
+            {{ participantProjectStatusLabel }}
+          </span>
+        </dd>
+      </div>
+    </dl>
+
+    @if (!participantProjectSubmitted) {
+    <div class="context-card__actions">
+      <button
+        class="context-card__button context-card__button--primary"
+        type="button"
+        [disabled]="participantSubmissionDisabled"
+        (click)="submitParticipantProject()"
+      >
+        {{ participantProjectSubmitting ? "Сдаем проект..." : "Сдать на проверку" }}
+      </button>
+      <a
+        class="context-card__button"
+        [routerLink]="['/office/projects', project.id, 'edit']"
+        [queryParams]="{ editingStep: 'main', fromProgram: true }"
+      >
+        Редактировать проект
+      </a>
+    </div>
+    } @else {
+    <p class="context-card__success">
+      Проект сдан {{ program.participantProjectSubmittedAt | date: "dd.MM.yyyy" }}
+    </p>
+    }
+    } @else {
+    <p class="context-card__text">
+      Вы зарегистрированы. Создайте или привяжите проект до окончания приема работ.
+    </p>
+    <a
+      class="context-card__button context-card__button--primary"
+      [routerLink]="['/office/program', program.id, 'projects']"
+    >
+      Привязать проект
+    </a>
+    } }
+
+    @if (status === "completed") { @if (program.issuedCertificateUrl) {
+    <a
+      class="context-card__button"
+      [href]="program.issuedCertificateUrl"
+      target="_blank"
+      rel="noreferrer"
+    >
+      Скачать сертификат
+    </a>
+    } @else {
+    <p class="context-card__notice">
+      Сертификат не выдан. Проверьте условия получения у организатора.
+    </p>
+    } }
+  </section>
+
+  @if (participantProject; as project) {
+  <section class="context-card participant-team">
+    <div class="participant-card__header">
+      <h2>Проектная команда</h2>
+      <span class="participant-team__code">{{ participantInviteCode }}</span>
+    </div>
+
+    <p class="context-card__text">
+      Код приглашения можно отправить участникам, которых нужно добавить в проект.
+    </p>
+
+    <ul class="participant-members">
+      @for (member of participantMembers.slice(0, 5); track member.userId) {
+      <li>
+        <span class="participant-members__avatar">
+          @if (member.avatar) {
+          <img [src]="member.avatar" [alt]="member.firstName + ' ' + member.lastName" />
+          } @else {
+          {{ participantMemberInitial(member) }}
+          }
+        </span>
+        <span>
+          <strong>{{ member.firstName }} {{ member.lastName }}</strong>
+          <em>{{ project.leader === member.userId ? "Лидер проекта" : member.role || "Участник" }}</em>
+        </span>
+      </li>
+      } @empty {
+      <li>
+        <span class="participant-members__avatar">У</span>
+        <span>
+          <strong>Участники проекта</strong>
+          <em>Список появится после синхронизации проекта</em>
+        </span>
+      </li>
+      }
+    </ul>
+  </section>
+
+  <section class="context-card participant-project">
+    <div class="participant-card__header">
+      <h2>Проект</h2>
+      <span
+        class="participant-status"
+        [class.participant-status--submitted]="participantProjectSubmitted"
+      >
+        {{ participantProjectStatusLabel }}
+      </span>
+    </div>
+
+    <p class="participant-project__title">{{ project.name || "Проект без названия" }}</p>
+    @if (project.shortDescription || project.description) {
+    <p class="context-card__text">{{ project.shortDescription || project.description }}</p>
+    }
+
+    <div class="participant-files">
+      @for (file of participantProjectFiles; track file.url) {
+      <a class="participant-files__item" [href]="file.url" target="_blank" rel="noreferrer">
+        <i appIcon icon="file" appSquare="14"></i>
+        <span>
+          <strong>{{ file.title }}</strong>
+          <em>{{ file.caption }}</em>
+        </span>
+        <b>Открыть</b>
+      </a>
+      } @empty {
+      <p class="context-card__notice">Файлы проекта пока не прикреплены.</p>
+      }
+    </div>
+
+    <div class="context-card__actions">
+      <a class="context-card__button" [routerLink]="['/office/projects', project.id]">
+        Открыть проект
+      </a>
+      @if (!participantProjectSubmitted) {
+      <a
+        class="context-card__button"
+        [routerLink]="['/office/projects', project.id, 'edit']"
+        [queryParams]="{ editingStep: 'main', fromProgram: true }"
+      >
+        Редактировать проект
+      </a>
+      }
+    </div>
+  </section>
+  }
+  } @if (!managementOnly && !hasRole("admin") && !hasRole("organizer") && !hasRole("expert") && !hasRole("participant") &&
+  !registrationOpen) {
+  <section class="context-card">
+    <h2>Участие</h2>
+    <p class="context-card__notice">
+      Регистрация закрыта {{ program.datetimeRegistrationEnds | date: "dd.MM.yyyy" }}.
+    </p>
+    <a class="context-card__button" routerLink="/office/program/all"
+      >Посмотреть похожие чемпионаты</a
+    >
+  </section>
+  } @if (!managementOnly && !hasRole("admin") && !hasRole("organizer") && !hasRole("expert") && !hasRole("guest") && !hasRole("participant") && registrationOpen) {
+  <section class="context-card">
+    <h2>Участие</h2>
+    <p class="context-card__text">
+      Регистрация открыта до {{ program.datetimeRegistrationEnds | date: "dd.MM.yyyy" }}.
+    </p>
+    @if (canViewLists) {
+    <a class="context-card__button" [routerLink]="['/office/program', program.id, 'members']"
+      >Перейти к участникам</a
+    >
+    }
+  </section>
+  } @if (hasRole("admin")) {
+  <section class="context-card context-card--admin">
+    <h2>Административный режим</h2>
+    @if (status === "pending_moderation") {
+    <button
+      class="context-card__button context-card__button--primary"
+      type="button"
+      (click)="approve.emit()"
+    >
+      Одобрить
+    </button>
+    <div class="context-card__fix-sections">
+      <span>Разделы к исправлению</span>
+      @for (section of moderationFixSectionOptions; track section.key) {
+      <label>
+        <input
+          type="checkbox"
+          [checked]="selectedSectionsToFix.includes(section.key)"
+          (change)="toggleSectionToFix(section.key)"
+        />
+        {{ section.label }}
+      </label>
+      }
+    </div>
+    <textarea
+      class="context-card__field"
+      [(ngModel)]="rejectComment"
+      placeholder="Причина отклонения"
+    ></textarea>
+    <button
+      class="context-card__button context-card__button--danger-outline"
+      type="button"
+      (click)="emitReject()"
+    >
+      Отклонить
+    </button>
+    } @else if (status === "frozen") {
+    <button
+      class="context-card__button context-card__button--primary"
+      type="button"
+      (click)="restore.emit()"
+    >
+      Восстановить
+    </button>
+    <button class="context-card__button" type="button" (click)="archive.emit()">
+      Архивировать
+    </button>
+    } @else if (status === "published") {
+    <textarea
+      class="context-card__field"
+      [(ngModel)]="freezeComment"
+      placeholder="Причина заморозки"
+    ></textarea>
+    <button class="context-card__button" type="button" (click)="emitFreeze()">
+      Заморозить вручную
+    </button>
+    }
+    <a class="context-card__link" [routerLink]="['/office/admin/moderation/programs', program.id]"
+      >Открыть полный экран модерации</a
+    >
+  </section>
+  }
+</div>

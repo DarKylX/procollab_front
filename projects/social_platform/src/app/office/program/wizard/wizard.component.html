@@ -1,0 +1,193 @@
+<!-- @format -->
+
+<main class="program-wizard">
+  <header class="program-wizard__header">
+    <div class="program-wizard__title">
+      <button class="program-wizard__back" type="button" (click)="goBack()" aria-label="Назад">
+        <i appIcon icon="left-arrow" appSquare="18"></i>
+      </button>
+      <h1 class="text-heading-3">Создание кейс-чемпионата</h1>
+    </div>
+
+    <app-wizard-progress
+      [currentStep]="state.currentStep"
+      (stepSelected)="navigateToStep($event)"
+    ></app-wizard-progress>
+  </header>
+
+  <section class="program-wizard__content">
+    <router-outlet></router-outlet>
+  </section>
+
+  <footer class="program-wizard__footer">
+    <div class="program-wizard__footer-inner">
+      <div
+        class="program-wizard__autosave"
+        [class.program-wizard__autosave--saving]="saveStatus === 'saving'"
+        [class.program-wizard__autosave--error]="saveStatus === 'error'"
+        [class.program-wizard__autosave--saved]="saveStatus === 'saved'"
+      >
+        <span class="program-wizard__autosave-icon" aria-hidden="true">
+          @if (saveStatus === "error") { ! } @else if (saveStatus === "saving") { … } @else {
+          <i appIcon icon="check" appSquare="12"></i>
+          }
+        </span>
+        <span class="text-body-12">{{ autosaveText }}</span>
+        @if (saveStatus === "error") {
+        <button class="program-wizard__retry" type="button" (click)="retryAutosave()">
+          Повторить
+        </button>
+        }
+      </div>
+
+      <div class="program-wizard__actions">
+        <button
+          class="program-wizard__button program-wizard__button--secondary"
+          type="button"
+          (click)="goBack()"
+        >
+          <i appIcon icon="left-arrow" appSquare="14"></i>
+          Назад
+        </button>
+        <button
+          class="program-wizard__button program-wizard__button--ghost"
+          type="button"
+          [disabled]="isDraftSaveDisabled"
+          (click)="saveDraft()"
+        >
+          Сохранить как черновик
+        </button>
+        <button
+          class="program-wizard__button program-wizard__button--primary"
+          type="button"
+          [disabled]="isNextDisabled"
+          (click)="goNext()"
+        >
+          {{ nextLabel }}
+          @if (state.currentStep !== 3) {
+          <i appIcon icon="arrowright" appSquare="16"></i>
+          }
+        </button>
+      </div>
+    </div>
+  </footer>
+
+  <app-modal
+    [open]="createdPopupOpen"
+    (openChange)="createdPopupOpen && closeCreatedPopup()"
+    bodyClass="modal__body--no-flex program-created-modal-shell"
+  >
+    <article class="created-popup" role="dialog" aria-modal="true" aria-labelledby="created-title">
+      <button
+        class="created-popup__close"
+        type="button"
+        aria-label="Закрыть"
+        (click)="closeCreatedPopup()"
+      >
+        <i appIcon icon="cross" appSquare="16"></i>
+      </button>
+
+      <header class="created-popup__header">
+        <span class="created-popup__success" aria-hidden="true">
+          <i appIcon icon="check" appSquare="36"></i>
+        </span>
+        <h2 id="created-title">Чемпионат создан</h2>
+        <p>
+          Чемпионат создан в статусе «Черновик». Заполните оставшиеся разделы и отправьте его на
+          модерацию.
+        </p>
+        <span class="created-popup__status">Статус: Черновик</span>
+      </header>
+
+      <section class="created-popup__readiness">
+        <div class="created-popup__section-title">
+          <h3>Готовность к модерации</h3>
+          <span>{{ readinessText }}</span>
+        </div>
+
+        <ul class="created-popup__checklist">
+          @for (item of createdChecklist; track item.label) {
+          <li
+            [class]="'created-popup__checklist-item created-popup__checklist-item--' + item.status"
+          >
+            <span class="created-popup__check-icon" aria-hidden="true">
+              @if (item.status === "done") {
+              <i appIcon icon="check" appSquare="12"></i>
+              } @else if (item.status === "partial") { – } @else { • }
+            </span>
+            <span>{{ item.label }}</span>
+            <em>{{ checklistStatusLabel(item.status) }}</em>
+          </li>
+          }
+        </ul>
+      </section>
+
+      <section class="created-popup__next">
+        <h3>Что можно сделать дальше</h3>
+
+        <div class="created-popup__action-card">
+          <span class="created-popup__action-icon">
+            <i appIcon icon="edit-pen" appSquare="20"></i>
+          </span>
+          <div>
+            <h4>Продолжить настройку</h4>
+            <p>
+              Добавьте материалы, критерии, экспертов и визуальные элементы чемпионата.
+            </p>
+          </div>
+          <button
+            class="created-popup__small-button created-popup__small-button--primary"
+            type="button"
+            (click)="goToCreatedEdit()"
+          >
+            Перейти к редактированию
+          </button>
+        </div>
+
+        <div class="created-popup__action-card">
+          <span class="created-popup__action-icon">
+            <i appIcon icon="send" appSquare="20"></i>
+          </span>
+          <div>
+            <h4>Отправить на модерацию</h4>
+            <p>Пока нельзя отправить: заполните обязательные разделы перед проверкой.</p>
+            <small>{{ moderationDisabledHint }}</small>
+            @if (moderationError) {
+            <small class="created-popup__error">{{ moderationError }}</small>
+            }
+          </div>
+          <button
+            class="created-popup__small-button"
+            type="button"
+            [disabled]="!canSubmitCreatedToModeration || moderationSubmitting"
+            (click)="submitCreatedToModeration()"
+          >
+            Отправить на модерацию
+          </button>
+        </div>
+
+        <div class="created-popup__action-card">
+          <span class="created-popup__action-icon">
+            <i appIcon icon="eye" appSquare="20"></i>
+          </span>
+          <div>
+            <h4>Предпросмотр страницы</h4>
+            <p>Посмотрите, как страница чемпионата будет выглядеть для участников.</p>
+          </div>
+          <button class="created-popup__small-button" type="button" (click)="goToCreatedPreview()">
+            Открыть страницу
+          </button>
+        </div>
+      </section>
+
+      <footer class="created-popup__footer">
+        <button class="created-popup__later" type="button" (click)="closeCreatedPopup()">
+          Позже
+        </button>
+        <button class="created-popup__primary" type="button" (click)="goToCreatedEdit()">
+          Перейти к редактированию
+        </button>
+      </footer>
+    </article>
+  </app-modal>
+</main>

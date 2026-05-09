@@ -414,6 +414,19 @@
   color: var(--black);
   background: var(--white);
   border-radius: 28px 28px 0 0;
+  box-shadow: 0 -18px 42px rgb(0 0 0 / 18%);
+
+  &::before {
+    position: absolute;
+    top: 10px;
+    left: 50%;
+    width: 56px;
+    height: 5px;
+    content: "";
+    background: var(--medium-grey-for-outline);
+    border-radius: 999px;
+    transform: translateX(-50%);
+  }
 
   h2 {
     margin: 8px 44px 2px 0;
@@ -445,6 +458,11 @@
     border: 1px solid var(--medium-grey-for-outline);
     border-radius: 12px;
     outline: none;
+
+    &:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 14%, transparent);
+    }
   }
 
   textarea {
@@ -454,6 +472,7 @@
   small {
     justify-self: end;
     color: var(--grey-for-text);
+    font-size: 12px;
   }
 }
 

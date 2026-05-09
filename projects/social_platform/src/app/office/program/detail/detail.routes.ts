@@ -6,12 +6,12 @@ import { ProgramRegisterComponent } from "@office/program/detail/register/regist
 import { ProgramRegisterResolver } from "@office/program/detail/register/register.resolver";
 import { ProgramProjectsResolver } from "@office/program/detail/list/projects.resolver";
 import { ProgramMembersResolver } from "@office/program/detail/list/members.resolver";
+import { ProgramAnalyticsComponent } from "@office/program/analytics/program-analytics.component";
 import { ProgramListComponent } from "./list/list.component";
 import { ProgramDetailResolver } from "./detail.resolver";
 import { DeatilComponent } from "@office/features/detail/detail.component";
 import { ExpertEvaluationDetailComponent } from "@office/program/expert-evaluation/expert-evaluation-detail.component";
 import { ExpertEvaluationListComponent } from "@office/program/expert-evaluation/expert-evaluation-list.component";
-import { ProgramAnalyticsComponent } from "@office/program/analytics/program-analytics.component";
 
 /**
  * Маршруты для детальной страницы программы
@@ -27,6 +27,10 @@ import { ProgramAnalyticsComponent } from "@office/program/analytics/program-ana
  * @returns {Routes} Конфигурация маршрутов для детальной страницы программы
  */
 export const PROGRAM_DETAIL_ROUTES: Routes = [
+  {
+    path: "edit",
+    loadChildren: () => import("../edit/edit.routes").then(c => c.PROGRAM_EDIT_ROUTES),
+  },
   {
     path: "projects-rating/:programProjectId",
     component: ExpertEvaluationDetailComponent,

@@ -1,0 +1,174 @@
+<!-- @format -->
+
+<form class="schedule-tab" [formGroup]="form" novalidate>
+  @if (isReadonly) {
+  <p class="schedule-lock">
+    Сроки и формат сейчас доступны только для просмотра. Если чемпионат опубликован и уже есть
+    участники, структура проведения не меняется.
+  </p>
+  }
+
+  <section class="schedule-panel schedule-panel--dates">
+    <header class="schedule-panel__header">
+      <h2>Этапы чемпионата</h2>
+      <p>Настройте даты ключевых этапов чемпионата</p>
+    </header>
+
+    <div class="schedule-dates">
+      @for (field of dateFields; track field.control) {
+      <label class="schedule-date-field">
+        <span class="schedule-date-field__label">
+          {{ field.label }}
+          @if (field.required) {
+          <em>*</em>
+          }
+        </span>
+
+        <span class="schedule-date-field__control">
+          <input type="date" [formControlName]="field.control" />
+          <i appIcon icon="deadline" appSquare="14"></i>
+        </span>
+      </label>
+      }
+    </div>
+
+    @if (dateErrorText) {
+    <p class="schedule-error">{{ dateErrorText }}</p>
+    }
+  </section>
+
+  <section class="schedule-panel">
+    <h2 class="schedule-panel__title">Формат участия</h2>
+
+    <div class="participation-options" aria-label="Формат участия">
+      <button
+        class="participation-option"
+        type="button"
+        [class.participation-option--active]="form.controls.participationFormat.value === 'individual'"
+        [disabled]="isReadonly"
+        (click)="selectParticipationFormat('individual')"
+      >
+        <span class="participation-option__radio"></span>
+        <i appIcon icon="add-person" appSquare="16"></i>
+        <strong>Индивидуально</strong>
+      </button>
+
+      <button
+        class="participation-option"
+        type="button"
+        [class.participation-option--active]="form.controls.participationFormat.value === 'team'"
+        [disabled]="isReadonly"
+        (click)="selectParticipationFormat('team')"
+      >
+        <span class="participation-option__radio"></span>
+        <i appIcon icon="team" appSquare="16"></i>
+        <strong>Командно</strong>
+      </button>
+    </div>
+
+    @if (isTeamFormat) {
+    <div class="team-settings" aria-label="Настройки команд">
+      <label class="schedule-field">
+        <span class="schedule-field__label">Минимальный размер команды</span>
+        <input
+          class="schedule-field__control"
+          type="number"
+          min="1"
+          formControlName="projectTeamMinSize"
+        />
+      </label>
+
+      <label class="schedule-field">
+        <span class="schedule-field__label">Максимальный размер команды</span>
+        <input
+          class="schedule-field__control"
+          type="number"
+          min="1"
+          formControlName="projectTeamMaxSize"
+          placeholder="Без ограничения"
+        />
+      </label>
+
+      <label class="schedule-switch schedule-switch--disabled">
+        <input type="checkbox" disabled />
+        <span class="schedule-switch__track"></span>
+        <span>
+          <strong>Приглашения в проектную команду</strong>
+          <em>Приглашения в проектную команду будут доступны позже</em>
+        </span>
+      </label>
+    </div>
+    } @else {
+    <p class="schedule-panel__note">
+      Участники не смогут добавить сокомандников в проект.
+    </p>
+    }
+  </section>
+
+  <section class="schedule-panel">
+    <h2 class="schedule-panel__title">Конкурсный режим и оценка</h2>
+
+    <div class="competition-settings">
+      <div class="competition-settings__toggles">
+        <label class="schedule-switch">
+          <input type="checkbox" formControlName="isCompetitive" />
+          <span class="schedule-switch__track"></span>
+          <span>
+            <strong>Конкурсная программа</strong>
+            <em>Участники подают проекты, которые оцениваются экспертами</em>
+          </span>
+        </label>
+
+        <label
+          class="schedule-switch"
+          [class.schedule-switch--disabled]="!isDistributedVisible || isReadonly"
+        >
+          <input
+            type="checkbox"
+            formControlName="isDistributedEvaluation"
+            [disabled]="!isDistributedVisible || isReadonly"
+          />
+          <span class="schedule-switch__track"></span>
+          <span>
+            <strong>Распределенная оценка</strong>
+            <em>Каждый проект оценивается несколькими экспертами независимо друг от друга</em>
+          </span>
+        </label>
+
+        <label class="schedule-switch">
+          <input type="checkbox" formControlName="publishProjectsAfterFinish" />
+          <span class="schedule-switch__track"></span>
+          <span>
+            <strong>Публиковать проекты после завершения</strong>
+            <em>Проекты станут доступны после окончания чемпионата</em>
+          </span>
+        </label>
+      </div>
+
+      <div class="competition-settings__fields">
+        <label class="schedule-field">
+          <span class="schedule-field__label">Количество оценок на проект</span>
+          <input
+            class="schedule-field__control"
+            type="number"
+            min="1"
+            max="99"
+            formControlName="maxProjectRates"
+            [disabled]="!form.controls.isDistributedEvaluation.value || isReadonly"
+          />
+          @if (isInvalid("maxProjectRates")) {
+          <span class="schedule-field__error">Укажите число от 1 до 99</span>
+          }
+        </label>
+
+        <label class="schedule-field">
+          <span class="schedule-field__label">Видимость результатов</span>
+          <select class="schedule-field__control" formControlName="projectsAvailability">
+            <option value="all_users">Всем пользователям</option>
+            <option value="experts_only">Только экспертам и организаторам</option>
+          </select>
+        </label>
+      </div>
+    </div>
+  </section>
+</form>

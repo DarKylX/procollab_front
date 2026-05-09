@@ -25,6 +25,9 @@ export class PartnerProgramInfo {
   programLinkId!: number;
   programId!: number;
   isSubmitted!: boolean;
+  submitted?: boolean;
+  submittedAt?: string | null;
+  submitted_at?: string | null;
   canSubmit!: boolean;
   programFields!: PartnerProgramFields[];
   programFieldValues!: PartnerProgramFieldsValues[];

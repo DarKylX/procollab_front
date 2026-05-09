@@ -59,3 +59,35 @@
     }
   }
 }
+
+@media (max-width: 767px) {
+  .register {
+    width: 100%;
+    min-height: 100%;
+
+    &__bar {
+      margin-bottom: 14px;
+    }
+  }
+
+  .form {
+    box-sizing: border-box;
+    width: 100%;
+    padding: 20px;
+    border: 0.5px solid var(--medium-grey-for-outline);
+    border-radius: var(--rounded-lg);
+
+    ::ng-deep {
+      app-input,
+      app-button,
+      .button {
+        display: block;
+        width: 100%;
+      }
+    }
+  }
+
+  .register__consent {
+    padding: 14px;
+  }
+}
