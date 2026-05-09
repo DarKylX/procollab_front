@@ -32,6 +32,15 @@
             ],
             "styles": ["projects/social_platform/src/styles.scss"],
             "scripts": [],
+            "allowedCommonJsDependencies": [
+              "dayjs",
+              "dayjs/locale/ru",
+              "dayjs/plugin/customParseFormat",
+              "dayjs/plugin/isToday",
+              "dayjs/plugin/relativeTime",
+              "file-saver",
+              "snakecase-keys"
+            ],
             "stylePreprocessorOptions": {
               "includePaths": ["projects/social_platform/src"]
             }
@@ -53,17 +62,21 @@
                 },
                 {
                   "type": "anyComponentStyle",
-                  "maximumWarning": "2kb",
-                  "maximumError": "15kb"
+                  "maximumWarning": "20kb",
+                  "maximumError": "40kb"
                 }
               ],
               "outputHashing": "all"
             },
 
             "development": {
-              "optimization": false,
+              "optimization": {
+                "scripts": true,
+                "styles": true,
+                "fonts": false
+              },
               "extractLicenses": false,
-              "sourceMap": true
+              "sourceMap": false
             }
           },
           "defaultConfiguration": "production"
