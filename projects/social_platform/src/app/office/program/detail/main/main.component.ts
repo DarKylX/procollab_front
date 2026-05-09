@@ -11,6 +11,7 @@ import {
 } from "@angular/core";
 import { ProgramService } from "@office/program/services/program.service";
 import { ActivatedRoute, Router, RouterModule } from "@angular/router";
+import { HttpParams } from "@angular/common/http";
 import {
   concatMap,
   finalize,
@@ -20,6 +21,7 @@ import {
   Observable,
   of,
   Subscription,
+  switchMap,
   tap,
   throttleTime,
 } from "rxjs";
@@ -36,6 +38,7 @@ import { ProgramLinksComponent } from "@office/features/program-links/program-li
 import { ProgramNewsCardComponent } from "../shared/news-card/news-card.component";
 import { ButtonComponent, IconComponent } from "@ui/components";
 import { ApiPagination } from "@models/api-pagination.model";
+import { Project } from "@models/project.model";
 import { TagComponent } from "@ui/components/tag/tag.component";
 import { ProjectService } from "@office/services/project.service";
 import { ModalComponent } from "@ui/components/modal/modal.component";
@@ -75,6 +78,7 @@ export class ProgramDetailMainComponent implements OnInit, OnDestroy {
     private readonly programService: ProgramService,
     private readonly programNewsService: ProgramNewsService,
     private readonly projectAdditionalService: ProjectAdditionalService,
+    private readonly projectService: ProjectService,
     private readonly authService: AuthService,
     private readonly router: Router,
     private readonly route: ActivatedRoute,
@@ -109,6 +113,12 @@ export class ProgramDetailMainComponent implements OnInit, OnDestroy {
   registeredProgramModal = signal<boolean>(false);
   participantProjectSubmitting = false;
   participantProjectSubmitError = "";
+  participantProjectPickerOpen = false;
+  participantProjectLoading = false;
+  participantProjectLinking = false;
+  participantProjectCreateLoading = false;
+  participantProjectLinkError = "";
+  participantProjectOptions: Project[] = [];
 
   programId?: number;
   profileId = signal<number | undefined>(undefined);
@@ -333,6 +343,85 @@ export class ProgramDetailMainComponent implements OnInit, OnDestroy {
     this.projectAdditionalService.clearAssignProjectToProgramError();
   }
 
+  openParticipantProjectPicker(): void {
+    if (!this.program) {
+      return;
+    }
+
+    this.participantProjectPickerOpen = true;
+    this.participantProjectLinkError = "";
+    this.participantProjectLoading = true;
+
+    this.projectService
+      .getMy(new HttpParams({ fromObject: { limit: 100, offset: 0 } }))
+      .pipe(finalize(() => (this.participantProjectLoading = false)))
+      .subscribe({
+        next: response => {
+          this.participantProjectOptions = response.results ?? [];
+        },
+        error: error => {
+          this.participantProjectOptions = [];
+          this.participantProjectLinkError = this.getParticipantProjectLinkErrorText(error);
+        },
+      });
+  }
+
+  closeParticipantProjectPicker(): void {
+    if (this.participantProjectLinking || this.participantProjectCreateLoading) {
+      return;
+    }
+
+    this.participantProjectPickerOpen = false;
+  }
+
+  linkExistingParticipantProject(project: Project): void {
+    const program = this.program;
+    if (!program || this.participantProjectLinking || this.participantProjectCreateLoading) {
+      return;
+    }
+
+    this.participantProjectLinkError = "";
+    this.participantProjectLinking = true;
+    this.programService
+      .applyProjectToProgram(program.id, { projectId: project.id, programFieldValues: [] })
+      .pipe(finalize(() => (this.participantProjectLinking = false)))
+      .subscribe({
+        next: response => this.applyParticipantProjectLink(program, project, response),
+        error: error => {
+          this.participantProjectLinkError = this.getParticipantProjectLinkErrorText(error);
+        },
+      });
+  }
+
+  createDraftParticipantProject(): void {
+    const program = this.program;
+    if (!program || this.participantProjectLinking || this.participantProjectCreateLoading) {
+      return;
+    }
+
+    this.participantProjectLinkError = "";
+    this.participantProjectCreateLoading = true;
+    this.projectService
+      .create()
+      .pipe(
+        switchMap(project =>
+          this.programService
+            .applyProjectToProgram(program.id, { projectId: project.id, programFieldValues: [] })
+            .pipe(map(response => ({ project, response })))
+        ),
+        finalize(() => (this.participantProjectCreateLoading = false))
+      )
+      .subscribe({
+        next: ({ project, response }) => {
+          this.applyParticipantProjectLink(program, project, response);
+          this.router.navigate(["/office/projects", project.id, "edit"]);
+        },
+        error: error => {
+          this.participantProjectLinkError = this.getParticipantProjectLinkErrorText(error);
+        },
+      });
+  }
+
   submitParticipantProject(): void {
     const relationId = this.participantProjectRelationId;
     if (!relationId || this.participantProjectSubmitting || this.participantProjectSubmitted) {
@@ -471,6 +560,56 @@ export class ProgramDetailMainComponent implements OnInit, OnDestroy {
     return this.participantProjectSubmitted ? "Проект сдан" : "Проект не сдан";
   }
 
+  get availableParticipantProjects(): Project[] {
+    const currentProjectId = this.participantProject?.id ?? null;
+    return this.participantProjectOptions.filter(project => {
+      if (project.id === currentProjectId) {
+        return false;
+      }
+
+      return !project.partnerProgram;
+    });
+  }
+
+  projectOptionDescription(project: Project): string {
+    return project.shortDescription || project.description || "Описание проекта пока не заполнено";
+  }
+
+  private applyParticipantProjectLink(program: Program, project: Project, response: any): void {
+    const relationId =
+      response?.programLinkId ??
+      response?.program_link_id ??
+      project.partnerProgram?.programLinkId ??
+      null;
+
+    this.program = {
+      ...program,
+      programLinkId: relationId,
+      participantProjectStatus: "not_submitted",
+      participantProjectSubmittedAt: null,
+      participantProject: {
+        id: project.id,
+        name: project.name || "",
+        description: project.description || "",
+        shortDescription: project.shortDescription || "",
+        imageAddress: project.imageAddress || "",
+        coverImageAddress: project.coverImageAddress || "",
+        presentationAddress: project.presentationAddress || "",
+        draft: project.draft,
+        partnerProgram: relationId
+          ? {
+              programId: program.id,
+              programLinkId: relationId,
+              isSubmitted: false,
+              submitted: false,
+              submittedAt: null,
+            }
+          : undefined,
+      },
+    };
+    this.participantProjectPickerOpen = false;
+  }
+
   private getSubmitErrorText(error: any): string {
     const detail = error?.error?.detail;
     if (detail) {
@@ -488,5 +627,24 @@ export class ProgramDetailMainComponent implements OnInit, OnDestroy {
     }
 
     return "Не удалось сдать проект. Проверьте данные и попробуйте еще раз.";
+  }
+
+  private getParticipantProjectLinkErrorText(error: any): string {
+    const detail = error?.error?.detail;
+    if (detail) {
+      return String(detail);
+    }
+
+    const projectId = error?.error?.projectId ?? error?.error?.project_id;
+    if (projectId) {
+      return Array.isArray(projectId) ? String(projectId[0]) : String(projectId);
+    }
+
+    const nonFieldErrors = error?.error?.nonFieldErrors ?? error?.error?.non_field_errors;
+    if (Array.isArray(nonFieldErrors) && nonFieldErrors.length) {
+      return String(nonFieldErrors[0]);
+    }
+
+    return "Не удалось привязать проект к чемпионату. Проверьте проект и попробуйте еще раз.";
   }
 }

@@ -121,6 +121,30 @@
           <p class="text-body-10 participant-project__description">
             Участие подтверждено. Вы сможете выбрать или создать проект для чемпионата на следующем шаге.
           </p>
+          @if (participantProjectLinkError) {
+          <p class="text-body-10 participant-project__error">
+            {{ participantProjectLinkError }}
+          </p>
+          }
+          <div class="participant-project__actions">
+            <app-button
+              size="medium"
+              customTypographyClass="text-body-10"
+              [disabled]="participantProjectCreateLoading"
+              [loader]="participantProjectLoading"
+              (click)="openParticipantProjectPicker()"
+              >Выбрать проект</app-button
+            >
+            <app-button
+              size="medium"
+              color="white"
+              customTypographyClass="text-body-10"
+              [disabled]="participantProjectLoading || participantProjectLinking"
+              [loader]="participantProjectCreateLoading"
+              (click)="createDraftParticipantProject()"
+              >Создать проект</app-button
+            >
+          </div>
           }
         </article>
         }
@@ -212,6 +236,72 @@
       (click)="clearAssignProjectToProgramError()"
       >понятно</app-button
     >
+  </div>
+</app-modal>
+
+<app-modal
+  [open]="participantProjectPickerOpen"
+  (openChange)="participantProjectPickerOpen = $event"
+>
+  <div class="project-picker">
+    <div class="project-picker__top">
+      <div>
+        <p class="project-picker__eyebrow text-body-10">Участие в чемпионате</p>
+        <h3 class="project-picker__title text-body-14">Выберите проект</h3>
+      </div>
+      <button
+        class="project-picker__close"
+        type="button"
+        aria-label="Закрыть"
+        (click)="closeParticipantProjectPicker()"
+      >
+        <i appIcon icon="cross" appSquare="12"></i>
+      </button>
+    </div>
+
+    @if (participantProjectLoading) {
+    <p class="project-picker__empty text-body-10">Загружаем ваши проекты...</p>
+    } @else { @if (availableParticipantProjects.length) {
+    <div class="project-picker__list">
+      @for (project of availableParticipantProjects; track project.id) {
+      <button
+        class="project-picker__item"
+        type="button"
+        [disabled]="participantProjectLinking || participantProjectCreateLoading"
+        (click)="linkExistingParticipantProject(project)"
+      >
+        <span class="project-picker__item-title text-body-12">
+          {{ project.name || "Проект без названия" }}
+        </span>
+        <span class="project-picker__item-text text-body-10">
+          {{ projectOptionDescription(project) }}
+        </span>
+      </button>
+      }
+    </div>
+    } @else {
+    <p class="project-picker__empty text-body-10">
+      У вас пока нет свободных проектов, которые можно привязать к этому чемпионату.
+    </p>
+    } }
+
+    @if (participantProjectLinkError) {
+    <p class="project-picker__error text-body-10">
+      {{ participantProjectLinkError }}
+    </p>
+    }
+
+    <div class="project-picker__actions">
+      <app-button
+        size="medium"
+        color="white"
+        customTypographyClass="text-body-10"
+        [disabled]="participantProjectLinking"
+        [loader]="participantProjectCreateLoading"
+        (click)="createDraftParticipantProject()"
+        >Создать новый проект</app-button
+      >
+    </div>
   </div>
 </app-modal>
 
