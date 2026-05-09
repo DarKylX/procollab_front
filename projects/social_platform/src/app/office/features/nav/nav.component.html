@@ -23,16 +23,6 @@
         (click)="notificationsOpen = !notificationsOpen"
       >
         <i
-          routerLink="chats"
-          appIcon
-          icon="chats"
-          appWidth="23"
-          appHeight="21"
-          appViewBox="0 0 23 21"
-          class="nav-bar__icon"
-        ></i>
-
-        <i
           appIcon
           icon="bell"
           appWidth="20"
@@ -40,7 +30,7 @@
           appViewBox="0 0 20 22"
           class="nav-bar__icon"
         ></i>
-        @if ((notificationService.hasNotifications | async) || hasInvites) {
+        @if (((notificationService.unreadCount$ | async) ?? 0) > 0 || hasInvites) {
         <div class="attention"></div>
         }
       </div>
@@ -90,6 +80,12 @@
             программы
           </li>
         </a>
+        <a class="nav__link" routerLink="notifications" routerLinkActive="nav__link--active">
+          <li class="text-body-14 nav__item">
+            <i appIcon icon="bell" appSquare="24" appViewBox="0 0 24 24" class="nav-bar__icon"></i>
+            уведомления
+          </li>
+        </a>
         <a class="nav__link" routerLink="courses" routerLinkActive="nav__link--active">
           <li class="text-body-14 nav__item">
             <i
@@ -117,8 +113,58 @@
       </ul>
     </nav>
     } @else {
-    <div>
-      <h3 class="text-bold-body-16 notifications__title">уведомления</h3>
+    <div class="notifications">
+      <div class="notifications__header">
+        <div>
+          <h3 class="text-bold-body-16 notifications__title">Уведомления</h3>
+          @if (((notificationService.unreadCount$ | async) ?? 0) > 0) {
+          <span class="notifications__counter"
+            >{{ notificationService.unreadCount$ | async }} новых</span
+          >
+          }
+        </div>
+        @if (((notificationService.unreadCount$ | async) ?? 0) > 0) {
+        <button type="button" class="notifications__mark-all" (click)="markAllNotificationsRead()">
+          Отметить все
+        </button>
+        }
+      </div>
+
+      @if (notificationService.notifications$ | async; as notifications) {
+      <ul class="notifications__list">
+        @for (notification of notifications; track notification.id) {
+        <li>
+          <button
+            type="button"
+            class="notifications__item"
+            [class.notifications__item--unread]="!notification.is_read"
+            (click)="onNotificationClick(notification)"
+          >
+            <span class="notifications__icon">
+              <i
+                appIcon
+                [icon]="notificationIcon(notification)"
+                appSquare="18"
+                appViewBox="0 0 24 24"
+              ></i>
+            </span>
+            <span class="notifications__content">
+              <span class="notifications__item-title">{{ notification.title }}</span>
+              <span class="notifications__message">{{ notification.message }}</span>
+            </span>
+            <span class="notifications__time">{{ notificationTime(notification) }}</span>
+          </button>
+        </li>
+        } @empty {
+        @if (!hasInvites) {
+        <li class="notifications__empty">У вас пока нет уведомлений</li>
+        }
+        }
+      </ul>
+      }
+
+      @if (hasInvites) {
+      <h4 class="notifications__section-title">Приглашения</h4>
       <ul class="notifications__invites">
         @for (invite of invites; track invite.id) {
         <li class="notifications__invite">
@@ -130,6 +176,11 @@
         </li>
         }
       </ul>
+      }
+
+      <button type="button" class="notifications__all" (click)="openNotificationsPage()">
+        Все уведомления
+      </button>
     </div>
     }
   </div>

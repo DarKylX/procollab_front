@@ -1,0 +1,80 @@
+<!-- @format -->
+
+<section class="notifications-page">
+  <div class="notifications-page__header">
+    <div>
+      <h1 class="notifications-page__title">Уведомления</h1>
+      <p class="notifications-page__subtitle">
+        События и важные изменения, связанные с чемпионатами
+      </p>
+    </div>
+
+    <button
+      type="button"
+      class="notifications-page__mark-all"
+      [disabled]="unreadCount() === 0"
+      (click)="markAllRead()"
+    >
+      Отметить все как прочитанные
+    </button>
+  </div>
+
+  <div class="notifications-page__filters" role="tablist" aria-label="Фильтры уведомлений">
+    @for (filter of filters; track filter.value) {
+    <button
+      type="button"
+      class="notifications-page__filter"
+      [class.notifications-page__filter--active]="activeFilter() === filter.value"
+      (click)="setFilter(filter.value)"
+    >
+      {{ filter.label }}
+      @if (filter.value === "unread") {
+      <span>{{ unreadCount() }}</span>
+      }
+    </button>
+    }
+  </div>
+
+  @if (loading()) {
+  <div class="notifications-page__empty">Загружаем уведомления...</div>
+  } @else if (filteredNotifications().length) {
+  <ul class="notifications-page__list">
+    @for (notification of filteredNotifications(); track notification.id) {
+    <li>
+      <button
+        type="button"
+        class="notification-card"
+        [class.notification-card--unread]="!notification.is_read"
+        (click)="openNotification(notification)"
+      >
+        <span class="notification-card__icon">
+          <i
+            appIcon
+            [icon]="notificationIcon(notification)"
+            appSquare="24"
+            appViewBox="0 0 24 24"
+          ></i>
+        </span>
+        <span class="notification-card__content">
+          <span class="notification-card__title">{{ notification.title }}</span>
+          <span class="notification-card__message">{{ notification.message }}</span>
+        </span>
+        <span class="notification-card__meta">
+          <span>{{ notificationDate(notification) }}</span>
+          @if (!notification.is_read) {
+          <span class="notification-card__dot"></span>
+          }
+          <span aria-hidden="true" class="notification-card__arrow">›</span>
+        </span>
+      </button>
+    </li>
+    }
+  </ul>
+  } @else {
+  <div class="notifications-page__empty">
+    <i appIcon icon="bell" appSquare="72" appViewBox="0 0 24 24"></i>
+    <h2>У вас пока нет уведомлений</h2>
+    <p>Когда появятся новые события по чемпионатам, они будут отображаться здесь.</p>
+  </div>
+  }
+</section>

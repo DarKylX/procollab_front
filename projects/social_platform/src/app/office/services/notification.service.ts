@@ -1,37 +1,96 @@
 /** @format */
 
 import { Injectable } from "@angular/core";
-import { BehaviorSubject, map } from "rxjs";
-import { Notification } from "@models/notification.model";
+import { HttpParams } from "@angular/common/http";
+import { BehaviorSubject, map, Observable, tap } from "rxjs";
+import { ApiService } from "projects/core";
+import {
+  Notification,
+  NotificationListResponse,
+  NotificationQueryParams,
+} from "@models/notification.model";
 
-/**
- * Сервис для управления уведомлениями пользователя
- *
- * Предоставляет функциональность для:
- * - Хранения списка уведомлений в памяти
- * - Отслеживания количества непрочитанных уведомлений
- * - Реактивного обновления состояния уведомлений
- */
 @Injectable({
   providedIn: "root",
 })
 export class NotificationService {
-  constructor() {}
+  private readonly NOTIFICATIONS_URL = "/notifications";
 
-  /**
-   * BehaviorSubject для хранения списка уведомлений
-   * Позволяет компонентам подписываться на изменения списка уведомлений
-   */
-  notifications = new BehaviorSubject<Notification[]>([]);
+  private readonly notificationsSubject = new BehaviorSubject<Notification[]>([]);
+  private readonly unreadCountSubject = new BehaviorSubject<number>(0);
 
-  /**
-   * Observable для отслеживания количества непрочитанных уведомлений
-   * Автоматически пересчитывается при изменении списка уведомлений
-   * Фильтрует уведомления по полю readAt (если null - уведомление не прочитано)
-   *
-   * @returns Observable<number> - количество непрочитанных уведомлений
-   */
-  hasNotifications = this.notifications
-    .asObservable()
-    .pipe(map(notifications => notifications.filter(notification => notification.readAt).length));
+  readonly notifications$ = this.notificationsSubject.asObservable();
+  readonly unreadCount$ = this.unreadCountSubject.asObservable();
+  readonly hasNotifications = this.unreadCount$.pipe(map(count => count > 0));
+
+  constructor(private readonly apiService: ApiService) {}
+
+  getNotifications(params: NotificationQueryParams = {}): Observable<NotificationListResponse> {
+    return this.apiService.get<NotificationListResponse>(
+      `${this.NOTIFICATIONS_URL}/`,
+      this.toHttpParams(params)
+    );
+  }
+
+  loadLatest(limit = 7): void {
+    this.getNotifications({ page: 1, page_size: limit }).subscribe({
+      next: response => this.notificationsSubject.next(response.results),
+    });
+  }
+
+  loadUnreadCount(): void {
+    this.apiService
+      .get<{ count: number }>(`${this.NOTIFICATIONS_URL}/unread-count/`)
+      .subscribe({
+        next: response => this.unreadCountSubject.next(response.count),
+      });
+  }
+
+  refreshSummary(): void {
+    this.loadLatest();
+    this.loadUnreadCount();
+  }
+
+  markRead(id: number): Observable<Notification> {
+    return this.apiService
+      .post<Notification>(`${this.NOTIFICATIONS_URL}/${id}/read/`, {})
+      .pipe(
+        tap(notification => {
+          const updated = this.notificationsSubject.value.map(item =>
+            item.id === id ? notification : item
+          );
+          this.notificationsSubject.next(updated);
+          this.loadUnreadCount();
+        })
+      );
+  }
+
+  markAllRead(): Observable<{ updated: number }> {
+    return this.apiService
+      .post<{ updated: number }>(`${this.NOTIFICATIONS_URL}/mark-all-read/`, {})
+      .pipe(
+        tap(() => {
+          this.notificationsSubject.next(
+            this.notificationsSubject.value.map(notification => ({
+              ...notification,
+              is_read: true,
+            }))
+          );
+          this.unreadCountSubject.next(0);
+        })
+      );
+  }
+
+  private toHttpParams(query: NotificationQueryParams): HttpParams {
+    let params = new HttpParams();
+
+    Object.entries(query).forEach(([key, value]) => {
+      if (value === undefined || value === null || value === "") {
+        return;
+      }
+      params = params.set(key, String(value));
+    });
+
+    return params;
+  }
 }

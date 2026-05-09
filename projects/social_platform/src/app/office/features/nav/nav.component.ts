@@ -10,6 +10,7 @@ import { InviteService } from "@services/invite.service";
 import { AsyncPipe, CommonModule } from "@angular/common";
 import { IconComponent } from "@ui/components";
 import { InviteManageCardComponent, ProfileInfoComponent } from "@uilib";
+import type { Notification } from "@models/notification.model";
 
 /**
  * Компонент навигационного меню
@@ -64,6 +65,8 @@ export class NavComponent implements OnInit, OnDestroy {
   ) {}
 
   ngOnInit(): void {
+    this.notificationService.refreshSummary();
+
     // Подписка на события роутера для закрытия мобильного меню
     const routerEvents$ = this.router.events.subscribe(event => {
       if (event instanceof NavigationStart) {
@@ -131,6 +134,65 @@ export class NavComponent implements OnInit, OnDestroy {
    */
   openSkills() {
     location.href = "https://skills.procollab.ru";
+  }
+
+  onNotificationClick(notification: Notification): void {
+    const navigate = () => {
+      this.notificationsOpen = false;
+      this.mobileMenuOpen = false;
+      if (notification.url) {
+        this.router
+          .navigateByUrl(notification.url)
+          .then(() => console.debug("Route changed from NavComponent notification"));
+      }
+    };
+
+    if (notification.is_read) {
+      navigate();
+      return;
+    }
+
+    this.notificationService.markRead(notification.id).subscribe({
+      next: navigate,
+      error: navigate,
+    });
+  }
+
+  markAllNotificationsRead(): void {
+    this.notificationService.markAllRead().subscribe();
+  }
+
+  openNotificationsPage(): void {
+    this.notificationsOpen = false;
+    this.mobileMenuOpen = false;
+    this.router
+      .navigateByUrl("/office/notifications")
+      .then(() => console.debug("Route changed from NavComponent notifications"));
+  }
+
+  notificationIcon(notification: Notification): string {
+    if (notification.category === "expertise") {
+      return "task";
+    }
+    if (notification.category === "verification") {
+      return "person";
+    }
+    if (notification.type.includes("approved")) {
+      return "circle-check";
+    }
+    if (notification.type.includes("rejected")) {
+      return "deadline";
+    }
+    return "bell";
+  }
+
+  notificationTime(notification: Notification): string {
+    return new Date(notification.created_at).toLocaleString("ru-RU", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   }
 
   protected readonly noop = noop;
