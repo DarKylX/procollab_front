@@ -39,6 +39,14 @@
     white-space: nowrap;
   }
 
+  &__company {
+    margin-top: 2px;
+    overflow: hidden;
+    color: var(--dark-grey);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   &__dates {
     display: flex;
     gap: 2px;

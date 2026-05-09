@@ -32,8 +32,17 @@
  * Методы:
  * @method static default() - Возвращает объект программы с дефолтными значениями
  */
+export type ProgramStatus = "draft" | "published" | "completed" | "archived";
+
+export interface ProgramCompany {
+  id: number;
+  name: string;
+  inn: string;
+}
+
 export class Program {
   id!: number;
+  status!: ProgramStatus;
   imageAddress!: string;
   coverImageAddress!: string;
   presentationAddress!: string;
@@ -57,6 +66,8 @@ export class Program {
   isUserLiked!: boolean;
   isUserManager!: boolean;
   isUserMember!: boolean;
+  company!: ProgramCompany | null;
+  companyName!: string;
   publishProjectsAfterFinish!: boolean;
   courseId!: number | null;
   courses!: { id: number; title: string; isAvailable: boolean }[];
@@ -64,6 +75,7 @@ export class Program {
   static default(): Program {
     return {
       id: 1,
+      status: "draft",
       name: "",
       description: "",
       city: "",
@@ -87,6 +99,8 @@ export class Program {
       isUserLiked: false,
       isUserMember: false,
       isUserManager: false,
+      company: null,
+      companyName: "",
       publishProjectsAfterFinish: false,
       courseId: null,
       courses: [],

@@ -96,6 +96,11 @@
     color: var(--accent);
   }
 
+  &__company {
+    margin-bottom: 8px;
+    color: var(--dark-grey);
+  }
+
   /* stylelint-disable value-no-vendor-prefix */
   &__text {
     p {

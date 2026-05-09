@@ -19,7 +19,7 @@
           size="big"
           [id]="field.name"
           formControlName="{{ field.name }}"
-          [error]="control | controlError: 'required'"
+          [error]="getControl(field.name) | controlError: 'required'"
           [placeholder]="field.helpText"
           [maxLength]="500"
         ></app-input>
