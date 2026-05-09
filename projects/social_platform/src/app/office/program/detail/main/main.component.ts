@@ -13,6 +13,7 @@ import { ProgramService } from "@office/program/services/program.service";
 import { ActivatedRoute, Router, RouterModule } from "@angular/router";
 import {
   concatMap,
+  finalize,
   fromEvent,
   map,
   noop,
@@ -22,7 +23,11 @@ import {
   tap,
   throttleTime,
 } from "rxjs";
-import { formatProgramParticipation, Program } from "@office/program/models/program.model";
+import {
+  formatProgramParticipation,
+  Program,
+  ProgramParticipantProject,
+} from "@office/program/models/program.model";
 import { ProgramNewsService } from "@office/program/services/program-news.service";
 import { FeedNews } from "@office/projects/models/project-news.model";
 import { expandElement } from "@utils/expand-element";
@@ -39,7 +44,7 @@ import { LoadingService } from "@office/services/loading.service";
 import { ProjectAdditionalService } from "@office/projects/edit/services/project-additional.service";
 import { SoonCardComponent } from "@office/shared/soon-card/soon-card.component";
 import { NewsFormComponent } from "@office/features/news-form/news-form.component";
-import { AsyncPipe } from "@angular/common";
+import { AsyncPipe, DatePipe } from "@angular/common";
 import { AvatarComponent } from "@uilib";
 import { NewsCardComponent } from "@office/features/news-card/news-card.component";
 import { AuthService } from "@auth/services";
@@ -62,10 +67,12 @@ import { AuthService } from "@auth/services";
     NewsFormComponent,
     ProgramLinksComponent,
     RouterModule,
+    DatePipe,
   ],
 })
 export class ProgramDetailMainComponent implements OnInit, OnDestroy {
   constructor(
+    private readonly programService: ProgramService,
     private readonly programNewsService: ProgramNewsService,
     private readonly projectAdditionalService: ProjectAdditionalService,
     private readonly authService: AuthService,
@@ -100,6 +107,8 @@ export class ProgramDetailMainComponent implements OnInit, OnDestroy {
   showProgramModalErrorMessage = signal<string | null>(null);
 
   registeredProgramModal = signal<boolean>(false);
+  participantProjectSubmitting = false;
+  participantProjectSubmitError = "";
 
   programId?: number;
   profileId = signal<number | undefined>(undefined);
@@ -324,6 +333,51 @@ export class ProgramDetailMainComponent implements OnInit, OnDestroy {
     this.projectAdditionalService.clearAssignProjectToProgramError();
   }
 
+  submitParticipantProject(): void {
+    const relationId = this.participantProjectRelationId;
+    if (!relationId || this.participantProjectSubmitting || this.participantProjectSubmitted) {
+      return;
+    }
+
+    this.participantProjectSubmitError = "";
+    this.participantProjectSubmitting = true;
+    this.programService
+      .submitCompettetiveProject(relationId)
+      .pipe(finalize(() => (this.participantProjectSubmitting = false)))
+      .subscribe({
+        next: () => {
+          const submittedAt = new Date().toISOString();
+          if (!this.program) {
+            return;
+          }
+
+          this.program = {
+            ...this.program,
+            participantProjectStatus: "submitted",
+            participantProjectSubmittedAt: submittedAt,
+            participantProject: this.participantProject
+              ? {
+                  ...this.participantProject,
+                  partnerProgram: {
+                    ...(this.participantProject.partnerProgram ?? {
+                      programId: this.program.id,
+                      programLinkId: relationId,
+                      isSubmitted: false,
+                    }),
+                    isSubmitted: true,
+                    submitted: true,
+                    submittedAt,
+                  },
+                }
+              : null,
+          };
+        },
+        error: (error: any) => {
+          this.participantProjectSubmitError = this.getSubmitErrorText(error);
+        },
+      });
+  }
+
   private loadEvent?: Observable<Event>;
 
   private checkDescriptionExpandable(): void {
@@ -382,5 +436,57 @@ export class ProgramDetailMainComponent implements OnInit, OnDestroy {
 
   get participationText(): string {
     return formatProgramParticipation(this.program);
+  }
+
+  get participantProject(): ProgramParticipantProject | null {
+    return this.program?.participantProject ?? null;
+  }
+
+  get participantProjectRelationId(): number | null {
+    return this.program?.programLinkId ?? this.participantProject?.partnerProgram?.programLinkId ?? null;
+  }
+
+  get participantProjectSubmitted(): boolean {
+    return (
+      this.program?.participantProjectStatus === "submitted" ||
+      Boolean(
+        this.participantProject?.partnerProgram?.submitted ||
+          this.participantProject?.partnerProgram?.isSubmitted
+      )
+    );
+  }
+
+  get participantProjectSubmittedAt(): string | null {
+    return (
+      this.program?.participantProjectSubmittedAt ??
+      this.participantProject?.partnerProgram?.submittedAt ??
+      null
+    );
+  }
+
+  get participantProjectStatusText(): string {
+    if (!this.participantProject) {
+      return "Проект пока не выбран";
+    }
+    return this.participantProjectSubmitted ? "Проект сдан" : "Проект не сдан";
+  }
+
+  private getSubmitErrorText(error: any): string {
+    const detail = error?.error?.detail;
+    if (detail) {
+      return String(detail);
+    }
+
+    const projectError = error?.error?.project;
+    if (projectError) {
+      return String(projectError);
+    }
+
+    const nonFieldErrors = error?.error?.nonFieldErrors ?? error?.error?.non_field_errors;
+    if (Array.isArray(nonFieldErrors) && nonFieldErrors.length) {
+      return String(nonFieldErrors[0]);
+    }
+
+    return "Не удалось сдать проект. Проверьте данные и попробуйте еще раз.";
   }
 }

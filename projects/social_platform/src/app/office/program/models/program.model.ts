@@ -34,11 +34,30 @@
  */
 export type ProgramStatus = "draft" | "published" | "completed" | "archived";
 export type ProgramParticipationFormat = "individual" | "team";
+export type ProgramParticipantProjectStatus = "not_linked" | "not_submitted" | "submitted";
 
 export interface ProgramCompany {
   id: number;
   name: string;
   inn: string;
+}
+
+export interface ProgramParticipantProject {
+  id: number;
+  name: string;
+  description?: string;
+  shortDescription?: string;
+  imageAddress?: string;
+  coverImageAddress?: string;
+  presentationAddress?: string;
+  draft?: boolean;
+  partnerProgram?: {
+    programLinkId: number;
+    programId: number;
+    isSubmitted: boolean;
+    submitted?: boolean;
+    submittedAt?: string | null;
+  };
 }
 
 export class Program {
@@ -72,6 +91,10 @@ export class Program {
   participationFormat!: ProgramParticipationFormat;
   projectTeamMinSize!: number | null;
   projectTeamMaxSize!: number | null;
+  programLinkId!: number | null;
+  participantProject!: ProgramParticipantProject | null;
+  participantProjectStatus!: ProgramParticipantProjectStatus;
+  participantProjectSubmittedAt!: string | null;
   publishProjectsAfterFinish!: boolean;
   courseId!: number | null;
   courses!: { id: number; title: string; isAvailable: boolean }[];
@@ -108,6 +131,10 @@ export class Program {
       participationFormat: "team",
       projectTeamMinSize: 1,
       projectTeamMaxSize: null,
+      programLinkId: null,
+      participantProject: null,
+      participantProjectStatus: "not_linked",
+      participantProjectSubmittedAt: null,
       publishProjectsAfterFinish: false,
       courseId: null,
       courses: [],
