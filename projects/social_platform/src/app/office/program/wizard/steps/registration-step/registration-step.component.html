@@ -1,0 +1,108 @@
+<!-- @format -->
+
+<form class="registration-step" [formGroup]="form" novalidate>
+  <div class="registration-step__header">
+    <h2 class="text-heading-3">Доступ и регистрация</h2>
+    <p class="text-body-14">Настройте доступ к чемпионату и базовый способ регистрации участников</p>
+  </div>
+
+  <section class="registration-step__section">
+    <div class="registration-step__section-header">
+      <h3>Тип доступа</h3>
+    </div>
+
+    <div class="registration-step__options" role="radiogroup" aria-label="Тип доступа">
+      <label
+        class="registration-option"
+        [class.registration-option--active]="form.controls.accessType.value === 'open'"
+      >
+        <input type="radio" formControlName="accessType" value="open" />
+        <span class="registration-option__radio" aria-hidden="true"></span>
+        <span class="registration-option__content">
+          <strong class="registration-option__title">Открытый чемпионат</strong>
+          <span class="registration-option__text">
+            Участники смогут найти чемпионат на витрине и зарегистрироваться самостоятельно.
+          </span>
+        </span>
+      </label>
+
+      <label
+        class="registration-option"
+        [class.registration-option--active]="form.controls.accessType.value === 'private'"
+      >
+        <input type="radio" formControlName="accessType" value="private" />
+        <span class="registration-option__radio" aria-hidden="true"></span>
+        <span class="registration-option__content">
+          <strong class="registration-option__title">Закрытый чемпионат</strong>
+          <span class="registration-option__text">
+            Участники смогут присоединиться только по приглашению или коду доступа. Настроить
+            приглашения можно будет после создания чемпионата.
+          </span>
+        </span>
+      </label>
+    </div>
+  </section>
+
+  <section class="registration-step__section">
+    <div class="registration-step__section-header">
+      <h3>Способ регистрации</h3>
+    </div>
+
+    <div class="registration-step__options" role="radiogroup" aria-label="Способ регистрации">
+      <label class="registration-option registration-option--active registration-option--with-icon">
+        <input type="radio" formControlName="registrationType" value="internal" />
+        <span class="registration-option__radio" aria-hidden="true"></span>
+        <span class="registration-option__icon" aria-hidden="true">
+          <i appIcon icon="file" appSquare="28"></i>
+        </span>
+        <span class="registration-option__content">
+          <strong class="registration-option__title">Встроенная форма PROCOLLAB</strong>
+          <span class="registration-option__text">Участники регистрируются прямо на платформе</span>
+          <span class="registration-option__note">
+            <i appIcon icon="circle-check" appSquare="16"></i>
+            Данные появятся в аналитике организатора
+          </span>
+        </span>
+      </label>
+
+      <div
+        class="registration-option registration-option--disabled registration-option--with-icon"
+        aria-disabled="true"
+      >
+        <span class="registration-option__radio" aria-hidden="true"></span>
+        <span class="registration-option__icon" aria-hidden="true">
+          <i appIcon icon="world-wide" appSquare="32"></i>
+        </span>
+        <span class="registration-option__content">
+          <span class="registration-option__title-row">
+            <strong class="registration-option__title">Внешний лендинг</strong>
+            <span class="registration-option__badge">В разработке</span>
+          </span>
+          <span class="registration-option__text">
+            Скоро можно будет перенаправлять участников на сайт организатора
+          </span>
+        </span>
+      </div>
+    </div>
+  </section>
+
+  <section class="registration-step__fields" aria-labelledby="registration-fields-title">
+    <h3 id="registration-fields-title">Базовые поля регистрации</h3>
+
+    <ul>
+      @for (field of systemFields; track field.label) {
+      <li>
+        <i appIcon [icon]="field.icon" appSquare="22"></i>
+        <span>{{ field.label }}</span>
+        <em>системное поле</em>
+      </li>
+      }
+    </ul>
+  </section>
+
+  <div class="registration-step__note text-body-14">
+    <i appIcon icon="hint" appSquare="18"></i>
+    Дополнительные поля регистрации и приглашения можно будет настроить после создания чемпионата в
+    разделе «Регистрация».
+  </div>
+</form>

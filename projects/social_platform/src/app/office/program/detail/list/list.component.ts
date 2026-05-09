@@ -16,9 +16,11 @@ import {
 } from "@angular/core";
 import {
   catchError,
+  combineLatest,
   concatMap,
   debounceTime,
   distinctUntilChanged,
+  filter,
   fromEvent,
   map,
   noop,
@@ -26,6 +28,7 @@ import {
   Subscription,
   switchMap,
   tap,
+  take,
 } from "rxjs";
 import { ProjectsFilterComponent } from "@office/program/detail/list/projects-filter/projects-filter.component";
 import Fuse from "fuse.js";
@@ -50,6 +53,8 @@ import { saveFile } from "@utils/helpers/export-file";
 import { ProgramDataService } from "@office/program/services/program-data.service";
 import { TooltipComponent } from "@ui/components/tooltip/tooltip.component";
 import { ModalComponent } from "@ui/components/modal/modal.component";
+import { SnackbarService } from "@ui/services/snackbar.service";
+import { Program } from "@office/program/models/program.model";
 
 @Component({
   selector: "app-list",
@@ -92,6 +97,7 @@ export class ProgramListComponent implements OnInit, OnDestroy, AfterViewInit {
   private readonly cdref = inject(ChangeDetectorRef);
   private readonly programService = inject(ProgramService);
   private readonly programDataService = inject(ProgramDataService);
+  private readonly snackbarService = inject(SnackbarService);
   private readonly projectRatingService = inject(ProjectRatingService);
   private readonly authService = inject(AuthService);
   private readonly subscriptionService = inject(SubscriptionService);
@@ -154,6 +160,8 @@ export class ProgramListComponent implements OnInit, OnDestroy, AfterViewInit {
     this.route.data.subscribe(data => {
       this.listType = data["listType"];
     });
+
+    this.setupAccessGuard();
 
     const routeData$ = this.route.data.pipe(map(r => r["data"])).subscribe(data => {
       this.listTotalCount = data.count;
@@ -294,6 +302,36 @@ export class ProgramListComponent implements OnInit, OnDestroy, AfterViewInit {
       });
 
     this.subscriptions$.push(filtersObservable$);
+  }
+
+  private setupAccessGuard(): void {
+    if (this.listType !== "projects" && this.listType !== "members") {
+      return;
+    }
+
+    const accessGuard$ = combineLatest([
+      this.programDataService.program$.pipe(filter((program): program is Program => !!program)),
+      this.authService.profile.pipe(take(1)),
+    ])
+      .pipe(take(1))
+      .subscribe(([program, profile]) => {
+        const profileWithFlags = profile as User & { isStaff?: boolean; is_staff?: boolean };
+        const isGlobalExpert = profile?.userType === 3;
+        const isPlatformAdmin = Boolean(profileWithFlags?.isStaff || profileWithFlags?.is_staff);
+
+        if (
+          program.projectsAvailability === "experts_only" &&
+          !program.isUserManager &&
+          !program.isUserExpert &&
+          !isGlobalExpert &&
+          !isPlatformAdmin
+        ) {
+          this.snackbarService.error("Список доступен только экспертам и организаторам");
+          this.router.navigate(["../"], { relativeTo: this.route, replaceUrl: true });
+        }
+      });
+
+    this.subscriptions$.push(accessGuard$);
   }
 
   // Универсальный метод скролла

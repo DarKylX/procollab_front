@@ -3,7 +3,6 @@
 import { Routes } from "@angular/router";
 import { ProgramComponent } from "./program.component";
 import { ProgramMainComponent } from "./main/main.component";
-import { ProgramMainResolver } from "./main/main.resolver";
 
 /**
  * Конфигурация маршрутов для модуля "Программы"
@@ -19,6 +18,10 @@ import { ProgramMainResolver } from "./main/main.resolver";
  */
 export const PROGRAM_ROUTES: Routes = [
   {
+    path: "new",
+    loadChildren: () => import("./wizard/wizard.routes").then(c => c.PROGRAM_WIZARD_ROUTES),
+  },
+  {
     path: "",
     component: ProgramComponent,
     children: [
@@ -30,9 +33,12 @@ export const PROGRAM_ROUTES: Routes = [
       {
         path: "all",
         component: ProgramMainComponent,
-        resolve: {
-          data: ProgramMainResolver,
-        },
+        data: { tab: "all" },
+      },
+      {
+        path: "my",
+        component: ProgramMainComponent,
+        data: { tab: "my" },
       },
     ],
   },

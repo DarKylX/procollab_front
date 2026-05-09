@@ -1,0 +1,54 @@
+<!-- @format -->
+
+<section class="my-programs">
+  <app-verification-banner [programs]="programs"></app-verification-banner>
+
+  <a class="create-card" routerLink="/office/program/new">
+    <span class="create-card__plus" aria-hidden="true">+</span>
+    <span class="create-card__content">
+      <strong>Создайте свой чемпионат</strong>
+      <span>Объединяйте таланты, решайте кейсы и достигайте большего вместе.</span>
+      <em>Бесплатно · 3 шага</em>
+    </span>
+    <span class="create-card__new">NEW</span>
+  </a>
+
+  @if (isEmpty) {
+  <div class="my-programs__empty">
+    <h2 class="text-heading-2-bold">У вас пока нет чемпионатов</h2>
+    <p class="text-body-14">
+      Создайте первый кейс-чемпионат или дождитесь приглашения в роли эксперта.
+    </p>
+  </div>
+  } @for (section of activeSections; track section.title) {
+  <section class="program-section">
+    <h2 class="program-section__title">{{ section.title }}</h2>
+    <div class="program-section__grid">
+      @for (program of section.programs; track program.id) {
+      <a [routerLink]="['/office/program', program.id]">
+        <app-program-card
+          [program]="program"
+          [showReadiness]="section.showReadiness"
+        ></app-program-card>
+      </a>
+      }
+    </div>
+  </section>
+  } @if (archivePrograms.length) {
+  <button class="my-programs__archive-toggle" type="button" (click)="showArchive = !showArchive">
+    {{ showArchive ? "Скрыть архив" : "Показать архив" }}
+  </button>
+
+  @if (showArchive) {
+  <section class="program-section">
+    <h2 class="program-section__title text-heading-2-bold">Завершенные и архивные</h2>
+    <div class="program-section__grid">
+      @for (program of archivePrograms; track program.id) {
+      <a [routerLink]="['/office/program', program.id]">
+        <app-program-card [program]="program"></app-program-card>
+      </a>
+      }
+    </div>
+  </section>
+  } }
+</section>

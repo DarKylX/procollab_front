@@ -106,7 +106,7 @@
         <header>
           <h2>Чемпионат</h2>
           @if (item.program?.id) {
-          <a [routerLink]="['/office/program', item.program?.id]">
+          <a [routerLink]="['/office/admin/moderation/programs', item.program?.id]">
             Открыть чемпионат
           </a>
           }

@@ -1,10 +1,31 @@
 /** @format */
 
-import { Component, Input, OnInit } from "@angular/core";
-import { formatProgramParticipation, Program } from "@office/program/models/program.model";
-import { IconComponent } from "@ui/components";
+import { ChangeDetectionStrategy, Component, Input, OnChanges, OnInit } from "@angular/core";
+import { Program } from "@office/program/models/program.model";
 import { AvatarComponent } from "@ui/components/avatar/avatar.component";
-import { DatePipe, NgClass } from "@angular/common";
+import { DatePipe } from "@angular/common";
+import { ReadinessWidgetComponent } from "../../readiness-widget/readiness-widget.component";
+import { ReadinessChecklist, ReadinessData } from "../../models/readiness.model";
+import {
+  ProgramStatus,
+  ProgramStatusBadgeComponent,
+} from "../program-status-badge/program-status-badge.component";
+
+type ProgramWithParticipantCounters = Program & {
+  is_verified?: boolean;
+  verification_status?: string;
+  participants_count?: number;
+  participantCount?: number;
+  participantTotal?: number;
+  participantsTotal?: number;
+  registrationsCount?: number;
+  registeredParticipantsCount?: number;
+  registeredUsersCount?: number;
+  membersCount?: number;
+  members_count?: number;
+  members?: unknown[];
+  registrations?: unknown[];
+};
 
 /**
  * Компонент карточки программы
@@ -36,20 +57,177 @@ import { DatePipe, NgClass } from "@angular/common";
   templateUrl: "./program-card.component.html",
   styleUrl: "./program-card.component.scss",
   standalone: true,
-  imports: [AvatarComponent, IconComponent, DatePipe, NgClass],
+  imports: [AvatarComponent, DatePipe, ReadinessWidgetComponent, ProgramStatusBadgeComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class ProgramCardComponent implements OnInit {
+export class ProgramCardComponent implements OnInit, OnChanges {
   constructor() {}
 
   @Input({ required: true }) program?: Program;
+  @Input() showReadiness = false;
+  @Input() showRegistrationDeadline = false;
+  @Input() showProjectsAndExperts = true;
+  @Input() showStatus = true;
+  readinessData: ReadinessData | null = null;
 
   ngOnInit(): void {
-    this.registerDateExpired = Date.now() > Date.parse(this.program!.datetimeRegistrationEnds);
+    this.updateDerivedState();
+  }
+
+  ngOnChanges(): void {
+    this.updateDerivedState();
+  }
+
+  private updateDerivedState(): void {
+    if (this.program) {
+      this.registerDateExpired = Date.now() > Date.parse(this.program.datetimeRegistrationEnds);
+    }
+    this.readinessData = this.buildReadinessData();
   }
 
   registerDateExpired?: boolean;
 
-  get participationText(): string {
-    return formatProgramParticipation(this.program);
+  get isVerified(): boolean {
+    const program = this.program as ProgramWithParticipantCounters | undefined;
+
+    return program?.isVerified === true || program?.is_verified === true;
+  }
+
+  get showVerificationStatus(): boolean {
+    return Boolean(this.program && !this.isVerified);
+  }
+
+  get verificationStatusLabel(): string {
+    const program = this.program as ProgramWithParticipantCounters | undefined;
+    if (!program?.isUserManager) {
+      return "Компания не верифицирована";
+    }
+
+    const status = program?.verificationStatus ?? program?.verification_status ?? "not_requested";
+    const labels: Record<string, string> = {
+      not_requested: "Компания не верифицирована",
+      pending: "Верификация на рассмотрении",
+      rejected: "Верификация отклонена",
+      revoked: "Верификация отозвана",
+      verified: "Официальная компания",
+    };
+
+    return labels[status] ?? "Компания не верифицирована";
+  }
+
+  get showStatusBadge(): boolean {
+    return Boolean(
+      this.showStatus &&
+        this.program?.isUserManager &&
+        ["draft", "pending_moderation", "rejected", "published", "frozen"].includes(
+          this.program.status ?? ""
+        )
+    );
+  }
+
+  get programStatus(): ProgramStatus {
+    return (this.program?.status ?? "draft") as ProgramStatus;
+  }
+
+  get participantsCount(): string {
+    return this.formatCount(this.resolvedParticipantsCount);
+  }
+
+  get participantsLabel(): string {
+    return this.pluralize(this.resolvedParticipantsCount, [
+      "участник",
+      "участника",
+      "участников",
+    ]);
+  }
+
+  private get resolvedParticipantsCount(): number {
+    const program = this.program as ProgramWithParticipantCounters | undefined;
+
+    return this.resolveFirstActualCount([
+      program?.participantsCount,
+      program?.participants_count,
+      program?.participantCount,
+      program?.participantTotal,
+      program?.participantsTotal,
+      program?.registrationsCount,
+      program?.registeredParticipantsCount,
+      program?.registeredUsersCount,
+      program?.membersCount,
+      program?.members_count,
+      program?.participants?.length,
+      program?.members?.length,
+      program?.registrations?.length,
+    ]);
+  }
+
+  get projectsCount(): string {
+    return this.formatCount(this.program?.projectsCount);
+  }
+
+  get expertsCount(): string {
+    return this.formatCount(this.program?.expertsCount ?? this.program?.experts?.length);
+  }
+
+  private buildReadinessData(): ReadinessData | null {
+    const checklist = this.program?.readiness;
+
+    if (!checklist) {
+      return null;
+    }
+
+    const requiredKeys = ["basic_info", "dates", "registration"];
+    const percentage = this.readinessPercentage(checklist, requiredKeys);
+
+    return {
+      percentage,
+      checklist,
+      labels: {},
+      missingRequiredSections: requiredKeys.filter(key => checklist[key] !== true),
+      canSubmitToModeration: false,
+      readinessToModeration: {
+        percentage,
+        checklist,
+        requiredKeys,
+        missingRequiredSections: requiredKeys.filter(key => checklist[key] !== true),
+        isReady: requiredKeys.every(key => checklist[key] === true),
+      },
+    };
+  }
+
+  private formatCount(value?: number): string {
+    return String(value ?? 0);
+  }
+
+  private pluralize(value: number, forms: [string, string, string]): string {
+    const absoluteValue = Math.abs(value);
+    const lastTwoDigits = absoluteValue % 100;
+    const lastDigit = absoluteValue % 10;
+
+    if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
+      return forms[2];
+    }
+
+    if (lastDigit === 1) {
+      return forms[0];
+    }
+
+    if (lastDigit >= 2 && lastDigit <= 4) {
+      return forms[1];
+    }
+
+    return forms[2];
+  }
+
+  private resolveFirstActualCount(values: (number | undefined)[]): number {
+    const numericValues = values.filter((value): value is number => typeof value === "number");
+
+    return numericValues.find(value => value > 0) ?? numericValues[0] ?? 0;
+  }
+
+  private readinessPercentage(checklist: ReadinessChecklist, requiredKeys: string[]): number {
+    const completed = requiredKeys.filter(key => checklist[key] === true).length;
+
+    return Math.round((completed / requiredKeys.length) * 100);
   }
 }

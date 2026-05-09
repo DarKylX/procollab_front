@@ -1,0 +1,55 @@
+<!-- @format -->
+
+<section
+  class="readiness"
+  [ngClass]="[
+    'readiness--' + size,
+    !showLabels ? 'readiness--compact' : '',
+    !framed ? 'readiness--unframed' : ''
+  ]"
+>
+  @if (isLoading()) {
+  <div class="readiness__circle readiness__skeleton readiness__skeleton--circle"></div>
+  @if (showLabels) {
+  <div class="readiness__list readiness__list--skeleton">
+    @for (item of [1, 2, 3, 4]; track item) {
+    <div class="readiness__skeleton readiness__skeleton--line"></div>
+    }
+  </div>
+  } } @else if (hasError()) {
+  <div class="readiness__error">
+    <p class="readiness__error-title">Не удалось загрузить готовность</p>
+    <button type="button" class="readiness__retry" (click)="refresh()">Повторить попытку</button>
+  </div>
+  } @else {
+  <div class="readiness__circle" [ngStyle]="progressStyle()" data-testid="readiness-circle">
+    <div class="readiness__circle-inner">
+      <span class="readiness__percent">{{ percentage() }}%</span>
+      <span class="readiness__percent-label">готово</span>
+    </div>
+  </div>
+
+  @if (showLabels) {
+  <ul class="readiness__list">
+    @for (item of checklistItems(); track item.key) {
+    <li
+      class="readiness__item"
+      [class.readiness__item--done]="item.completed"
+      [class.readiness__item--todo]="!item.completed"
+      [class.readiness__item--optional]="item.optional || item.notApplicable"
+    >
+      <button
+        type="button"
+        class="readiness__item-button"
+        [disabled]="item.completed || item.notApplicable"
+        (click)="onBlockClick(item)"
+        [attr.aria-label]="item.label"
+      >
+        <span class="readiness__icon" aria-hidden="true"></span>
+        <span class="readiness__label">{{ item.label }}</span>
+      </button>
+    </li>
+    }
+  </ul>
+  } }
+</section>

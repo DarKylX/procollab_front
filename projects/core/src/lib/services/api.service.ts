@@ -53,6 +53,14 @@ export class ApiService {
       .pipe(first()) as Observable<Blob>;
   }
 
+  postFile(path: string, body: object): Observable<Blob> {
+    return this.http
+      .post(this.apiUrl + path, body, {
+        responseType: "blob",
+      })
+      .pipe(first()) as Observable<Blob>;
+  }
+
   /**
    * Выполняет PUT запрос к API (полное обновление ресурса)
    * @param path - Относительный путь к ресурсу

@@ -1,0 +1,247 @@
+<!-- @format -->
+
+<main class="moderation-list">
+  <header class="moderation-list__mobile-top">
+    <img src="/assets/images/shared/logo.svg" alt="PROCOLLAB" />
+    @if (profile$ | async; as user) {
+    <a class="moderation-list__profile" [routerLink]="['/office/profile', user.id]" aria-label="Профиль администратора">
+      @if (user.avatar) {
+      <img [src]="user.avatar" alt="" />
+      } @else {
+      <span>{{ (user.firstName || user.email || "A").slice(0, 1) }}</span>
+      }
+    </a>
+    }
+  </header>
+
+  <header class="moderation-list__header">
+    <div>
+      <h1>Модерация</h1>
+      <p>Быстрые проверки с телефона</p>
+    </div>
+  </header>
+
+  <nav class="moderation-list__queue-tabs" aria-label="Очереди модерации">
+    <a class="moderation-list__queue-tab moderation-list__queue-tab--active" routerLink="/office/admin/moderation">
+      Чемпионаты
+    </a>
+    <a class="moderation-list__queue-tab" routerLink="/office/admin/moderation/verification">
+      Верификация компаний
+    </a>
+  </nav>
+
+  <section class="moderation-list__stats" aria-label="Счетчики модерации">
+    <article class="moderation-list__stat">
+      <span>Чемпионаты</span>
+      <strong>{{ pendingCount() }}</strong>
+    </article>
+    <article class="moderation-list__stat">
+      <span>Верификация</span>
+      <strong>{{ verificationPendingCount() }}</strong>
+    </article>
+    @if (revisionCount() !== null) {
+    <article class="moderation-list__stat moderation-list__stat--revision">
+      <span>На доработке</span>
+      <strong>{{ revisionCount() }}</strong>
+    </article>
+    }
+  </section>
+
+  <section class="moderation-list__toolbar">
+    <label class="moderation-list__search">
+      <span>Поиск</span>
+      <input
+        type="search"
+        [formControl]="searchControl"
+        placeholder="Название, организатор, email или компания"
+      />
+    </label>
+
+    <div class="moderation-list__tabs" role="tablist" aria-label="Статус чемпионатов">
+      @for (tab of statusTabs; track tab.value) {
+      <button
+        type="button"
+        role="tab"
+        [class.moderation-list__tab--active]="activeStatus === tab.value"
+        (click)="setStatus(tab.value)"
+      >
+        {{ tab.label }}
+      </button>
+      }
+    </div>
+
+    <label class="moderation-list__sort">
+      <span>Сортировка</span>
+      <select [value]="ordering" (change)="setOrdering($any($event.target).value)">
+        <option value="-submitted">Сначала новые отправки</option>
+        <option value="submitted">Сначала старые отправки</option>
+        <option value="-decision">Сначала новые решения</option>
+        <option value="decision">Сначала старые решения</option>
+      </select>
+    </label>
+
+    <div class="moderation-list__mobile-filters" aria-label="Фильтры чемпионатов">
+      <button
+        type="button"
+        [class.moderation-list__mobile-filter--active]="isMobileFilterActive('new')"
+        (click)="setMobileFilter('new')"
+      >
+        Новые
+      </button>
+      <button
+        type="button"
+        [class.moderation-list__mobile-filter--active]="isMobileFilterActive('urgent')"
+        (click)="setMobileFilter('urgent')"
+      >
+        Сначала срочные
+      </button>
+      <button
+        type="button"
+        [class.moderation-list__mobile-filter--active]="isMobileFilterActive('all')"
+        (click)="setMobileFilter('all')"
+      >
+        Все
+      </button>
+    </div>
+  </section>
+
+  <section class="moderation-list__table-card">
+    @if (isLoading()) {
+    <div class="moderation-list__loading">
+      <app-loader color="var(--accent)" size="28px"></app-loader>
+    </div>
+    } @else if (programs.length) {
+    <div class="moderation-list__table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Чемпионат</th>
+            <th>Организатор</th>
+            <th>Отправлен</th>
+            <th>Дедлайн</th>
+            <th>Готовность</th>
+            <th>Статус</th>
+            <th>Компания</th>
+            <th>Доступ</th>
+            <th>Регистрация</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (program of programs; track program.id) {
+          <tr>
+            <td>
+              <strong>{{ program.name }}</strong>
+              <span>{{ program.city || "Город не указан" }}</span>
+            </td>
+            <td>
+              @if (primaryOrganizer(program); as organizer) {
+              <strong>{{ organizer.fullName || organizer.email }}</strong>
+              <span>{{ organizer.email }}</span>
+              @if (program.company?.name) {
+              <small>{{ program.company?.name }}</small>
+              }
+              } @else {
+              <span>Организатор не указан</span>
+              }
+            </td>
+            <td>
+              {{ (program.submittedAt || program.decisionAt || program.datetimeUpdated) | date: "dd.MM.yyyy HH:mm" }}
+            </td>
+            <td>
+              <strong [class.moderation-list__deadline--overdue]="isOverdue(program)">
+                {{ deadlineLabel(program) }}
+              </strong>
+              @if (program.moderationDeadlineAt) {
+              <span>до {{ program.moderationDeadlineAt | date: "dd.MM.yyyy HH:mm" }}</span>
+              }
+            </td>
+            <td>
+              <div class="moderation-list__readiness">
+                <span>{{ program.readinessPercentage ?? 0 }}%</span>
+                <i [style.--progress]="program.readinessPercentage ?? 0"></i>
+              </div>
+            </td>
+            <td>
+              <app-program-status-badge
+                [status]="asProgramStatus(program.status)"
+                size="small"
+              ></app-program-status-badge>
+            </td>
+            <td>
+              <strong>{{ companyVerificationLabel(program) }}</strong>
+              @if (program.company?.name) {
+              <span>{{ program.company?.name }}</span>
+              }
+            </td>
+            <td>{{ accessTypeLabel(program) }}</td>
+            <td>{{ registrationTypeLabel(program) }}</td>
+            <td>
+              <a
+                class="moderation-list__check"
+                [routerLink]="['/office/admin/moderation/programs', program.id]"
+              >
+                Проверить
+              </a>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="moderation-list__mobile-cards">
+      @for (program of programs; track program.id) {
+      <article class="moderation-list__mobile-card">
+        <div class="moderation-list__mobile-card-head">
+          <span class="moderation-list__mobile-icon">К</span>
+          <div>
+            <span class="moderation-list__mobile-type">Кейс-чемпионат</span>
+            <h2>{{ program.name }}</h2>
+            <p>{{ primaryOrganizerLabel(program) }} · {{ companyLabel(program) }}</p>
+          </div>
+        </div>
+        <div class="moderation-list__mobile-meta">
+          <span>Отправлен</span>
+          <strong>{{ submittedLabel(program) }}</strong>
+          <span>Доступ</span>
+          <strong>{{ accessTypeLabel(program) }}</strong>
+          <span>Готовность</span>
+          <strong>{{ readinessLabel(program) }}</strong>
+        </div>
+        <div class="moderation-list__mobile-card-bottom">
+          <span
+            class="moderation-list__mobile-badge"
+            [class.moderation-list__mobile-badge--urgent]="isOverdue(program)"
+          >
+            {{ mobileBadgeLabel(program) }}
+          </span>
+          <a [routerLink]="['/office/admin/moderation/programs', program.id]">
+            Проверить
+            <span>→</span>
+          </a>
+        </div>
+      </article>
+      }
+    </div>
+
+    <footer class="moderation-list__pagination">
+      <span>Всего: {{ totalCount }}</span>
+      <div>
+        <button type="button" [disabled]="!hasPreviousPage" (click)="goToPage(page - 1)">
+          Назад
+        </button>
+        <b>{{ page }}</b>
+        <button type="button" [disabled]="!hasNextPage" (click)="goToPage(page + 1)">
+          Вперед
+        </button>
+      </div>
+    </footer>
+    } @else {
+    <div class="moderation-list__empty">
+      <h2>{{ emptyTitle() }}</h2>
+      <p>{{ emptyText() }}</p>
+    </div>
+    }
+  </section>
+</main>

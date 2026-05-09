@@ -1,0 +1,351 @@
+<!-- @format -->
+
+<form class="criteria-tab" [formGroup]="settingsForm" novalidate>
+  <section class="criteria-panel">
+    <header class="criteria-panel__header">
+      <div>
+        <h2>Настройки оценивания</h2>
+        <p>Определите, как эксперты будут оценивать проекты</p>
+      </div>
+    </header>
+
+    <div class="evaluation-settings">
+      <div class="evaluation-settings__toggles">
+        <label class="criteria-switch">
+          <input type="checkbox" formControlName="isCompetitive" />
+          <span class="criteria-switch__track"></span>
+          <span>
+            <strong>Конкурсная программа включена</strong>
+          </span>
+        </label>
+
+        <label class="criteria-switch">
+          <input type="checkbox" formControlName="isDistributedEvaluation" />
+          <span class="criteria-switch__track"></span>
+          <span>
+            <strong>Распределенная оценка</strong>
+          </span>
+        </label>
+      </div>
+
+      <label class="edit-field">
+        <span class="edit-field__label">Количество оценок на один проект</span>
+        <input
+          class="edit-field__control"
+          type="number"
+          min="1"
+          max="99"
+          formControlName="maxProjectRates"
+        />
+      </label>
+
+      <label class="edit-field edit-field--select">
+        <span class="edit-field__label">Видимость результатов для участников</span>
+        <select class="edit-field__control" formControlName="projectsAvailability">
+          <option value="all_users">После завершения чемпионата</option>
+          <option value="experts_only">Только экспертам и организаторам</option>
+        </select>
+      </label>
+    </div>
+
+    <p class="criteria-panel__note">
+      @if (isCompetitiveEnabled) {
+      Каждый проект будет оценен несколькими экспертами независимо друг от друга.
+      } @else {
+      Критерии и эксперты не требуются для модерации, пока конкурсная программа выключена.
+      }
+    </p>
+  </section>
+
+  @if (isCompetitiveEnabled) {
+  <section class="criteria-panel">
+    <header class="criteria-panel__header criteria-panel__header--inline">
+      <div>
+        <h2>Критерии оценки</h2>
+        <p>Настройте параметры, по которым эксперты будут оценивать проекты</p>
+      </div>
+
+      <button
+        class="criteria-add-button"
+        type="button"
+        [disabled]="isReadonly || !isCompetitiveEnabled"
+        (click)="openCreateCriterion()"
+      >
+        Добавить критерий
+        <i appIcon icon="plus" appSquare="14"></i>
+      </button>
+    </header>
+
+    <div class="criteria-table" role="table" aria-label="Критерии оценки">
+      <div class="criteria-table__row criteria-table__row--head" role="row">
+        <span></span>
+        <span>Название критерия</span>
+        <span>Тип оценки</span>
+        <span>Вес</span>
+        <span>Описание</span>
+        <span>Действия</span>
+      </div>
+
+      @for (criterion of criteria; track criterion.id) {
+      <div class="criteria-table__row" role="row">
+        <span class="criteria-table__drag" aria-hidden="true">
+          <i appIcon icon="dots" appSquare="14"></i>
+        </span>
+        <span class="criteria-table__name">{{ criterion.name }}</span>
+        <span>{{ criterionTypeLabel(criterion.type) }}</span>
+        <span class="criteria-table__weight">{{ criterion.weight }}%</span>
+        <span class="criteria-table__description">{{ criterion.description }}</span>
+        <span class="criteria-table__actions">
+          <button
+            class="criteria-icon-button"
+            type="button"
+            [disabled]="isReadonly"
+            title="Редактировать"
+            (click)="openEditCriterion(criterion)"
+          >
+            <i appIcon icon="edit-pen" appSquare="14"></i>
+          </button>
+          <button
+            class="criteria-icon-button criteria-icon-button--danger"
+            type="button"
+            [disabled]="isReadonly"
+            title="Удалить"
+            (click)="removeCriterion(criterion)"
+          >
+            <i appIcon icon="basket" appSquare="14"></i>
+          </button>
+        </span>
+      </div>
+      }
+      @empty {
+      <p class="criteria-table__empty">Критерии еще не добавлены</p>
+      }
+    </div>
+
+    <div class="criteria-summary">
+      <span>Суммарный вес критериев</span>
+      <strong [class.criteria-summary__warning]="totalWeight !== 100">{{ totalWeight }}%</strong>
+    </div>
+
+    @if (totalWeight !== 100) {
+    <p class="criteria-panel__note">
+      Для готовности к модерации сумма весов пользовательских критериев должна быть 100%.
+    </p>
+    }
+
+    @if (criterionEditorOpen) {
+    <div class="criterion-editor" [formGroup]="criterionForm">
+      <header class="criterion-editor__header">
+        <h3>{{ criterionEditorTitle }}</h3>
+      </header>
+
+      <div class="criterion-editor__grid">
+        <label class="edit-field">
+          <span class="edit-field__label">Название критерия</span>
+          <input
+            class="edit-field__control"
+            type="text"
+            formControlName="name"
+            placeholder="Например: Влияние на целевую аудиторию"
+          />
+          @if (hasCriterionError("name")) {
+          <span class="edit-field__error">Укажите название критерия</span>
+          }
+        </label>
+
+        <label class="edit-field edit-field--select">
+          <span class="edit-field__label">Тип оценки</span>
+          <select class="edit-field__control" formControlName="type">
+            @for (type of criterionTypes; track type.value) {
+            <option [value]="type.value">{{ type.label }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="edit-field criterion-editor__description">
+          <span class="edit-field__label">Описание</span>
+          <textarea
+            class="edit-field__control edit-field__control--textarea"
+            formControlName="description"
+            placeholder="Как проект решает проблему и помогает целевой аудитории"
+          ></textarea>
+          @if (hasCriterionError("description")) {
+          <span class="edit-field__error">Добавьте короткое описание</span>
+          }
+        </label>
+
+        <label class="edit-field">
+          <span class="edit-field__label">Минимальное значение</span>
+          <input class="edit-field__control" type="number" formControlName="minValue" />
+        </label>
+
+        <label class="edit-field">
+          <span class="edit-field__label">Максимальное значение</span>
+          <input class="edit-field__control" type="number" formControlName="maxValue" />
+          @if (criterionFormSubmitted && hasRangeError()) {
+          <span class="edit-field__error">Максимум должен быть больше минимума</span>
+          }
+        </label>
+
+        <label class="edit-field criterion-editor__weight">
+          <span class="edit-field__label">Вес критерия</span>
+          <span class="criterion-editor__percent">
+            <input class="edit-field__control" type="number" min="1" max="100" formControlName="weight" />
+            <em>%</em>
+          </span>
+        </label>
+      </div>
+
+      <div class="criterion-editor__actions">
+        <button class="criteria-secondary-button" type="button" (click)="cancelCriterionEditor()">
+          Отмена
+        </button>
+        <button class="criteria-primary-button" type="button" (click)="saveCriterion()">
+          {{ criterionActionText }}
+        </button>
+      </div>
+    </div>
+    }
+  </section>
+
+  <section class="criteria-panel">
+    <header class="criteria-panel__header criteria-panel__header--inline">
+      <div>
+        <h2>Эксперты</h2>
+        <p>Назначьте экспертов, которые будут оценивать проекты</p>
+      </div>
+
+      <button
+        class="criteria-add-button"
+        type="button"
+        [disabled]="isReadonly || !isCompetitiveEnabled"
+        (click)="openExpertSearch()"
+      >
+        Добавить эксперта
+      </button>
+    </header>
+
+    <div class="experts-list" aria-label="Эксперты чемпионата">
+      @for (expert of experts; track expert.id) {
+      <div class="experts-list__row">
+        <span class="experts-list__avatar">
+          @if (expert.avatar) {
+          <img [src]="expert.avatar" [alt]="expert.name" />
+          } @else {
+          {{ expert.name.slice(0, 1) }}
+          }
+        </span>
+        <strong>{{ expert.name }}</strong>
+        <span>{{ expert.company }}</span>
+        <span>{{ expert.email }}</span>
+        <em>Назначен</em>
+        <button
+          class="criteria-icon-button"
+          type="button"
+          [disabled]="isReadonly"
+          title="Убрать эксперта"
+          (click)="removeExpert(expert)"
+        >
+          <i appIcon icon="cross" appSquare="12"></i>
+        </button>
+      </div>
+      }
+      @empty {
+      <p class="expert-search__empty">Эксперты еще не добавлены</p>
+      }
+    </div>
+
+    @if (expertSearchOpen) {
+    <div class="expert-search">
+      <label class="expert-search__field">
+        <span>Поиск эксперта</span>
+        <input
+          #expertSearchInput
+          type="text"
+          [value]="expertSearch"
+          [disabled]="isReadonly"
+          (input)="updateExpertSearch(expertSearchInput.value)"
+          placeholder="Искать по имени, фамилии или email"
+        />
+      </label>
+
+      <div class="expert-search__results">
+        @for (candidate of visibleExpertCandidates; track candidate.id) {
+        <button
+          class="expert-candidate"
+          type="button"
+          [class.expert-candidate--active]="candidate.id === selectedExpertCandidate?.id"
+          [disabled]="isReadonly"
+          (click)="selectExpertCandidate(candidate)"
+        >
+          <span class="expert-candidate__avatar">
+            @if (candidate.avatar) {
+            <img [src]="candidate.avatar" [alt]="candidate.name" />
+            } @else {
+            {{ candidate.name.slice(0, 1) }}
+            }
+          </span>
+          <strong>{{ candidate.name }}</strong>
+          <span>{{ candidate.company }}</span>
+          <em>{{ candidate.email }}</em>
+        </button>
+        } @empty {
+        <p class="expert-search__empty">Подходящие эксперты не найдены</p>
+        }
+      </div>
+
+      <div class="expert-search__actions">
+        <button class="criteria-secondary-button" type="button" [disabled]="isReadonly" (click)="closeExpertSearch()">
+          Отмена
+        </button>
+        <button
+          class="criteria-primary-button"
+          type="button"
+          [disabled]="isReadonly || !selectedExpertCandidate"
+          (click)="addSelectedExpert()"
+        >
+          Добавить эксперта
+        </button>
+      </div>
+    </div>
+    }
+  </section>
+
+  <section class="criteria-panel">
+    <header class="criteria-panel__header">
+      <div>
+        <h2>Распределение оценки</h2>
+        <p>Выберите, как проекты будут назначаться экспертам</p>
+      </div>
+    </header>
+
+    <div class="distribution-settings">
+      <div class="distribution-settings__toggles">
+        <label class="criteria-switch">
+          <input type="checkbox" formControlName="autoDistribution" />
+          <span class="criteria-switch__track"></span>
+          <span>
+            <strong>Разрешить автоматическое распределение</strong>
+          </span>
+        </label>
+      </div>
+
+      <label class="edit-field">
+        <span class="edit-field__label">Количество экспертов на проект</span>
+        <input
+          class="edit-field__control"
+          type="number"
+          min="1"
+          max="99"
+          formControlName="maxProjectRates"
+        />
+      </label>
+    </div>
+
+    <p class="criteria-panel__note">
+      Автоматическое распределение использует количество экспертов на проект. Ручное назначение
+      скрыто, пока отдельный рабочий сценарий не подключен.
+    </p>
+  </section>
+  }
+</form>

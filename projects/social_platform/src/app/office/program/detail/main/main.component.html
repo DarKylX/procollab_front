@@ -1,210 +1,584 @@
 <!-- @format -->
 
 @if (program) {
-<main class="project">
-  <section class="program__main">
-    <!-- advertisementImageAddress поле только для тех кто не участник программы поэтому нельзя сделать toggle и давать появляться или нет полю -->
-    @if (!program.isUserMember && !program.isUserManager) {
-    <div class="program__advertisement">
-      <img [src]="program.advertisementImageAddress" [alt]="program.name" />
-    </div>
-    } @else {
-    <div class="program__details">
-      @if (appWidth > 920) {
-      <div class="program__left">
-        <aside class="program__aside">
-          @if (program.isUserMember) {
-          <app-soon-card
-            title="аналитика"
-            description="уровень включённости студентов, статистика достижения целей в проектах"
-          ></app-soon-card>
-          }
-        </aside>
-      </div>
+<main class="program-overview">
+  @if (isNotRegisteredGuest) {
+  <section class="program-access-note">
+    <span class="program-access-note__icon" aria-hidden="true">i</span>
+    <p>Чтобы подать проект и получить доступ ко всем материалам, зарегистрируйтесь в чемпионате.</p>
+  </section>
+  } @if (false && !isNotRegisteredGuest && !isParticipant) {
+  <app-program-stat-cards [program]="program" [stats]="stats"></app-program-stat-cards>
+  } @if (isNotRegisteredGuest) {
+  <section class="stage-timeline-card">
+    <h2>Этапы чемпионата</h2>
+    <ol class="stage-timeline">
+      @for (stage of programStages; track stage.index) {
+      <li
+        class="stage-timeline__item"
+        [class.stage-timeline__item--active]="stage.active"
+        [class.stage-timeline__item--completed]="stage.completed"
+      >
+        <span class="stage-timeline__marker">{{ stage.index }}</span>
+        <strong>{{ stage.title }}</strong>
+        <em>{{ stage.date }}</em>
+      </li>
       }
+    </ol>
+  </section>
+  } @if (false && !isNotRegisteredGuest && !isParticipant) {
+  <nav class="program-tabs" aria-label="Разделы чемпионата">
+    <a
+      class="program-tabs__link program-tabs__link--active"
+      [routerLink]="['/office/program', program.id]"
+    >
+      Обзор
+    </a>
+    @if (canViewProgramLists) {
+    <a class="program-tabs__link" [routerLink]="['/office/program', program.id, 'members']">
+      Участники
+    </a>
+    <a class="program-tabs__link" [routerLink]="['/office/program', program.id, 'projects']">
+      Проекты
+    </a>
+    } @if (hasRole("organizer") || hasRole("expert") || hasRole("admin")) {
+    <a class="program-tabs__link" [routerLink]="['/office/program', program.id, 'projects-rating']">
+      оценка проектов
+    </a>
+    } @if (hasRole("organizer") || hasRole("admin")) {
+    <a class="program-tabs__link" [routerLink]="['/office/program', program.id, 'analytics']">
+      Аналитика
+    </a>
+    }
+  </nav>
+  } @if (isParticipant) {
+  <section class="participant-dashboard" aria-label="Состояние участия">
+    <article class="participant-card participant-card--main">
+      <h2>Мое участие</h2>
 
-      <div class="program__content">
-        <div class="about program__about">
-          <div class="about__head">
-            <h3 class="text-body-12 about__title">о программе</h3>
-            <i appIcon icon="folder" appSquare="12" class="about__head--icon"></i>
-          </div>
-          @if (program.companyName) {
-          <p class="text-body-10 about__company">
-            Организатор: {{ program.companyName }}
-          </p>
-          }
-          @if (program.isVerified) {
-          <p class="text-body-10 about__verified">
-            Официальная компания: {{ program.verifiedCompanyName || program.companyName }}
-          </p>
-          }
-          @if (participationText) {
-          <p class="text-body-10 about__participation">
-            Формат участия: {{ participationText }}
-          </p>
-          }
-          @if (program.description) {
-          <div class="text-body-10 about__text">
-            <p #descEl [innerHTML]="program.description | parseLinks | parseBreaks"></p>
-            @if (descriptionExpandable) {
-            <div
-              class="read-more"
-              (click)="onExpandDescription(descEl, 'expanded', readFullDescription)"
-            >
-              {{ readFullDescription ? "cкрыть" : "подробнее" }}
-            </div>
-            }
-          </div>
-          }
-        </div>
-        @if (program.isUserManager) {
-        <app-program-verification-panel [program]="program"></app-program-verification-panel>
-        }
-        @if (program.isUserMember) {
-        <article class="participant-project">
-          <div class="participant-project__head">
-            <div>
-              <h3 class="text-body-12 participant-project__title">Ваш проект</h3>
-              <p class="text-body-10 participant-project__status">
-                {{ participantProjectStatusText }}
-              </p>
-            </div>
-            @if (participantProjectSubmitted) {
-            <span class="participant-project__badge participant-project__badge--success">
-              Сдан
-            </span>
-            } @else {
-            <span class="participant-project__badge">Черновик</span>
-            }
-          </div>
-
-          @if (participantProject; as project) {
-          <div class="participant-project__body">
-            <h4 class="text-body-12 participant-project__name">
-              {{ project.name || "Проект без названия" }}
-            </h4>
-            @if (project.shortDescription || project.description) {
-            <p class="text-body-10 participant-project__description">
-              {{ project.shortDescription || project.description }}
-            </p>
-            }
-            @if (participantProjectSubmittedAt) {
-            <p class="text-body-10 participant-project__submitted-at">
-              Дата сдачи: {{ participantProjectSubmittedAt | date: "dd.MM.yyyy HH:mm" }}
-            </p>
-            }
-          </div>
-
-          @if (participantProjectSubmitError) {
-          <p class="text-body-10 participant-project__error">
-            {{ participantProjectSubmitError }}
-          </p>
-          }
-
-          <div class="participant-project__actions">
-            @if (!participantProjectSubmitted) {
-            <app-button
-              size="medium"
-              customTypographyClass="text-body-10"
-              [disabled]="!participantProjectRelationId || participantProjectSubmitting"
-              [loader]="participantProjectSubmitting"
-              (click)="submitParticipantProject()"
-              >Сдать проект</app-button
-            >
-            <a
-              class="participant-project__link text-body-10"
-              [routerLink]="['/office/projects', project.id, 'edit']"
-              >Редактировать</a
-            >
-            } @else {
-            <a
-              class="participant-project__link participant-project__link--primary text-body-10"
-              [routerLink]="['/office/projects', project.id]"
-              >Открыть проект</a
-            >
-            }
-          </div>
+      <div class="participant-card__meta">
+        <span>
+          Статус:
+          <strong class="participant-pill participant-pill--success">Зарегистрирован</strong>
+        </span>
+        <span>
+          Проект: @if (participantProject; as project) {
+          <strong class="participant-pill">{{ project.name || "Проект без названия" }}</strong>
           } @else {
-          <p class="text-body-10 participant-project__description">
-            Участие подтверждено. Вы сможете выбрать или создать проект для чемпионата на следующем шаге.
-          </p>
-          @if (participantProjectLinkError) {
-          <p class="text-body-10 participant-project__error">
-            {{ participantProjectLinkError }}
-          </p>
+          <strong class="participant-pill">Не выбран</strong>
           }
-          <div class="participant-project__actions">
-            <app-button
-              size="medium"
-              customTypographyClass="text-body-10"
-              [disabled]="participantProjectCreateLoading"
-              [loader]="participantProjectLoading"
-              (click)="openParticipantProjectPicker()"
-              >Выбрать проект</app-button
-            >
-            <app-button
-              size="medium"
-              color="white"
-              customTypographyClass="text-body-10"
-              [disabled]="participantProjectLoading || participantProjectLinking"
-              [loader]="participantProjectCreateLoading"
-              (click)="createDraftParticipantProject()"
-              >Создать проект</app-button
-            >
-          </div>
-          }
-        </article>
+        </span>
+        @if (participantProject) {
+        <span>
+          Статус проекта:
+          <strong
+            class="participant-pill"
+            [class.participant-pill--success]="participantProjectSubmitted"
+          >
+            {{ participantProjectStatusLabel }}
+          </strong>
+        </span>
         }
-        <div class="news">
-          @if (program.isUserManager) {
-          <app-news-form class="news__form" (addNews)="onAddNews($event)"></app-news-form>
-          } @for (n of news(); track n.id) {
-          <app-program-news-card
-            class="news__item"
-            [attr.data-id]="n.id"
-            [newsItem]="n"
-            [isOwner]="program.isUserMember"
-            (like)="onLike($event)"
-            (edited)="onEdit($event, n.id)"
-            (delete)="onDelete($event)"
-          ></app-program-news-card>
-          }
-        </div>
       </div>
 
-      @if (appWidth > 920) {
-      <div class="program__right">
-        @if (program.isUserMember && program.links?.length) {
-        <aside class="program__aside program__section">
-          <app-program-links
-            title="контакты"
-            icon="phone"
-            [links]="contactLinks"
-          ></app-program-links>
-        </aside>
-        } @if (program.isUserMember && program.materials?.length) {
-        <aside class="program__aside program__section">
-          <app-program-links
-            title="материалы"
-            icon="book"
-            [links]="materialLinks"
-          ></app-program-links>
-        </aside>
+      <div class="participant-card__next">
+        <span>Следующий шаг:</span>
+        <strong>{{ participantNextStepTitle }}</strong>
+        <p>{{ participantNextStepText }}</p>
+      </div>
+
+      @if (participantProject; as project) {
+      <section
+        class="participant-project"
+        [class.participant-project--submitted]="participantProjectSubmitted"
+      >
+        @if (participantProjectSubmitted) {
+        <div class="participant-project__success">
+          <i appIcon icon="circle-check" appSquare="28"></i>
+          <div>
+            <strong>Проект успешно отправлен</strong>
+            <span>Статус: Ожидает оценки</span>
+            @if (participantProjectSubmittedAt) {
+            <time [attr.datetime]="participantProjectSubmittedAt">
+              Дата сдачи: {{ participantProjectSubmittedAt | date: "d MMMM yyyy, HH:mm" }}
+            </time>
+            } @else {
+            <span>Дата сдачи: нет данных</span>
+            }
+          </div>
+        </div>
+        }
+
+        <div class="participant-project__header">
+          <h3>{{ project.name || "Проект без названия" }}</h3>
+          @if (!participantProjectSubmitted) {
+          <span>Проект привязан, но не сдан на проверку</span>
+          }
+        </div>
+
+        @if (project.shortDescription || project.description) {
+        <p class="participant-project__description">
+          {{ project.shortDescription || project.description }}
+        </p>
+        }
+
+        @if (participantProjectMembers.length) {
+        <div class="participant-project__section">
+          <strong>Участники проекта</strong>
+          <ul class="participant-project__members">
+            @for (member of participantProjectMembers; track member.userId) {
+            <li>
+              @if (member.avatar) {
+              <img [src]="member.avatar" alt="" />
+              } @else {
+              <span>{{ participantMemberInitial(member) }}</span>
+              }
+              <em>{{ member.firstName }} {{ member.lastName }}</em>
+            </li>
+            }
+          </ul>
+        </div>
+        }
+
+        @if (participantProjectMaterials.length) {
+        <div class="participant-project__section">
+          <strong>Материалы проекта</strong>
+          <ul class="participant-project__materials">
+            @for (material of participantProjectMaterials; track material.url) {
+            <li>
+              <i appIcon icon="file" appSquare="14"></i>
+              <a [href]="material.url" target="_blank" rel="noreferrer">
+                {{ material.title }}
+              </a>
+              <span>{{ material.caption }}</span>
+            </li>
+            }
+          </ul>
+        </div>
+        }
+      </section>
+      }
+
+      @if (isParticipantWithoutProject) {
+      <div class="participant-actions">
+        <button
+          class="participant-actions__button participant-actions__button--primary"
+          type="button"
+          (click)="requestCreateProject($event)"
+        >
+          <i appIcon icon="plus" appSquare="14"></i>
+          Создать новый проект
+        </button>
+        <button
+          class="participant-actions__button"
+          type="button"
+          (click)="requestBindProject($event)"
+        >
+          <i appIcon icon="file" appSquare="14"></i>
+          Привязать существующий проект
+        </button>
+        <button
+          class="participant-actions__button"
+          type="button"
+          (click)="requestProjectInvite($event)"
+        >
+          <i appIcon icon="mail" appSquare="14"></i>
+          Ввести приглашение
+        </button>
+      </div>
+      } @else { @if (participantProject; as project) {
+      <div class="participant-actions">
+        @if (!participantProjectSubmitted) {
+        <button
+          class="participant-actions__button participant-actions__button--primary"
+          type="button"
+          [disabled]="!participantProjectRelationId || participantProjectSubmitting"
+          (click)="openParticipantSubmitModal($event)"
+        >
+          <i appIcon icon="send" appSquare="14"></i>
+          {{ participantProjectSubmitting ? "Сдаем..." : "Сдать на проверку" }}
+        </button>
+        <a
+          class="participant-actions__button"
+          [routerLink]="['/office/projects', project.id]"
+        >
+          <i appIcon icon="file" appSquare="14"></i>
+          Открыть проект
+        </a>
+        <a
+          class="participant-actions__button"
+          [routerLink]="['/office/projects', project.id, 'edit']"
+          [queryParams]="{ editingStep: 'main', fromProgram: true }"
+        >
+          <i appIcon icon="edit" appSquare="14"></i>
+          Редактировать проект
+        </a>
+        } @else {
+        <a
+          class="participant-actions__button participant-actions__button--primary"
+          [routerLink]="['/office/projects', project.id]"
+        >
+          <i appIcon icon="eye" appSquare="14"></i>
+          Открыть проект
+        </a>
+        @if (participantProjectPrimaryMaterial; as material) {
+        <a
+          class="participant-actions__button"
+          [href]="material.url"
+          target="_blank"
+          rel="noreferrer"
+        >
+          <i appIcon icon="folder" appSquare="14"></i>
+          Посмотреть материалы
+        </a>
+        } @else {
+        <button class="participant-actions__button" type="button" disabled>
+          <i appIcon icon="folder" appSquare="14"></i>
+          Материалы не добавлены
+        </button>
+        }
         }
       </div>
+      } }
+    </article>
+
+    <article class="participant-card participant-card--steps">
+      <h2>Этапы участия</h2>
+
+      <ol class="participant-steps">
+        @for (step of participationSteps; track step.index) {
+        <li
+          [class.participant-steps__item--active]="step.active"
+          [class.participant-steps__item--completed]="step.completed"
+        >
+          <span class="participant-steps__index">{{ step.completed ? "✓" : step.index }}</span>
+          <span>
+            <strong>{{ step.index }}. {{ step.title }}</strong>
+            <em>{{ step.description }}</em>
+          </span>
+        </li>
+        }
+      </ol>
+    </article>
+
+    @if (shouldShowCertificateCard) {
+    <article
+      class="participant-card participant-card--certificate"
+      [class.participant-card--certificate-ready]="myCertificate?.state === 'available'"
+    >
+      <div class="participant-certificate__icon">
+        <i appIcon icon="file" appSquare="30"></i>
+      </div>
+
+      <h2>{{ participantCertificateTitle }}</h2>
+      <p>{{ participantCertificateText }}</p>
+
+      @if (participantCertificate; as certificate) {
+      <dl class="participant-certificate__details">
+        <div>
+          <dt>ID сертификата</dt>
+          <dd>{{ certificate.certificateId }}</dd>
+        </div>
+        <div>
+          <dt>Дата выдачи</dt>
+          <dd>{{ certificate.generatedAt | date: "d MMMM yyyy" }}</dd>
+        </div>
+        <div>
+          <dt>Чемпионат</dt>
+          <dd>{{ program.name }}</dd>
+        </div>
+        @if (certificate.projectTitle && myCertificate?.settings?.showProjectTitle) {
+        <div>
+          <dt>Проект</dt>
+          <dd>{{ certificate.projectTitle }}</dd>
+        </div>
+        }
+      </dl>
+
+      <div class="participant-certificate__actions">
+        <button type="button" class="participant-certificate__primary" (click)="downloadCertificate($event)">
+          Скачать сертификат PDF
+        </button>
+        <button type="button" (click)="viewCertificate($event)">
+          Посмотреть сертификат
+        </button>
+      </div>
       }
-    </div>
+    </article>
     }
   </section>
+  }
+
+  <section
+    class="overview-grid"
+    [class.overview-grid--guest]="isNotRegisteredGuest"
+    [class.overview-grid--participant]="isParticipant"
+  >
+    <article class="overview-card overview-card--about">
+      <h2>О программе</h2>
+      @if (program.description) {
+      <div
+        class="overview-card__text"
+        [class.overview-card__text--expanded]="readFullDescription"
+        [innerHTML]="program.description | parseLinks | parseBreaks"
+      ></div>
+      } @else {
+      <p class="overview-card__text">Описание появится после публикации организатором.</p>
+      } @if (shouldShowAboutMore) {
+      <button
+        class="overview-card__link"
+        type="button"
+        (click)="readFullDescription = !readFullDescription"
+      >
+        {{ readFullDescription ? "Свернуть" : "Подробнее" }}
+      </button>
+      }
+    </article>
+
+    @if (!isNotRegisteredGuest && !isParticipant) {
+    <article class="overview-card overview-card--stages">
+      <h2>Этапы чемпионата</h2>
+      <ol class="stage-list">
+        @for (stage of programStages; track stage.index) {
+        <li [class.stage-list__item--active]="stage.active">
+          <span class="stage-list__index">{{ stage.index }}</span>
+          <span>
+            <strong>{{ stage.title }}</strong>
+            <em>{{ stage.date }}</em>
+          </span>
+        </li>
+        }
+      </ol>
+    </article>
+    } @if (!isNotRegisteredGuest) {
+    <article class="overview-card overview-card--materials">
+      <h2>Материалы</h2>
+      @if (publicMaterials.length) {
+      <ul class="materials-list">
+        @for (material of publicMaterials.slice(0, 3); track material.url) {
+        <li>
+          <i appIcon [icon]="material.url ? 'file' : 'book'" appSquare="12"></i>
+          <span>
+            <strong>{{ material.title }}</strong>
+            <em>{{ material.url ? "Материал" : "Ссылка" }}</em>
+          </span>
+          <a [href]="material.url" target="_blank" rel="noreferrer">Открыть</a>
+        </li>
+        }
+      </ul>
+      } @else {
+      <p class="overview-card__text">Материалы пока не добавлены.</p>
+      } @if (isNotRegisteredGuest) {
+      <p class="overview-card__notice">Часть материалов доступна после регистрации в чемпионате.</p>
+      }
+    </article>
+    } @else {
+    <aside class="participation-guide">
+      <h2>Как принять участие</h2>
+
+      <ol class="participation-guide__steps">
+        @for (step of participationSteps; track step.index) {
+        <li
+          [class.participation-guide__step--active]="step.active"
+          [class.participation-guide__step--completed]="step.completed"
+        >
+          <span>{{ step.index }}</span
+          >{{ step.title }}
+        </li>
+        }
+      </ol>
+
+      <button
+        class="participation-guide__button"
+        type="button"
+        (click)="requestRegistration($event)"
+      >
+        Зарегистрироваться
+      </button>
+    </aside>
+    }
+  </section>
+
+  @if (isParticipant) {
+  <section class="stage-timeline-card stage-timeline-card--compact">
+    <h2>Этапы чемпионата</h2>
+    <ol class="stage-timeline">
+      @for (stage of programStages; track stage.index) {
+      <li
+        class="stage-timeline__item"
+        [class.stage-timeline__item--active]="stage.active"
+        [class.stage-timeline__item--completed]="stage.completed"
+      >
+        <span class="stage-timeline__marker">{{ stage.index }}</span>
+        <strong>{{ stage.title }}</strong>
+        <em>{{ stage.date }}</em>
+      </li>
+      }
+    </ol>
+  </section>
+  } @if (showParticipationProgress && !isNotRegisteredGuest && !isParticipant) {
+  <section class="participation-guide participation-guide--inline">
+    <h2>Как принять участие</h2>
+    <p class="participation-guide__note">
+      <span aria-hidden="true">i</span>
+      {{ participationGuideNote }}
+    </p>
+
+    <ol class="participation-guide__steps">
+      @for (step of participationSteps; track step.index) {
+      <li
+        [class.participation-guide__step--active]="step.active"
+        [class.participation-guide__step--completed]="step.completed"
+      >
+        <span>{{ step.index }}</span
+        >{{ step.title }}
+      </li>
+      }
+    </ol>
+  </section>
+  } @if (isParticipant) {
+  <section class="program-news-panel">
+    <h2>Новости</h2>
+    <div class="news">
+      @for (n of news(); track n.id) {
+      <app-program-news-card
+        class="news__item"
+        [attr.data-id]="n.id"
+        [newsItem]="n"
+        [isOwner]="program.isUserMember"
+        (like)="onLike($event)"
+        (edited)="onEdit($event, n.id)"
+        (delete)="onDelete($event)"
+      ></app-program-news-card>
+      } @empty {
+      <p class="program-news-panel__empty">Новостей пока нет</p>
+      }
+    </div>
+  </section>
+  } @if (!isParticipant && !isNotRegisteredGuest) {
+  <section
+    class="program-news-row"
+    [class.program-news-row--with-management]="showManagementActionsInNews"
+  >
+    <section class="program-news-panel program-news-panel--manager">
+      <h2>Новости</h2>
+      <div class="news">
+        @if (program.isUserManager) {
+        <app-news-form class="news__form" (addNews)="onAddNews($event)"></app-news-form>
+        } @for (n of news(); track n.id) {
+        <app-program-news-card
+          class="news__item"
+          [attr.data-id]="n.id"
+          [newsItem]="n"
+          [isOwner]="program.isUserMember || program.isUserManager"
+          (like)="onLike($event)"
+          (edited)="onEdit($event, n.id)"
+          (delete)="onDelete($event)"
+        ></app-program-news-card>
+        } @empty {
+        <p class="program-news-panel__empty">Новостей пока нет</p>
+        }
+      </div>
+    </section>
+    @if (showManagementActionsInNews) {
+    <aside class="program-management-column">
+      <app-program-context-actions
+        [program]="program"
+        [roles]="roles"
+        [canViewLists]="canViewProgramLists"
+        [managementOnly]="true"
+        (submitModeration)="submitToModeration()"
+        (withdrawModeration)="withdrawFromModeration()"
+        (approve)="approve()"
+        (reject)="reject($event)"
+        (freeze)="freeze($event)"
+        (restore)="restore()"
+        (archive)="archive()"
+        (support)="contactSupport()"
+      ></app-program-context-actions>
+    </aside>
+    }
+  </section>
+  }
 </main>
 
-<app-modal [open]="showProgramModal()" (openChange)="showProgramModal.set(!showProgramModal)">
-  <div class="cancel">
+@if (participantSubmitModalOpen) {
+<section
+  class="participant-submit-modal"
+  aria-modal="true"
+  role="dialog"
+  aria-labelledby="participant-submit-title"
+  (click)="closeParticipantSubmitModal()"
+>
+  <div class="participant-submit-modal__dialog" (click)="$event.stopPropagation()">
+    <button
+      class="participant-submit-modal__close"
+      type="button"
+      aria-label="Закрыть"
+      (click)="closeParticipantSubmitModal()"
+    >
+      <i appIcon icon="cross" appSquare="14"></i>
+    </button>
+
+    <header>
+      <h2 id="participant-submit-title">Сдать проект на проверку</h2>
+      <p>
+        После сдачи редактирование и повторная отправка будут недоступны. Проверьте, что материалы
+        проекта готовы к оценке.
+      </p>
+    </header>
+
+    @if (participantProject; as project) {
+    <article class="participant-submit-modal__project">
+      <strong>{{ project.name || "Проект без названия" }}</strong>
+      <span>{{ participantProjectMaterials.length }} материалов</span>
+    </article>
+    }
+
+    <footer>
+      <button type="button" (click)="closeParticipantSubmitModal()">Вернуться</button>
+      <button
+        type="button"
+        class="participant-submit-modal__primary"
+        [disabled]="participantProjectSubmitting"
+        (click)="confirmParticipantProjectSubmit()"
+      >
+        {{ participantProjectSubmitting ? "Сдаем..." : "Сдать на проверку" }}
+      </button>
+    </footer>
+  </div>
+</section>
+}
+
+@if (certificatePreviewOpen) {
+<section
+  class="certificate-view-modal"
+  aria-modal="true"
+  role="dialog"
+  aria-labelledby="certificate-view-title"
+  (click)="closeCertificatePreview()"
+>
+  <div class="certificate-view-modal__dialog" (click)="$event.stopPropagation()">
+    <button
+      class="certificate-view-modal__close"
+      type="button"
+      aria-label="Закрыть"
+      (click)="closeCertificatePreview()"
+    >
+      <i appIcon icon="cross" appSquare="14"></i>
+    </button>
+    <h2 id="certificate-view-title">Сертификат</h2>
+    <iframe [src]="certificatePreviewUrl" title="Сертификат участника"></iframe>
+  </div>
+</section>
+}
+
+<app-modal [open]="showProgramModal()" (openChange)="showProgramModal.set($event)">
+  <div class="cancel access-denied-modal">
     <div class="cancel__top">
       <i appIcon icon="cross" class="cancel__cross" appSquare="12" (click)="closeModal()"></i>
       <p class="cancel__title text-body-12">
-        вы не являетесь экспертом или организатором программы!
+        вы не являетесь экспертом или организатором программы
       </p>
     </div>
 
@@ -220,6 +594,50 @@
       (click)="closeModal()"
       customTypographyClass="text-body-10"
       >хорошо</app-button
+    >
+  </div>
+</app-modal>
+
+<app-modal [open]="showRevisionModal()" (openChange)="showRevisionModal.set($event)">
+  <div class="revision-modal">
+    <button
+      class="revision-modal__close"
+      type="button"
+      aria-label="Закрыть"
+      (click)="closeRevisionModal()"
+    >
+      ×
+    </button>
+    <h2>Кейс-чемпионат вернули на доработку</h2>
+    <p>Администратор проверил чемпионат и попросил внести правки перед повторной модерацией.</p>
+
+    @if (activeRejection; as rejection) {
+    <dl>
+      @if (rejection.reasonLabel) {
+      <div>
+        <dt>Причина</dt>
+        <dd>{{ rejection.reasonLabel }}</dd>
+      </div>
+      } @if (rejection.comment) {
+      <div>
+        <dt>Комментарий</dt>
+        <dd>{{ rejection.comment }}</dd>
+      </div>
+      } @if (revisionSectionsText) {
+      <div>
+        <dt>Разделы для исправления</dt>
+        <dd>{{ revisionSectionsText }}</dd>
+      </div>
+      }
+    </dl>
+    }
+
+    <app-button
+      class="revision-modal__button"
+      size="medium"
+      customTypographyClass="text-body-12"
+      (click)="editRevision()"
+      >Исправить</app-button
     >
   </div>
 </app-modal>
@@ -247,110 +665,4 @@
   </div>
 </app-modal>
 
-<app-modal
-  [open]="participantProjectPickerOpen"
-  (openChange)="participantProjectPickerOpen = $event"
->
-  <div class="project-picker">
-    <div class="project-picker__top">
-      <div>
-        <p class="project-picker__eyebrow text-body-10">Участие в чемпионате</p>
-        <h3 class="project-picker__title text-body-14">Выберите проект</h3>
-      </div>
-      <button
-        class="project-picker__close"
-        type="button"
-        aria-label="Закрыть"
-        (click)="closeParticipantProjectPicker()"
-      >
-        <i appIcon icon="cross" appSquare="12"></i>
-      </button>
-    </div>
-
-    @if (participantProjectLoading) {
-    <p class="project-picker__empty text-body-10">Загружаем ваши проекты...</p>
-    } @else { @if (availableParticipantProjects.length) {
-    <div class="project-picker__list">
-      @for (project of availableParticipantProjects; track project.id) {
-      <button
-        class="project-picker__item"
-        type="button"
-        [disabled]="participantProjectLinking || participantProjectCreateLoading"
-        (click)="linkExistingParticipantProject(project)"
-      >
-        <span class="project-picker__item-title text-body-12">
-          {{ project.name || "Проект без названия" }}
-        </span>
-        <span class="project-picker__item-text text-body-10">
-          {{ projectOptionDescription(project) }}
-        </span>
-      </button>
-      }
-    </div>
-    } @else {
-    <p class="project-picker__empty text-body-10">
-      У вас пока нет свободных проектов, которые можно привязать к этому чемпионату.
-    </p>
-    } }
-
-    @if (participantProjectLinkError) {
-    <p class="project-picker__error text-body-10">
-      {{ participantProjectLinkError }}
-    </p>
-    }
-
-    <div class="project-picker__actions">
-      <app-button
-        size="medium"
-        color="white"
-        customTypographyClass="text-body-10"
-        [disabled]="participantProjectLinking"
-        [loader]="participantProjectCreateLoading"
-        (click)="createDraftParticipantProject()"
-        >Создать новый проект</app-button
-      >
-    </div>
-  </div>
-</app-modal>
-
-<app-modal [open]="registeredProgramModal()" (openChange)="registeredProgramModal.set(false)">
-  <div class="cancel" style="width: 605px; padding: 0px 24px">
-    <div class="cancel__top">
-      <p class="cancel__title text-body-14">поздравляем с регистрацией на программу! 🎉</p>
-    </div>
-
-    <div class="cancel__text-block">
-      <p class="text-body-12">
-        Это закрытая группа программы – доступ к ней есть только у зарегистрированных участников
-      </p>
-
-      <p class="text-body-12">Здесь вы найдете:</p>
-
-      <ul class="cancel__text-list">
-        <li class="text-body-12">
-          самые актуальные и важные файлы программы (например, Положение)
-        </li>
-        <li class="text-body-12">контакты организаторов для связи</li>
-        <li class="text-body-12">новости программы</li>
-      </ul>
-
-      <p class="text-body-12">
-        Важно: именно через закрытую группу и кнопку «подать проект» вы отправляете результаты
-        работы своей команды, когда будете готовы
-      </p>
-
-      <p class="text-body-12">
-        Будьте внимательны: по истечению дедлайна определенного организаторами, кнопка становится
-        некликабельной 👻
-      </p>
-    </div>
-
-    <app-button
-      customTypographyClass="text-body-12"
-      size="medium"
-      (click)="registeredProgramModal.set(false)"
-      >спасибо, понятно</app-button
-    >
-  </div>
-</app-modal>
 }

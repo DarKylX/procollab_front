@@ -1,0 +1,372 @@
+<!-- @format -->
+
+<form class="registration-tab" [formGroup]="settingsForm" novalidate>
+  <section class="registration-panel">
+    <header class="registration-panel__header">
+      <div>
+        <h2>Способ регистрации</h2>
+        <p>Выберите, как участники будут регистрироваться на кейс-чемпионат</p>
+      </div>
+    </header>
+
+    <div class="registration-methods" role="radiogroup" aria-label="Способ регистрации">
+      <label
+        class="registration-method"
+        [class.registration-method--active]="isInternal"
+        (click)="selectRegistrationType('internal')"
+      >
+        <input type="radio" formControlName="registrationType" value="internal" />
+        <span class="registration-method__icon">
+          <i appIcon icon="task" appSquare="22"></i>
+        </span>
+        <span class="registration-method__content">
+          <strong>Встроенная форма PROCOLLAB</strong>
+          <em>Участник регистрируется прямо на платформе</em>
+        </span>
+      </label>
+
+      <label
+        class="registration-method registration-method--disabled"
+        aria-disabled="true"
+      >
+        <input type="radio" value="external" disabled />
+        <span class="registration-method__icon">
+          <i appIcon icon="link" appSquare="22"></i>
+        </span>
+        <span class="registration-method__content">
+          <span class="registration-method__badge">В разработке</span>
+          <strong>Внешний лендинг</strong>
+          <em>Кнопка регистрации ведет на сайт организатора</em>
+        </span>
+      </label>
+    </div>
+
+    @if (false) {
+    <label class="edit-field registration-link-field">
+      <span class="edit-field__label">
+        Ссылка на внешний лендинг <span class="edit-field__required">*</span>
+      </span>
+      <input
+        class="edit-field__control"
+        type="url"
+        formControlName="registrationLink"
+        placeholder="https://example.ru/register"
+      />
+      @if (hasExternalLinkError()) {
+      <span class="edit-field__error">Укажите корректную ссылку с http:// или https://</span>
+      }
+    </label>
+    } @else {
+    <p class="registration-panel__note">
+      Участники будут заполнять форму на странице чемпионата. Данные появятся в аналитике
+      организатора.
+    </p>
+    }
+  </section>
+
+  @if (isInternal) {
+  <section class="registration-panel registration-panel--fields">
+    <header class="registration-panel__header registration-panel__header--inline">
+      <div>
+        <h2>Поля регистрационной формы</h2>
+        <p>Настройте данные, которые участники укажут при регистрации</p>
+      </div>
+
+      <button
+        class="registration-add-button"
+        type="button"
+        [disabled]="isReadonly"
+        (click)="openCreateField()"
+      >
+        Добавить поле
+        <i appIcon icon="plus" appSquare="14"></i>
+      </button>
+    </header>
+
+    <div class="registration-table" role="table" aria-label="Поля регистрационной формы">
+      <div class="registration-table__row registration-table__row--head" role="row">
+        <span></span>
+        <span>Поле</span>
+        <span>Тип поля</span>
+        <span>Обязательное</span>
+        <span>Фильтр</span>
+        <span>Действия</span>
+      </div>
+
+      @for (field of fields; track field.id; let index = $index) {
+      <div class="registration-table__row" role="row">
+        <span class="registration-table__drag" aria-hidden="true">
+          <i appIcon icon="dots" appSquare="14"></i>
+        </span>
+
+        <span class="registration-table__field">
+          <strong>{{ field.label }}</strong>
+          @if (field.system) {
+          <em>Системное поле</em>
+          } @else if (getFieldPrivacyWarning(field)) {
+          <em class="registration-table__privacy-warning">{{
+            getFieldPrivacyWarning(field)
+          }}</em>
+          }
+        </span>
+
+        <span class="registration-table__type">{{ fieldTypeLabel(field.type) }}</span>
+
+        <span>
+          <button
+            class="registration-switch"
+            type="button"
+            [class.registration-switch--active]="field.required"
+            [disabled]="isReadonly || field.system"
+            (click)="toggleFieldRequired(field)"
+            [attr.aria-label]="'Обязательность поля ' + field.label"
+          >
+            <span></span>
+          </button>
+        </span>
+
+        <span>
+          <button
+            class="registration-switch"
+            type="button"
+            [class.registration-switch--active]="field.asFilter"
+            [disabled]="isReadonly || field.system"
+            (click)="toggleFieldFilter(field)"
+            [attr.aria-label]="'Использовать как фильтр ' + field.label"
+          >
+            <span></span>
+          </button>
+        </span>
+
+        <span class="registration-table__actions">
+          <button
+            class="registration-icon-button registration-icon-button--up"
+            type="button"
+            [disabled]="!canMoveField(index, -1)"
+            title="Поднять"
+            (click)="moveField(index, -1)"
+          >
+            <i appIcon icon="arrow-down" appSquare="12"></i>
+          </button>
+          <button
+            class="registration-icon-button"
+            type="button"
+            [disabled]="!canMoveField(index, 1)"
+            title="Опустить"
+            (click)="moveField(index, 1)"
+          >
+            <i appIcon icon="arrow-down" appSquare="12"></i>
+          </button>
+          <button
+            class="registration-icon-button"
+            type="button"
+            [disabled]="isReadonly || field.system"
+            title="Редактировать"
+            (click)="openEditField(field)"
+          >
+            <i appIcon icon="edit-pen" appSquare="14"></i>
+          </button>
+          <button
+            class="registration-icon-button registration-icon-button--danger"
+            type="button"
+            [disabled]="isReadonly || field.system"
+            title="Удалить"
+            (click)="removeField(field)"
+          >
+            <i appIcon icon="basket" appSquare="14"></i>
+          </button>
+        </span>
+      </div>
+      }
+    </div>
+
+    @if (editorOpen) {
+    <div class="field-editor" [formGroup]="fieldForm">
+      <header class="field-editor__header">
+        <h3>{{ fieldEditorTitle }}</h3>
+      </header>
+
+      <div class="field-editor__grid">
+        <label class="edit-field">
+          <span class="edit-field__label">Название поля</span>
+          <input
+            class="edit-field__control"
+            type="text"
+            formControlName="label"
+            placeholder="Например: Уровень подготовки"
+          />
+        </label>
+
+        <label class="edit-field edit-field--select">
+          <span class="edit-field__label">Тип поля</span>
+          <select class="edit-field__control" formControlName="type">
+            @for (type of fieldTypes; track type.value) {
+            <option [value]="type.value">{{ type.label }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="edit-field field-editor__wide">
+          <span class="edit-field__label">Подсказка для участника</span>
+          <input
+            class="edit-field__control"
+            type="text"
+            formControlName="hint"
+            placeholder="Например: выберите уровень образования"
+          />
+        </label>
+      </div>
+
+      @if (fieldPrivacyWarning) {
+      <p class="field-editor__privacy-warning">{{ fieldPrivacyWarning }}</p>
+      }
+
+      @if (fieldTypeNeedsOptions()) {
+      <label class="edit-field">
+        <span class="edit-field__label">Варианты списка</span>
+        <input
+          class="edit-field__control"
+          type="text"
+          formControlName="optionsText"
+          placeholder="Бакалавриат, Магистратура, Аспирантура"
+        />
+        @if (optionErrorVisible) {
+        <span class="edit-field__error">Добавьте минимум два варианта через запятую</span>
+        } @else {
+        <span class="edit-field__hint">Разделяйте варианты запятой или переносом строки</span>
+        }
+      </label>
+      }
+
+      <div class="field-editor__toggles">
+        <label class="registration-toggle">
+          <input type="checkbox" formControlName="required" />
+          <span></span>
+          <strong>Обязательное поле</strong>
+        </label>
+
+        <label class="registration-toggle">
+          <input type="checkbox" formControlName="asFilter" />
+          <span></span>
+          <strong>Использовать как фильтр</strong>
+        </label>
+      </div>
+
+      <div class="field-editor__actions">
+        <button class="registration-secondary-button" type="button" (click)="cancelFieldEditor()">
+          Отмена
+        </button>
+        <button class="registration-primary-button" type="button" (click)="saveFieldEditor()">
+          {{ fieldEditorActionText }}
+        </button>
+      </div>
+    </div>
+    }
+  </section>
+  }
+
+  <section class="registration-panel registration-legal" [formGroup]="legalForm">
+    <header class="registration-panel__header">
+      <div>
+        <h2>Правовые документы и согласия</h2>
+        <p>
+          Политика обработки персональных данных PROCOLLAB применяется ко всем чемпионатам.
+          Организатор может добавить только правила участия или дополнительные условия чемпионата.
+        </p>
+      </div>
+    </header>
+
+    <div class="registration-legal__documents">
+      <article>
+        <strong>Platform privacy policy</strong>
+        @if (legalDocumentHref("privacy_policy")) {
+        <a [href]="legalDocumentHref('privacy_policy')" target="_blank" rel="noopener">
+          {{ legalDocumentTitle("privacy_policy", "Политика обработки персональных данных") }}
+        </a>
+        } @else {
+        <span>Активный документ не найден</span>
+        }
+      </article>
+
+      <article>
+        <strong>Participant consent</strong>
+        @if (legalDocumentHref("participant_consent")) {
+        <a [href]="legalDocumentHref('participant_consent')" target="_blank" rel="noopener">
+          {{ legalDocumentTitle("participant_consent", "Согласие на обработку данных") }}
+        </a>
+        } @else {
+        <span>Активный документ не найден</span>
+        }
+      </article>
+    </div>
+
+    <label class="edit-field">
+      <span class="edit-field__label">Ссылка на правила участия</span>
+      <input
+        class="edit-field__control"
+        type="url"
+        formControlName="participationRulesLink"
+        placeholder="https://example.ru/rules.pdf"
+      />
+    </label>
+
+    <label class="edit-field">
+      <span class="edit-field__label">Дополнительные условия чемпионата</span>
+      <textarea
+        class="edit-field__control"
+        rows="4"
+        formControlName="additionalTermsText"
+        placeholder="Условия, которые не заменяют политику PROCOLLAB"
+      ></textarea>
+    </label>
+
+    <div class="registration-legal__terms">
+      <div>
+        <strong>Organizer terms</strong>
+        @if (organizerTermsAccepted) {
+        <span>
+          Принято
+          {{ currentLegalSettings?.organizerTermsAcceptedAt | date: "d MMMM yyyy, HH:mm" }}
+        </span>
+        } @else {
+        <span>Не принято. Перед отправкой на модерацию условия обязательны.</span>
+        }
+      </div>
+      <button
+        class="registration-secondary-button"
+        type="button"
+        [disabled]="isReadonly || organizerTermsAccepted"
+        (click)="acceptOrganizerTerms()"
+      >
+        Принять условия организатора
+      </button>
+    </div>
+  </section>
+
+  <section class="registration-panel registration-access">
+    <header class="registration-panel__header">
+      <div>
+        <h2>Доступ к регистрации</h2>
+        <p>Управляйте доступом участников к форме регистрации</p>
+      </div>
+    </header>
+
+    <label class="registration-access__switch">
+      <input type="checkbox" formControlName="isPrivate" />
+      <span></span>
+      <strong>Закрытый чемпионат</strong>
+      <em>Если включено, чемпионат будет доступен только по приглашению или прямой ссылке</em>
+    </label>
+
+    @if (settingsForm.controls.isPrivate.value) {
+    <p class="registration-access__hint">
+      Приглашения в закрытый чемпионат не настраиваются в рамках этой задачи.
+      Управление приглашениями будет доступно позже.
+    </p>
+    } @else {
+    <p class="registration-access__hint registration-access__hint--muted">
+      Регистрация открыта для всех пользователей, у которых есть доступ к странице чемпионата.
+    </p>
+    }
+  </section>
+</form>

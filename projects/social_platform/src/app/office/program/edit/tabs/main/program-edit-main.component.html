@@ -1,0 +1,141 @@
+<!-- @format -->
+
+<form class="edit-form main-edit-form" [formGroup]="form" novalidate>
+  <section class="edit-form__section">
+    <h2 class="edit-form__section-title">Основная информация</h2>
+
+    <div class="main-edit-form__top-grid">
+      <label class="edit-field">
+        <span class="edit-field__label">
+          Название чемпионата <span class="edit-field__required">*</span>
+        </span>
+        <input
+          class="edit-field__control"
+          type="text"
+          formControlName="name"
+          placeholder="Название чемпионата"
+        />
+        @if (isInvalid("name")) {
+        <span class="edit-field__error">{{ errorText("name") }}</span>
+        }
+      </label>
+
+      <label class="edit-field">
+        <span class="edit-field__label">Краткий тег / slug</span>
+        <input
+          class="edit-field__control"
+          type="text"
+          formControlName="tag"
+          placeholder="financial-foresight-2026"
+        />
+        <span class="edit-field__hint">Используется в URL чемпионата</span>
+      </label>
+    </div>
+
+    <label class="edit-field">
+      <span class="edit-field__label"> Описание <span class="edit-field__required">*</span> </span>
+      <textarea
+        class="edit-field__control edit-field__control--textarea"
+        formControlName="description"
+        rows="5"
+        placeholder="Опишите задачу, формат участия, аудиторию и ожидаемые результаты"
+      ></textarea>
+      @if (isInvalid("description")) {
+      <span class="edit-field__error">{{ errorText("description") }}</span>
+      }
+      <span class="edit-field__hint">Минимум {{ descriptionMinLength }} символов</span>
+    </label>
+
+    <label class="edit-field">
+      <span class="edit-field__label">Город <span class="edit-field__required">*</span></span>
+      <input
+        class="edit-field__control"
+        type="text"
+        formControlName="city"
+        list="program-edit-cities"
+        placeholder="Москва или онлайн"
+      />
+      <datalist id="program-edit-cities">
+        <option value="Москва"></option>
+        <option value="Санкт-Петербург"></option>
+        <option value="Казань"></option>
+        <option value="Новосибирск"></option>
+        <option value="Екатеринбург"></option>
+        <option value="Онлайн"></option>
+      </datalist>
+      @if (isInvalid("city")) {
+      <span class="edit-field__error">{{ errorText("city") }}</span>
+      }
+    </label>
+  </section>
+
+  <section class="edit-form__section main-edit-form__assets" aria-label="Визуальные материалы">
+    <div class="asset-grid">
+      @for (asset of assetFields; track asset.key) {
+      <article class="asset-card" [ngClass]="asset.previewClass">
+        <header class="asset-card__header">
+          <strong>
+            {{ asset.label }}
+            @if (asset.required) {
+            <span class="asset-card__required">*</span>
+            }
+          </strong>
+          <span>{{ asset.hint }}</span>
+        </header>
+
+        @if (assetValue(asset.key)) {
+        <div class="asset-card__preview">
+          <img [src]="assetValue(asset.key)" [alt]="asset.label" />
+        </div>
+        } @else {
+        <label class="asset-card__empty">
+          <input
+            type="file"
+            accept="image/png,image/jpeg"
+            [disabled]="isReadonly || uploadingAsset === asset.key"
+            (change)="onAssetSelected($event, asset.key)"
+          />
+          <i appIcon icon="upload" appSquare="18"></i>
+          <span>{{ uploadingAsset === asset.key ? "Загрузка..." : "Загрузить" }}</span>
+        </label>
+        }
+
+        <div class="asset-card__footer">
+          <div class="asset-card__meta">
+            <span>{{ assetName(asset.key) || "Файл не выбран" }}</span>
+            <em>{{ assetValue(asset.key) ? assetSize(asset.key) : "JPG или PNG, до 10 МБ" }}</em>
+          </div>
+
+          @if (assetValue(asset.key)) {
+          <button
+            class="asset-card__delete"
+            type="button"
+            [disabled]="isReadonly"
+            aria-label="Удалить изображение"
+            (click)="removeAsset(asset.key)"
+          >
+            <i appIcon icon="basket" appSquare="14"></i>
+          </button>
+          }
+        </div>
+
+        @if (!assetValue(asset.key)) {
+        <label class="asset-card__upload">
+          <input
+            type="file"
+            accept="image/png,image/jpeg"
+            [disabled]="isReadonly || uploadingAsset === asset.key"
+            (change)="onAssetSelected($event, asset.key)"
+          />
+          Выбрать файл
+        </label>
+        }
+      </article>
+      }
+    </div>
+
+    <p class="assets-note">
+      Рекомендуемый формат изображений: JPG или PNG. Максимальный размер файла — 10 МБ.
+    </p>
+  </section>
+</form>

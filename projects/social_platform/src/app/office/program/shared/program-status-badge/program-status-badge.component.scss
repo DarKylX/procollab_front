@@ -1,0 +1,62 @@
+/** @format */
+
+.program-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: fit-content;
+  font-family: Mont, sans-serif;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+  border-radius: var(--rounded-xxl);
+
+  &--small {
+    min-height: 24px;
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+
+  &--medium {
+    min-height: 24px;
+    padding: 4px 12px;
+    font-size: 12px;
+  }
+
+  &--draft {
+    color: #8a5a00;
+    background: #fff4cc;
+    border: 1px solid #ffe08a;
+  }
+
+  &--pending_moderation {
+    color: var(--gold-dark);
+    background: color-mix(in srgb, var(--gold) 24%, transparent);
+  }
+
+  &--published {
+    color: var(--green-dark);
+    background: var(--green-light);
+  }
+
+  &--rejected {
+    color: var(--red-dark);
+    background: color-mix(in srgb, var(--red) 24%, transparent);
+  }
+
+  &--completed {
+    color: var(--green-dark);
+    background: color-mix(in srgb, var(--green) 36%, transparent);
+  }
+
+  &--frozen {
+    color: var(--grey-for-text);
+    background: var(--grey-button);
+  }
+
+  &--archived {
+    color: var(--grey-for-text);
+    background: var(--medium-grey-for-outline);
+  }
+}

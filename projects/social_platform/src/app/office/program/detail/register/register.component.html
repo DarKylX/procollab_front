@@ -48,19 +48,6 @@
         }.
       </p>
 
-      @if (legalDocument("participation_terms")) {
-      <p class="register__consent-text">
-        Условия участия:
-        @if (legalDocumentHref("participation_terms")) {
-        <a [href]="legalDocumentHref('participation_terms')" target="_blank" rel="noopener">
-          {{ legalDocumentTitle("participation_terms", "условия участия") }}
-        </a>
-        } @else {
-        <span>{{ legalDocumentTitle("participation_terms", "условия участия") }}</span>
-        }
-      </p>
-      }
-
       @if ((consentControl.touched || consentControl.dirty) && consentControl.invalid) {
       <p class="register__error">Необходимо согласиться на обработку персональных данных.</p>
       }

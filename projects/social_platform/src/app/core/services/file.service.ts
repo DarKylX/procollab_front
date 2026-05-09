@@ -28,13 +28,17 @@ export class FileService {
    * Использует нативный fetch API вместо HttpClient для поддержки FormData
    * Автоматически добавляет Authorization header с Bearer токеном
    */
-  uploadFile(file: File): Observable<{ url: string }> {
+  uploadFile(
+    file: File,
+    options: { preserveOriginal?: boolean } = {}
+  ): Observable<{ url: string; file?: unknown }> {
     const formData = new FormData();
     formData.append("file", file);
 
-    return new Observable<{ url: string }>(observer => {
+    return new Observable<{ url: string; file?: unknown }>(observer => {
+      const query = options.preserveOriginal ? "?preserve_original=true" : "";
       const doFetch = (token: string) =>
-        fetch(`${environment.apiUrl}${this.FILES_URL}/`, {
+        fetch(`${environment.apiUrl}${this.FILES_URL}/${query}`, {
           method: "POST",
           headers: { Authorization: `Bearer ${token}` },
           body: formData,

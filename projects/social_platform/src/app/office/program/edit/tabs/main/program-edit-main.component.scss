@@ -1,0 +1,233 @@
+/** @format */
+
+@use "../../edit-form";
+
+.main-edit-form {
+  gap: 18px;
+
+  &__top-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 18px;
+
+    @media (min-width: 920px) {
+      grid-template-columns: minmax(0, 1.25fr) minmax(240px, 0.8fr);
+    }
+  }
+
+  &__assets {
+    gap: 12px;
+  }
+}
+
+.asset-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+
+  @media (min-width: 760px) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  @media (min-width: 1180px) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.asset-card {
+  display: grid;
+  grid-template-rows: auto auto auto auto;
+  gap: 9px;
+  min-width: 0;
+  padding: 10px;
+  background: var(--white);
+  border: 0.5px solid var(--medium-grey-for-outline);
+  border-radius: 8px;
+
+  &__header {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+
+    strong,
+    span {
+      min-width: 0;
+      overflow: hidden;
+      line-height: 1.3;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    strong {
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--black);
+    }
+
+    .asset-card__required {
+      color: var(--red);
+    }
+
+    span {
+      font-size: 10px;
+      color: var(--grey-for-text);
+    }
+  }
+
+  &__preview,
+  &__empty {
+    display: grid;
+    place-items: center;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    background: var(--light-background);
+    border: 0.5px solid var(--medium-grey-for-outline);
+    border-radius: 7px;
+  }
+
+  &__preview {
+    img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+  }
+
+  &__empty {
+    gap: 6px;
+    color: var(--accent);
+    cursor: pointer;
+    background: color-mix(in srgb, var(--accent) 7%, var(--white));
+
+    input {
+      display: none;
+    }
+
+    span {
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    &:has(input:disabled) {
+      color: var(--grey-for-text);
+      cursor: default;
+      background: var(--grey-button);
+    }
+  }
+
+  &__footer {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 32px;
+    gap: 8px;
+    align-items: center;
+    min-width: 0;
+  }
+
+  &__meta {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+
+    span,
+    em {
+      min-width: 0;
+      overflow: hidden;
+      font-size: 11px;
+      line-height: 1.3;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    span {
+      color: var(--black);
+    }
+
+    em {
+      font-style: normal;
+      color: var(--grey-for-text);
+    }
+  }
+
+  &__delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    color: var(--grey-for-text);
+    cursor: pointer;
+    background: var(--white);
+    border: 0.5px solid var(--medium-grey-for-outline);
+    border-radius: 7px;
+
+    &:hover {
+      color: var(--red);
+      background: color-mix(in srgb, var(--red) 9%, var(--white));
+      border-color: color-mix(in srgb, var(--red) 42%, var(--medium-grey-for-outline));
+    }
+
+    &:disabled {
+      color: var(--grey-for-text);
+      cursor: default;
+      background: var(--grey-button);
+      border-color: var(--medium-grey-for-outline);
+    }
+  }
+
+  &__upload {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 30px;
+    padding: 0 10px;
+    font-family: Mont, sans-serif;
+    font-size: 11px;
+    font-weight: 800;
+    color: var(--accent);
+    cursor: pointer;
+    background: var(--white);
+    border: 0.5px solid color-mix(in srgb, var(--accent) 70%, var(--medium-grey-for-outline));
+    border-radius: 7px;
+
+    input {
+      display: none;
+    }
+
+    &:has(input:disabled) {
+      color: var(--grey-for-text);
+      cursor: default;
+      border-color: var(--medium-grey-for-outline);
+    }
+  }
+
+  &--cover &__preview,
+  &--cover &__empty {
+    aspect-ratio: 16 / 7;
+  }
+
+  &--mobile &__preview,
+  &--mobile &__empty {
+    justify-self: center;
+    width: min(92px, 100%);
+    aspect-ratio: 3 / 4;
+  }
+
+  &--avatar &__preview,
+  &--avatar &__empty {
+    justify-self: center;
+    width: min(86px, 100%);
+    aspect-ratio: 1 / 1;
+    border-radius: 50%;
+  }
+
+}
+
+.assets-note {
+  margin: 2px 0 0;
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--grey-for-text);
+}

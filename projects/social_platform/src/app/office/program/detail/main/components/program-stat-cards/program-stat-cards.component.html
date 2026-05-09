@@ -1,0 +1,27 @@
+<!-- @format -->
+
+<section
+  class="program-stats"
+  [class.program-stats--public]="publicOnly"
+  aria-label="Статистика чемпионата"
+>
+  @for (card of cards; track card.title) {
+  <article class="program-stats__card">
+    <span
+      class="program-stats__icon"
+      [class]="'program-stats__icon program-stats__icon--' + card.tone"
+    >
+      <i appIcon [icon]="card.icon" appSquare="18"></i>
+    </span>
+    <span class="program-stats__content">
+      @if (card.value) {
+      <strong>{{ card.value }}</strong>
+      }
+      <span>{{ card.title }}</span>
+      @if (card.subtitle) {
+      <em>{{ card.subtitle }}</em>
+      }
+    </span>
+  </article>
+  }
+</section>

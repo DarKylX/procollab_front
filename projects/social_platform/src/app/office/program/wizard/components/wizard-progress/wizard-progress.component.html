@@ -1,0 +1,34 @@
+<!-- @format -->
+
+<div class="wizard-progress" aria-label="Прогресс создания чемпионата">
+  <p class="wizard-progress__mobile text-body-14">Шаг {{ currentStep }} из 3</p>
+
+  <div class="wizard-progress__desktop">
+    @for (item of steps; track item.step; let last = $last) {
+    <button
+      class="wizard-progress__step"
+      type="button"
+      [class.wizard-progress__step--active]="item.step === currentStep"
+      [class.wizard-progress__step--completed]="isCompleted(item.step)"
+      [disabled]="item.step >= currentStep"
+      (click)="selectStep(item.step)"
+    >
+      <span class="wizard-progress__circle">
+        @if (isCompleted(item.step)) {
+        <span aria-hidden="true">✓</span>
+        } @else {
+        {{ item.step }}
+        }
+      </span>
+      <span class="wizard-progress__label">{{ item.label }}</span>
+    </button>
+
+    @if (!last) {
+    <span
+      class="wizard-progress__line"
+      [class.wizard-progress__line--completed]="item.step < currentStep"
+      aria-hidden="true"
+    ></span>
+    } }
+  </div>
+</div>

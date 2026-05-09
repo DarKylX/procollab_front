@@ -1,6 +1,7 @@
 /** @format */
 
-import type { Program } from "./program.model";
+import { ApiPagination } from "@models/api-pagination.model";
+import { Program } from "./program.model";
 
 export type VerificationStatus =
   | "not_requested"
@@ -55,10 +56,10 @@ export interface ProgramVerificationRequest {
   submittedBy?: VerificationPerson | null;
   decidedBy?: VerificationPerson | null;
   reviewedBy?: VerificationPerson | null;
-  requestsHistory?: ProgramVerificationRequest[];
   program?: Partial<Program> & {
     verificationStatus?: VerificationStatus;
   };
+  requestsHistory?: ProgramVerificationRequest[];
 }
 
 export interface ProgramVerificationCompanyData {
@@ -99,3 +100,6 @@ export interface ProgramVerificationSubmitPayload {
   companyRoleDescription: string;
   documents: string[];
 }
+
+export type VerificationRequestPage = ApiPagination<ProgramVerificationRequest>;
+

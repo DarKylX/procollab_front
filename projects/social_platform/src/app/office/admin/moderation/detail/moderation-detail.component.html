@@ -1,0 +1,545 @@
+<!-- @format -->
+
+<main class="moderation-detail">
+  @if (isLoading()) {
+  <div class="moderation-detail__loading">
+    <app-loader color="var(--accent)" size="32px"></app-loader>
+  </div>
+  } @else {
+  @if (program(); as p) {
+  <header class="moderation-detail__header">
+    <a [routerLink]="['/office/admin/moderation']">
+      <i appIcon icon="left-arrow" appSquare="12"></i>
+      К списку модерации
+    </a>
+    <div>
+      <h1>{{ p.name }}</h1>
+      <app-program-status-badge [status]="asProgramStatus(p.status)"></app-program-status-badge>
+    </div>
+  </header>
+
+  <section class="moderation-detail__mobile-intro">
+    <div class="moderation-detail__mobile-title-row">
+      <a [routerLink]="['/office/admin/moderation']" aria-label="Назад">
+        <i appIcon icon="left-arrow" appSquare="18"></i>
+      </a>
+      <span>Проверка чемпионата</span>
+    </div>
+    <div class="moderation-detail__mobile-heading">
+      <h1>{{ p.name }}</h1>
+      <span>На модерации</span>
+    </div>
+  </section>
+
+  <section class="moderation-detail__layout">
+    <div class="moderation-detail__content">
+      <section class="moderation-detail__mobile-card moderation-detail__mobile-summary">
+        <span class="moderation-detail__mobile-icon">К</span>
+        <dl>
+          <div>
+            <dt>Организатор</dt>
+            <dd>{{ primaryOrganizerLabel(p) }} · {{ p.company?.name || "Компания не указана" }}</dd>
+          </div>
+          <div>
+            <dt>Отправлено</dt>
+            <dd>{{ submittedLabel(p) }}</dd>
+          </div>
+          <div>
+            <dt>Тип доступа</dt>
+            <dd>{{ accessLabel(p) }}</dd>
+          </div>
+          <div>
+            <dt>Готовность</dt>
+            <dd>Проверяем публичную часть</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="moderation-detail__mobile-card moderation-detail__mobile-note">
+        <span class="moderation-detail__mobile-icon">i</span>
+        <div>
+          <h2>Проверяется только публичная основа чемпионата</h2>
+          <p>
+            Проверяется только публичная основа чемпионата. Материалы, критерии и экспертов можно
+            добавить позже, если они не блокируют публикацию по readiness rules.
+          </p>
+        </div>
+      </section>
+
+      <section class="moderation-detail__mobile-card moderation-detail__mobile-checklist">
+        <h2>Чек-лист проверки публичной основы</h2>
+        <h3>1. Обязательные для публикации</h3>
+        <ul>
+          @for (check of mobileMandatoryChecks; track check.key) {
+          <li>
+            <span>{{ check.label }}</span>
+            <strong [class.moderation-detail__mobile-check--ready]="readinessCheckCompleted(p, check)">
+              {{ readinessCheckLabel(p, check) }}
+            </strong>
+          </li>
+          }
+        </ul>
+        <h3>2. Можно заполнить позже</h3>
+        <ul>
+          @for (check of mobileOptionalChecks; track check.key) {
+          <li>
+            <span>{{ check.label }}</span>
+            <strong [class.moderation-detail__mobile-check--ready]="readinessCheckCompleted(p, check)">
+              {{ readinessCheckLabel(p, check) }}
+            </strong>
+          </li>
+          }
+        </ul>
+      </section>
+
+      <section class="moderation-detail__preview">
+        @if (p.coverImageAddress || p.imageAddress) {
+        <img
+          [src]="p.coverImageAddress || p.imageAddress"
+          [alt]="p.name"
+          loading="lazy"
+          decoding="async"
+        />
+        }
+        <div>
+          <span>Предпросмотр публичных данных</span>
+          <h2>{{ p.name }}</h2>
+          <p [class.moderation-detail__description--expanded]="descriptionExpanded()">
+            {{ p.description || "Описание не заполнено" }}
+          </p>
+          @if (p.description && p.description.length > 360) {
+          <button class="moderation-detail__description-toggle" type="button" (click)="toggleDescription()">
+            {{ descriptionExpanded() ? "Свернуть описание" : "Показать описание полностью" }}
+          </button>
+          }
+          <a [routerLink]="['/office/program', p.id]" target="_blank">
+            Открыть страницу чемпионата
+          </a>
+        </div>
+      </section>
+
+      <section class="moderation-detail__section">
+        <h2>Основная информация</h2>
+        <dl class="moderation-detail__grid">
+          <div>
+            <dt>Город</dt>
+            <dd>{{ p.city || "Не указан" }}</dd>
+          </div>
+          <div>
+            <dt>Организатор</dt>
+            <dd>
+              @if (organizers(p).length) {
+              @for (organizer of organizers(p); track organizer.id) {
+              <span>{{ organizer.fullName || organizer.email }} · {{ organizer.email }}</span>
+              }
+              } @else {
+              <span>Не указан</span>
+              }
+            </dd>
+          </div>
+          <div>
+            <dt>Компания</dt>
+            <dd>{{ p.company?.name || "Не указана" }}</dd>
+          </div>
+          <div>
+            <dt>Верификация компании</dt>
+            <dd>{{ companyVerificationLabel(p) }}</dd>
+          </div>
+          <div>
+            <dt>Отправлен на модерацию</dt>
+            <dd>{{ p.submittedAt ? (p.submittedAt | date: "dd.MM.yyyy HH:mm") : "Нет данных" }}</dd>
+          </div>
+          <div>
+            <dt>Оценить до</dt>
+            <dd>
+              {{ p.moderationDeadlineAt ? (p.moderationDeadlineAt | date: "dd.MM.yyyy HH:mm") : "Нет данных" }}
+              <span>{{ deadlineLabel(p) }}</span>
+            </dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="moderation-detail__section">
+        <h2>Сроки и формат</h2>
+        <dl class="moderation-detail__grid">
+          <div>
+            <dt>Регистрация до</dt>
+            <dd>{{ p.datetimeRegistrationEnds | date: "dd.MM.yyyy HH:mm" }}</dd>
+          </div>
+          <div>
+            <dt>Старт</dt>
+            <dd>{{ p.datetimeStarted | date: "dd.MM.yyyy HH:mm" }}</dd>
+          </div>
+          <div>
+            <dt>Завершение</dt>
+            <dd>{{ p.datetimeFinished | date: "dd.MM.yyyy HH:mm" }}</dd>
+          </div>
+          <div>
+            <dt>Формат участия</dt>
+            <dd>{{ p.participationFormat === "individual" ? "Индивидуальный" : "Командный" }}</dd>
+          </div>
+        </dl>
+      </section>
+
+      <section class="moderation-detail__section">
+        <h2>Визуальные материалы</h2>
+        <details class="moderation-detail__visuals">
+          <summary>Показать материалы на платформе</summary>
+          @if (p.coverImageAddress || p.imageAddress || p.advertisementImageAddress) {
+          <div class="moderation-detail__visual-grid">
+            @if (p.coverImageAddress) {
+            <figure>
+              <button
+                class="moderation-detail__visual-button"
+                type="button"
+                (click)="openVisual(p.coverImageAddress, 'Обложка')"
+              >
+                <img
+                  [src]="p.coverImageAddress"
+                  alt="Обложка чемпионата"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </button>
+              <figcaption>Обложка</figcaption>
+            </figure>
+            }
+            @if (p.imageAddress) {
+            <figure>
+              <button
+                class="moderation-detail__visual-button"
+                type="button"
+                (click)="openVisual(p.imageAddress, 'Аватар')"
+              >
+                <img
+                  [src]="p.imageAddress"
+                  alt="Аватар чемпионата"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </button>
+              <figcaption>Аватар</figcaption>
+            </figure>
+            }
+            @if (p.advertisementImageAddress) {
+            <figure>
+              <button
+                class="moderation-detail__visual-button"
+                type="button"
+                (click)="openVisual(p.advertisementImageAddress, 'Баннер')"
+              >
+                <img
+                  [src]="p.advertisementImageAddress"
+                  alt="Баннер чемпионата"
+                  loading="lazy"
+                  decoding="async"
+                />
+              </button>
+              <figcaption>Баннер</figcaption>
+            </figure>
+            }
+          </div>
+          } @else {
+          <p class="moderation-detail__muted">Визуальные материалы не загружены.</p>
+          }
+        </details>
+      </section>
+
+      <section class="moderation-detail__section">
+        <h2>Регистрация</h2>
+        <dl class="moderation-detail__grid">
+          <div>
+            <dt>Тип доступа</dt>
+            <dd>{{ accessLabel(p) }}</dd>
+          </div>
+          <div>
+            <dt>Способ регистрации</dt>
+            <dd>{{ registrationLabel(p) }}</dd>
+          </div>
+          <div *ngIf="p.registrationLink">
+            <dt>Внешняя ссылка</dt>
+            <dd><a [href]="p.registrationLink" target="_blank">{{ p.registrationLink }}</a></dd>
+          </div>
+        </dl>
+
+        @if (dataSchemaEntries(p).length) {
+        <ul class="moderation-detail__chips">
+          @for (field of dataSchemaEntries(p); track field.key) {
+          <li>{{ field.label }} <span>{{ field.type || "field" }}</span></li>
+          }
+        </ul>
+        }
+
+        @if (privacyWarningMessages(p).length) {
+        <div class="moderation-detail__privacy-warning">
+          <strong>Privacy warnings</strong>
+          <ul>
+            @for (message of privacyWarningMessages(p); track message) {
+            <li>{{ message }}</li>
+            }
+          </ul>
+          @if (p.privacyWarnings?.forbiddenRegistrationFields?.length) {
+          <ol>
+            @for (field of p.privacyWarnings?.forbiddenRegistrationFields; track field.fieldId) {
+            <li>{{ field.label || field.fieldId }} <span>{{ field.source }}</span></li>
+            }
+          </ol>
+          }
+        </div>
+        }
+      </section>
+
+      <section class="moderation-detail__section">
+        <h2>Материалы</h2>
+        @if (p.materials?.length) {
+        <ul class="moderation-detail__list">
+          @for (material of p.materials; track material.id) {
+          <li>
+            <strong>{{ material.title }}</strong>
+            <a [href]="material.url" target="_blank">{{ material.url }}</a>
+          </li>
+          }
+        </ul>
+        } @else {
+        <p class="moderation-detail__muted">Материалы не добавлены.</p>
+        }
+      </section>
+
+      <section class="moderation-detail__section">
+        <h2>Критерии и эксперты</h2>
+        <div class="moderation-detail__columns">
+          <div>
+            <h3>Критерии</h3>
+            @if (p.criteria?.length) {
+            <ul class="moderation-detail__list">
+              @for (criterion of p.criteria; track criterion.id) {
+              <li>
+                <strong>{{ criterion.name }} · {{ criterion.weight }}%</strong>
+                <span>{{ criterion.description || "Без описания" }}</span>
+              </li>
+              }
+            </ul>
+            } @else {
+            <p class="moderation-detail__muted">Критерии не заполнены.</p>
+            }
+          </div>
+          <div>
+            <h3>Эксперты</h3>
+            @if (p.experts?.length) {
+            <ul class="moderation-detail__list">
+              @for (expert of p.experts; track expert.id) {
+              <li>
+                <strong>{{ expert.fullName }}</strong>
+                <span>{{ expert.email }}</span>
+              </li>
+              }
+            </ul>
+            } @else {
+            <p class="moderation-detail__muted">Эксперты не назначены.</p>
+            }
+          </div>
+        </div>
+      </section>
+
+      <section class="moderation-detail__section">
+        <h2>Готовность к модерации</h2>
+        <div class="moderation-detail__readiness">
+          <strong>{{ p.readinessPercentage ?? 0 }}%</strong>
+          <span>общая готовность</span>
+        </div>
+        <ul class="moderation-detail__chips moderation-detail__chips--readiness">
+          @for (item of readinessEntries(p); track item.key) {
+          <li
+            [class.moderation-detail__chip--ready]="item.completed"
+            [class.moderation-detail__chip--missing]="!item.completed"
+          >
+            {{ item.label }} <span>{{ item.value }}</span>
+          </li>
+          }
+        </ul>
+      </section>
+
+      <section class="moderation-detail__section">
+        <h2>История действий</h2>
+        @if (p.moderationHistory?.length) {
+        <ol class="moderation-detail__timeline">
+          @for (log of p.moderationHistory; track log.id) {
+          <li>
+            <strong>{{ logActionLabel(log) }}</strong>
+            <span>{{ (log.createdAt || log.datetimeCreated) | date: "dd.MM.yyyy HH:mm" }}</span>
+            @if (log.oldStatus || log.newStatus || log.statusBefore || log.statusAfter) {
+            <small>
+              {{ statusLabel(log.oldStatus || log.statusBefore) }} → {{ statusLabel(log.newStatus || log.statusAfter) }}
+            </small>
+            }
+            @if (actorLabel(log)) {
+            <small>Кем обработано: {{ actorLabel(log) }}</small>
+            }
+            @if (log.comment) {
+            <p>{{ log.comment }}</p>
+            }
+            @if (log.sectionsToFix?.length) {
+            <p>Исправить: {{ sectionsLabel(log.sectionsToFix) }}</p>
+            }
+          </li>
+          }
+        </ol>
+        } @else {
+        <p class="moderation-detail__muted">История действий пока пустая.</p>
+        }
+      </section>
+    </div>
+
+    <aside class="moderation-detail__aside">
+      <section class="moderation-detail__decision">
+        <h2>Решение по модерации</h2>
+        @if (canDecide) {
+        <app-button
+          size="medium"
+          customTypographyClass="text-body-12"
+          [loader]="isDeciding()"
+          [disabled]="isDeciding()"
+          (click)="approve()"
+        >
+          Одобрить
+        </app-button>
+        <div class="moderation-detail__reject-title">Если чемпионат нужно доработать</div>
+        <div class="moderation-detail__fix-sections">
+          <span>Разделы к исправлению</span>
+          @for (section of fixSectionOptions; track section.key) {
+          <label>
+            <input
+              type="checkbox"
+              [checked]="isSectionSelected(section.key)"
+              (change)="toggleSectionToFix(section.key)"
+            />
+            {{ section.label }}
+          </label>
+          }
+        </div>
+        <label>
+          <span>Причина отклонения</span>
+          <select [formControl]="decisionForm.controls.reasonCode">
+            <option value="">Выберите причину</option>
+            @for (reason of rejectionReasons(); track reason.code) {
+            <option [value]="reason.code">{{ reason.label }}</option>
+            }
+          </select>
+        </label>
+        <label>
+          <span>Комментарий</span>
+          <textarea
+            rows="5"
+            [formControl]="decisionForm.controls.comment"
+            [class.moderation-detail__field--invalid]="commentInvalid()"
+            placeholder="Что нужно исправить или дополнительный комментарий к решению"
+          ></textarea>
+        </label>
+        @if (decisionError()) {
+        <p class="moderation-detail__error">{{ decisionError() }}</p>
+        }
+        <div class="moderation-detail__decision-actions">
+          <button type="button" [disabled]="isDeciding()" (click)="reject()">Отклонить</button>
+        </div>
+        } @else {
+        <p class="moderation-detail__muted">
+          Решение доступно только для чемпионатов в статусе «На модерации».
+        </p>
+        }
+      </section>
+    </aside>
+  </section>
+
+  @if (selectedVisual(); as visual) {
+  <div class="moderation-detail__visual-modal" role="dialog" aria-modal="true" (click)="closeVisual()">
+    <div class="moderation-detail__visual-modal-card" (click)="$event.stopPropagation()">
+      <button type="button" aria-label="Закрыть просмотр" (click)="closeVisual()">×</button>
+      <strong>{{ visual.label }}</strong>
+      <img [src]="visual.url" [alt]="visual.label" />
+    </div>
+  </div>
+  }
+
+  @if (canDecide) {
+  <section class="moderation-detail__mobile-actions" aria-label="Решение по модерации">
+    <button type="button" class="moderation-detail__mobile-approve" [disabled]="isDeciding()" (click)="approve()">
+      Одобрить
+    </button>
+    <button type="button" class="moderation-detail__mobile-reject" [disabled]="isDeciding()" (click)="openRejectSheet()">
+      Отклонить
+    </button>
+  </section>
+  }
+
+  <app-modal [open]="approveConfirmOpen()" (openChange)="approveConfirmOpen.set($event)">
+    <div class="moderation-detail__confirm">
+      <h2>Опубликовать чемпионат?</h2>
+      <p>После подтверждения чемпионат станет доступен участникам на платформе.</p>
+      <div>
+        <button type="button" (click)="cancelApprove()">Отмена</button>
+        <button type="button" [disabled]="isDeciding()" (click)="confirmApprove()">
+          {{ isDeciding() ? "Публикуем..." : "Опубликовать" }}
+        </button>
+      </div>
+    </div>
+  </app-modal>
+
+  @if (rejectSheetOpen()) {
+  <div class="moderation-detail__sheet" role="dialog" aria-modal="true" (click)="closeRejectSheet()">
+    <form class="moderation-detail__sheet-card" [formGroup]="decisionForm" (click)="$event.stopPropagation()">
+      <button type="button" class="moderation-detail__sheet-close" aria-label="Закрыть" (click)="closeRejectSheet()">
+        ×
+      </button>
+      <h2>Отклонение чемпионата</h2>
+      @if (rejectionReasons().length) {
+      <label>
+        <span>Причина отклонения</span>
+        <select formControlName="reasonCode">
+          <option value="">Выберите причину</option>
+          @for (reason of rejectionReasons(); track reason.code) {
+          <option [value]="reason.code">{{ reason.label }}</option>
+          }
+        </select>
+      </label>
+      }
+      <label>
+        <span>Комментарий организатору</span>
+        <textarea
+          rows="5"
+          maxlength="500"
+          formControlName="comment"
+          [class.moderation-detail__field--invalid]="commentInvalid()"
+          placeholder="Опишите, каких данных не хватает или что нужно исправить"
+        ></textarea>
+        <small>{{ decisionForm.controls.comment.value.length }}/500</small>
+      </label>
+      <fieldset>
+        <legend>Разделы на доработку</legend>
+        <div>
+          @for (section of fixSectionOptions; track section.key) {
+          <label>
+            <input
+              type="checkbox"
+              [checked]="isSectionSelected(section.key)"
+              (change)="toggleSectionToFix(section.key)"
+            />
+            <span>{{ section.label }}</span>
+          </label>
+          }
+        </div>
+      </fieldset>
+      @if (decisionError()) {
+      <p class="moderation-detail__error">{{ decisionError() }}</p>
+      }
+      <div class="moderation-detail__sheet-actions">
+        <button type="button" (click)="closeRejectSheet()">Отмена</button>
+        <button type="button" [disabled]="!canReject" (click)="reject()">
+          {{ isDeciding() ? "Отправляем..." : "Отклонить" }}
+        </button>
+      </div>
+    </form>
+  </div>
+  }
+  }
+  }
+</main>

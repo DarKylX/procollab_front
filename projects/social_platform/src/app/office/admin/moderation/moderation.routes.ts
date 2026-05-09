@@ -2,32 +2,42 @@
 
 import { Routes } from "@angular/router";
 import { moderationStaffGuard } from "./moderation-staff.guard";
-import { ModerationForbiddenComponent } from "./forbidden/moderation-forbidden.component";
-import { VerificationListComponent } from "./verification-list/verification-list.component";
-import { VerificationDetailComponent } from "./verification-detail/verification-detail.component";
 
 export const MODERATION_ROUTES: Routes = [
   {
     path: "forbidden",
-    component: ModerationForbiddenComponent,
+    loadComponent: () =>
+      import("./forbidden/moderation-forbidden.component").then(
+        c => c.ModerationForbiddenComponent
+      ),
   },
   {
     path: "",
+    pathMatch: "full",
     canActivate: [moderationStaffGuard],
-    children: [
-      {
-        path: "",
-        pathMatch: "full",
-        redirectTo: "verification",
-      },
-      {
-        path: "verification",
-        component: VerificationListComponent,
-      },
-      {
-        path: "verification/:requestId",
-        component: VerificationDetailComponent,
-      },
-    ],
+    loadComponent: () =>
+      import("./list/moderation-list.component").then(c => c.ModerationListComponent),
+  },
+  {
+    path: "verification",
+    canActivate: [moderationStaffGuard],
+    loadComponent: () =>
+      import("./verification-list/verification-list.component").then(
+        c => c.VerificationListComponent
+      ),
+  },
+  {
+    path: "verification/:requestId",
+    canActivate: [moderationStaffGuard],
+    loadComponent: () =>
+      import("./verification-detail/verification-detail.component").then(
+        c => c.VerificationDetailComponent
+      ),
+  },
+  {
+    path: "programs/:programId",
+    canActivate: [moderationStaffGuard],
+    loadComponent: () =>
+      import("./detail/moderation-detail.component").then(c => c.ModerationDetailComponent),
   },
 ];
