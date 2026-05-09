@@ -1,0 +1,229 @@
+<!-- @format -->
+
+<section class="verification-panel">
+  <div class="verification-panel__head">
+    <div>
+      <p class="verification-panel__eyebrow text-body-10">Верификация организатора</p>
+      <h3 class="verification-panel__title text-body-12">Подтверждение компании</h3>
+    </div>
+    <span class="verification-panel__status" [class]="'verification-panel__status verification-panel__status--' + status">
+      {{ statusLabel() }}
+    </span>
+  </div>
+
+  <p class="verification-panel__lead text-body-10">
+    Подтвержденная компания получает отметку на карточке чемпионата и вызывает больше доверия у участников.
+  </p>
+
+  @if (isLoading) {
+  <p class="verification-panel__state text-body-10">Загружаем данные верификации...</p>
+  } @else if (errorMessage) {
+  <p class="verification-panel__error text-body-10">{{ errorMessage }}</p>
+  } @else {
+  @if (status === "pending" && latestRequest; as request) {
+  <article class="verification-panel__summary verification-panel__summary--pending">
+    <h4 class="text-body-12">Заявка на рассмотрении</h4>
+    <p class="text-body-10">
+      Мы проверим данные компании и документы. Обычно это занимает 1-2 рабочих дня.
+    </p>
+    <dl>
+      <div>
+        <dt>Дата подачи</dt>
+        <dd>{{ requestDate(request) }}</dd>
+      </div>
+      <div>
+        <dt>Компания</dt>
+        <dd>{{ request.companyName }}</dd>
+      </div>
+      <div>
+        <dt>ИНН</dt>
+        <dd>{{ request.inn }}</dd>
+      </div>
+    </dl>
+  </article>
+  }
+
+  @if (status === "verified" && latestRequest; as request) {
+  <article class="verification-panel__summary verification-panel__summary--verified">
+    <h4 class="text-body-12">Компания подтверждена</h4>
+    <p class="text-body-10">
+      На странице и карточке чемпионата отображается отметка официального организатора.
+    </p>
+    <dl>
+      <div>
+        <dt>Компания</dt>
+        <dd>{{ request.companyName || state?.verifiedCompanyName }}</dd>
+      </div>
+      <div>
+        <dt>ИНН</dt>
+        <dd>{{ request.inn }}</dd>
+      </div>
+      <div>
+        <dt>Дата решения</dt>
+        <dd>{{ decisionDate(request) }}</dd>
+      </div>
+    </dl>
+  </article>
+  }
+
+  @if ((status === "rejected" || status === "revoked") && latestRequest; as request) {
+  <article class="verification-panel__summary verification-panel__summary--rejected">
+    <h4 class="text-body-12">
+      {{ status === "revoked" ? "Верификация отозвана" : "Заявка отклонена" }}
+    </h4>
+    <p class="text-body-10">Можно подать новую заявку. Документы нужно загрузить повторно.</p>
+    <dl>
+      <div>
+        <dt>Дата решения</dt>
+        <dd>{{ decisionDate(request) }}</dd>
+      </div>
+      <div>
+        <dt>Причина</dt>
+        <dd>{{ request.rejectionReasonLabel || request.reasonCode || "Не указана" }}</dd>
+      </div>
+      <div class="verification-panel__wide">
+        <dt>Комментарий</dt>
+        <dd>{{ request.adminComment || "Комментарий не указан" }}</dd>
+      </div>
+    </dl>
+  </article>
+  }
+
+  @if (canShowForm) {
+  <form class="verification-form" [formGroup]="form" (ngSubmit)="submit()" novalidate>
+    <div class="verification-form__grid">
+      <label class="verification-field" [class.verification-field--invalid]="isInvalid('companyName')">
+        <span>Название компании *</span>
+        <input formControlName="companyName" type="text" placeholder="ООО Компания" />
+        @if (isInvalid('companyName')) { <small>{{ errorText("companyName") }}</small> }
+      </label>
+
+      <label class="verification-field" [class.verification-field--invalid]="isInvalid('inn')">
+        <span>ИНН *</span>
+        <input formControlName="inn" type="text" inputmode="numeric" placeholder="7701234567" />
+        @if (isInvalid('inn')) { <small>{{ errorText("inn") }}</small> }
+      </label>
+
+      <label class="verification-field">
+        <span>Юридическое наименование</span>
+        <input formControlName="legalName" type="text" placeholder="ООО Компания" />
+      </label>
+
+      <label class="verification-field">
+        <span>ОГРН / ОГРНИП</span>
+        <input formControlName="ogrn" type="text" placeholder="1027700132195" />
+      </label>
+
+      <label class="verification-field" [class.verification-field--invalid]="isInvalid('website')">
+        <span>Сайт</span>
+        <input formControlName="website" type="url" placeholder="https://example.com" />
+        @if (isInvalid('website')) { <small>{{ errorText("website") }}</small> }
+      </label>
+
+      <label class="verification-field">
+        <span>Город / регион</span>
+        <input formControlName="region" type="text" placeholder="Москва" />
+      </label>
+
+      <label class="verification-field" [class.verification-field--invalid]="isInvalid('contactFullName')">
+        <span>Контактное лицо *</span>
+        <input formControlName="contactFullName" type="text" placeholder="Иван Петров" />
+        @if (isInvalid('contactFullName')) { <small>{{ errorText("contactFullName") }}</small> }
+      </label>
+
+      <label class="verification-field" [class.verification-field--invalid]="isInvalid('contactPosition')">
+        <span>Должность *</span>
+        <input formControlName="contactPosition" type="text" placeholder="Руководитель проекта" />
+        @if (isInvalid('contactPosition')) { <small>{{ errorText("contactPosition") }}</small> }
+      </label>
+
+      <label class="verification-field" [class.verification-field--invalid]="isInvalid('contactEmail')">
+        <span>Email *</span>
+        <input formControlName="contactEmail" type="email" placeholder="name@example.com" />
+        @if (isInvalid('contactEmail')) { <small>{{ errorText("contactEmail") }}</small> }
+      </label>
+
+      <label class="verification-field" [class.verification-field--invalid]="isInvalid('contactPhone')">
+        <span>Телефон *</span>
+        <input formControlName="contactPhone" type="tel" placeholder="+7 900 000-00-00" />
+        @if (isInvalid('contactPhone')) { <small>{{ errorText("contactPhone") }}</small> }
+      </label>
+    </div>
+
+    <label class="verification-field verification-field--full" [class.verification-field--invalid]="isInvalid('companyRoleDescription')">
+      <span>Роль компании в чемпионате *</span>
+      <textarea
+        formControlName="companyRoleDescription"
+        rows="4"
+        placeholder="Например: организатор чемпионата, поставщик кейсов, экспертное сообщество"
+      ></textarea>
+      <em>{{ roleDescriptionLength }} / 1000</em>
+      @if (isInvalid('companyRoleDescription')) { <small>{{ errorText("companyRoleDescription") }}</small> }
+    </label>
+
+    <label
+      class="verification-upload"
+      [class.verification-upload--active]="isDragActive"
+      (dragover)="onDragOver($event)"
+      (dragleave)="onDragLeave($event)"
+      (drop)="onDrop($event)"
+    >
+      <input
+        type="file"
+        multiple
+        accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+        (change)="onFileSelected($event)"
+      />
+      <strong>Перетащите документы или нажмите для выбора</strong>
+      <span>PDF, PNG, JPG, JPEG. До {{ maxFiles }} файлов, до {{ maxFileSizeMb }} МБ каждый.</span>
+    </label>
+
+    @if (selectedDocuments.length) {
+    <ul class="verification-documents">
+      @for (document of selectedDocuments; track document.name + document.size; let index = $index) {
+      <li [class.verification-documents__item--error]="document.error">
+        <div>
+          <strong>{{ documentName(document) }}</strong>
+          <span>{{ fileSize(document.size) }}</span>
+          @if (document.error) { <small>{{ document.error }}</small> }
+          @if (document.uploading) { <small>Загружаем файл...</small> }
+        </div>
+        <button type="button" (click)="removeDocument(index)" aria-label="Удалить документ">x</button>
+      </li>
+      }
+    </ul>
+    }
+
+    <label class="verification-confirm" [class.verification-confirm--invalid]="isInvalid('confirmed')">
+      <input type="checkbox" formControlName="confirmed" />
+      <span>Подтверждаю достоверность предоставленных данных *</span>
+    </label>
+    @if (isInvalid('confirmed')) { <small class="verification-form__error">{{ errorText("confirmed") }}</small> }
+
+    <div class="verification-form__actions">
+      @if (status === "rejected" || status === "revoked") {
+      <button class="verification-form__button verification-form__button--secondary" type="button" (click)="resetToLatestTextData()">
+        Вернуть данные последней заявки
+      </button>
+      }
+      <button class="verification-form__button" type="submit" [disabled]="!canSubmit">
+        {{ isSubmitting ? "Отправляем..." : "Отправить заявку" }}
+      </button>
+    </div>
+  </form>
+  }
+
+  @if (history.length > 1) {
+  <section class="verification-history">
+    <h4 class="text-body-12">История заявок</h4>
+    @for (request of history; track request.id) {
+    <article>
+      <strong>Заявка №{{ request.id }}</strong>
+      <span>{{ statusLabel(request.status === "approved" ? "verified" : request.status) }}</span>
+      <time>{{ requestDate(request) }}</time>
+    </article>
+    }
+  </section>
+  }
+  }
+</section>

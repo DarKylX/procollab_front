@@ -6,6 +6,10 @@ import { map, Observable } from "rxjs";
 import { HttpParams } from "@angular/common/http";
 import { ProgramCreate } from "@office/program/models/program-create.model";
 import { LegalDocument, Program, ProgramDataSchema } from "@office/program/models/program.model";
+import {
+  ProgramVerificationState,
+  ProgramVerificationSubmitPayload,
+} from "@office/program/models/program-verification.model";
 import { Project } from "@models/project.model";
 import { ApiPagination } from "@models/api-pagination.model";
 import { User } from "@auth/models/user.model";
@@ -74,6 +78,22 @@ export class ProgramService {
 
   getOne(programId: number): Observable<Program> {
     return this.apiService.get(`${this.PROGRAMS_URL}/${programId}/`);
+  }
+
+  getVerification(programId: number): Observable<ProgramVerificationState> {
+    return this.apiService.get<ProgramVerificationState>(
+      `${this.PROGRAMS_URL}/${programId}/verification/`
+    );
+  }
+
+  submitVerification(
+    programId: number,
+    payload: ProgramVerificationSubmitPayload
+  ): Observable<ProgramVerificationState> {
+    return this.apiService.post<ProgramVerificationState>(
+      `${this.PROGRAMS_URL}/${programId}/verification/submit/`,
+      payload
+    );
   }
 
   create(program: ProgramCreate): Observable<Program> {

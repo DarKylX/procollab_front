@@ -34,6 +34,11 @@
             Организатор: {{ program.companyName }}
           </p>
           }
+          @if (program.isVerified) {
+          <p class="text-body-10 about__verified">
+            Официальная компания: {{ program.verifiedCompanyName || program.companyName }}
+          </p>
+          }
           @if (participationText) {
           <p class="text-body-10 about__participation">
             Формат участия: {{ participationText }}
@@ -53,6 +58,9 @@
           </div>
           }
         </div>
+        @if (program.isUserManager) {
+        <app-program-verification-panel [program]="program"></app-program-verification-panel>
+        }
         @if (program.isUserMember) {
         <article class="participant-project">
           <div class="participant-project__head">
