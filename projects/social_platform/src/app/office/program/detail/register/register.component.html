@@ -2,23 +2,78 @@
 
 <div class="register">
   <app-bar class="bar register__bar" [backHave]="true" [links]="[]"></app-bar>
-  @if (registerForm && schema) {
-  <form class="register__form form" [formGroup]="registerForm">
-    @for (f of schema | keyvalue; track f.key) {
+  @if (registerForm && registrationSchema) {
+  <form class="register__form form" [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+    @for (f of registrationSchema | keyvalue; track f.key) {
     <fieldset class="form__fieldset">
-      <label [for]="f.key" class="field-label">{{ f.value.name }}</label>
+      <label [for]="f.key" class="field-label">{{ f.value.name || f.key }}</label>
       @if (registerForm.get(f.key); as field) {
       <app-input
         size="big"
         [id]="f.key"
         [formControlName]="f.key"
-        [placeholder]="f.value.placeholder"
+        [placeholder]="f.value.placeholder || ''"
         [error]="field | controlError"
       ></app-input>
       }
     </fieldset>
     }
-    <app-button size="big" (click)="onSubmit()">Зарегистрироваться в программе</app-button>
+    @if (registerForm.get(consentControlName); as consentControl) {
+    <fieldset class="form__fieldset register__consent">
+      <label class="register__consent-control">
+        <input type="checkbox" [formControlName]="consentControlName" />
+        <span>
+          Я согласен(а) на обработку персональных данных при регистрации в чемпионате.
+        </span>
+      </label>
+
+      <p class="register__consent-text">
+        Ознакомлен(а) с
+        @if (legalDocumentHref("privacy_policy")) {
+        <a [href]="legalDocumentHref('privacy_policy')" target="_blank" rel="noopener">
+          {{ legalDocumentTitle("privacy_policy", "политикой обработки персональных данных") }}
+        </a>
+        } @else {
+        <span>{{ legalDocumentTitle("privacy_policy", "политикой обработки персональных данных") }}</span>
+        }
+        и
+        @if (legalDocumentHref("participant_consent")) {
+        <a [href]="legalDocumentHref('participant_consent')" target="_blank" rel="noopener">
+          {{ legalDocumentTitle("participant_consent", "согласием на обработку персональных данных") }}
+        </a>
+        } @else {
+        <span>{{
+          legalDocumentTitle("participant_consent", "согласием на обработку персональных данных")
+        }}</span>
+        }.
+      </p>
+
+      @if (legalDocument("participation_terms")) {
+      <p class="register__consent-text">
+        Условия участия:
+        @if (legalDocumentHref("participation_terms")) {
+        <a [href]="legalDocumentHref('participation_terms')" target="_blank" rel="noopener">
+          {{ legalDocumentTitle("participation_terms", "условия участия") }}
+        </a>
+        } @else {
+        <span>{{ legalDocumentTitle("participation_terms", "условия участия") }}</span>
+        }
+      </p>
+      }
+
+      @if ((consentControl.touched || consentControl.dirty) && consentControl.invalid) {
+      <p class="register__error">Необходимо согласиться на обработку персональных данных.</p>
+      }
+    </fieldset>
+    }
+
+    @if (serverError) {
+    <p class="register__error register__error--server">{{ serverError }}</p>
+    }
+
+    <app-button size="big" type="submit" [disabled]="isSubmitting" [loader]="isSubmitting">
+      Зарегистрироваться в программе
+    </app-button>
   </form>
   }
 </div>

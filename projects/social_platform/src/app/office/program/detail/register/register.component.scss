@@ -2,6 +2,50 @@
   &__bar {
     margin-bottom: 20px;
   }
+
+  &__consent {
+    padding: 16px;
+    border: 1px solid var(--medium-grey-for-outline);
+    border-radius: 5px;
+  }
+
+  &__consent-control {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    color: var(--black);
+    line-height: 1.4;
+    cursor: pointer;
+
+    input {
+      flex: 0 0 auto;
+      width: 18px;
+      height: 18px;
+      margin-top: 2px;
+    }
+  }
+
+  &__consent-text {
+    margin-top: 10px;
+    color: var(--dark-grey);
+    line-height: 1.4;
+
+    a {
+      color: var(--accent);
+      text-decoration: underline;
+      text-underline-offset: 2px;
+    }
+  }
+
+  &__error {
+    margin-top: 8px;
+    color: var(--red);
+    line-height: 1.4;
+
+    &--server {
+      margin-bottom: 16px;
+    }
+  }
 }
 
 .form {

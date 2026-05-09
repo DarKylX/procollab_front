@@ -5,7 +5,7 @@ import { ApiService } from "projects/core";
 import { map, Observable } from "rxjs";
 import { HttpParams } from "@angular/common/http";
 import { ProgramCreate } from "@office/program/models/program-create.model";
-import { Program, ProgramDataSchema } from "@office/program/models/program.model";
+import { LegalDocument, Program, ProgramDataSchema } from "@office/program/models/program.model";
 import { Project } from "@models/project.model";
 import { ApiPagination } from "@models/api-pagination.model";
 import { User } from "@auth/models/user.model";
@@ -88,9 +88,13 @@ export class ProgramService {
 
   register(
     programId: number,
-    additionalData: Record<string, string>
+    additionalData: Record<string, unknown>
   ): Observable<ProgramDataSchema> {
     return this.apiService.post(`${this.PROGRAMS_URL}/${programId}/register/`, additionalData);
+  }
+
+  getActiveLegalDocuments(): Observable<LegalDocument[]> {
+    return this.apiService.get<LegalDocument[]>(`${this.PROGRAMS_URL}/legal-documents/active/`);
   }
 
   getAllProjects(programId: number, params?: HttpParams): Observable<ApiPagination<Project>> {

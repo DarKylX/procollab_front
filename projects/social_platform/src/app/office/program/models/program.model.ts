@@ -60,6 +60,15 @@ export interface ProgramParticipantProject {
   };
 }
 
+export interface LegalDocument {
+  id: number;
+  type: "privacy_policy" | "participant_consent" | "participation_terms";
+  title: string;
+  version: string;
+  contentUrl?: string;
+  contentHtml?: string;
+}
+
 export class Program {
   id!: number;
   status!: ProgramStatus;
