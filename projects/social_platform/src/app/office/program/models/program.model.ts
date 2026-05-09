@@ -33,6 +33,7 @@
  * @method static default() - Возвращает объект программы с дефолтными значениями
  */
 export type ProgramStatus = "draft" | "published" | "completed" | "archived";
+export type ProgramParticipationFormat = "individual" | "team";
 
 export interface ProgramCompany {
   id: number;
@@ -68,6 +69,9 @@ export class Program {
   isUserMember!: boolean;
   company!: ProgramCompany | null;
   companyName!: string;
+  participationFormat!: ProgramParticipationFormat;
+  projectTeamMinSize!: number | null;
+  projectTeamMaxSize!: number | null;
   publishProjectsAfterFinish!: boolean;
   courseId!: number | null;
   courses!: { id: number; title: string; isAvailable: boolean }[];
@@ -101,11 +105,44 @@ export class Program {
       isUserManager: false,
       company: null,
       companyName: "",
+      participationFormat: "team",
+      projectTeamMinSize: 1,
+      projectTeamMaxSize: null,
       publishProjectsAfterFinish: false,
       courseId: null,
       courses: [],
     };
   }
+}
+
+export function formatProgramParticipation(program?: Pick<
+  Program,
+  "participationFormat" | "projectTeamMinSize" | "projectTeamMaxSize"
+>): string {
+  if (!program) {
+    return "";
+  }
+
+  if (program.participationFormat === "individual") {
+    return "Индивидуальное участие";
+  }
+
+  const minSize = program.projectTeamMinSize ?? 1;
+  const maxSize = program.projectTeamMaxSize;
+
+  if (maxSize && maxSize === minSize) {
+    return `Команда: ${maxSize} участников`;
+  }
+
+  if (maxSize && maxSize > minSize) {
+    return `Команда: ${minSize}-${maxSize} участников`;
+  }
+
+  if (minSize > 1) {
+    return `Команда: от ${minSize} участников`;
+  }
+
+  return "Командное участие";
 }
 
 /**

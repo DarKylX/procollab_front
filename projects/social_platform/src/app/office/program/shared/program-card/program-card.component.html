@@ -13,6 +13,11 @@
       {{ program.companyName }}
     </p>
     }
+    @if (participationText) {
+    <p class="text-body-10 card__participation" style="padding-left: 25px">
+      {{ participationText }}
+    </p>
+    }
 
     <p
       class="text-body-10 card__description card__registration"

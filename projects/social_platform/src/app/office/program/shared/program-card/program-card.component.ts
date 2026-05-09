@@ -1,7 +1,7 @@
 /** @format */
 
 import { Component, Input, OnInit } from "@angular/core";
-import { Program } from "@office/program/models/program.model";
+import { formatProgramParticipation, Program } from "@office/program/models/program.model";
 import { IconComponent } from "@ui/components";
 import { AvatarComponent } from "@ui/components/avatar/avatar.component";
 import { DatePipe, NgClass } from "@angular/common";
@@ -48,4 +48,8 @@ export class ProgramCardComponent implements OnInit {
   }
 
   registerDateExpired?: boolean;
+
+  get participationText(): string {
+    return formatProgramParticipation(this.program);
+  }
 }
