@@ -69,6 +69,11 @@ export const OFFICE_ROUTES: Routes = [
         component: ExpertEvaluationsComponent,
       },
       {
+        path: "notifications",
+        loadComponent: () =>
+          import("./notifications/notifications.component").then(c => c.NotificationsComponent),
+      },
+      {
         path: "admin/moderation",
         loadChildren: () =>
           import("./admin/moderation/moderation.routes").then(c => c.MODERATION_ROUTES),

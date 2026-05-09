@@ -1,0 +1,247 @@
+.notifications-page {
+  display: grid;
+  gap: 24px;
+  padding: 22px 0 48px;
+
+  &__header {
+    display: flex;
+    gap: 20px;
+    align-items: flex-start;
+    justify-content: space-between;
+  }
+
+  &__title {
+    margin: 0 0 8px;
+    font-size: 36px;
+    font-weight: 700;
+    line-height: 1.15;
+    color: var(--black);
+  }
+
+  &__subtitle {
+    margin: 0;
+    font-size: 17px;
+    line-height: 1.45;
+    color: #696a7d;
+  }
+
+  &__mark-all,
+  &__filter {
+    font: inherit;
+    cursor: pointer;
+    background: transparent;
+    border: 0;
+  }
+
+  &__mark-all {
+    padding: 12px 22px;
+    font-weight: 700;
+    color: var(--accent);
+    white-space: nowrap;
+    border: 1px solid #e5ddff;
+    border-radius: 999px;
+
+    &:disabled {
+      color: #b9bac5;
+      cursor: default;
+      border-color: #ededf2;
+    }
+  }
+
+  &__filters {
+    display: flex;
+    gap: 22px;
+    align-items: center;
+    overflow-x: auto;
+    border-bottom: 1px solid #eeeafc;
+  }
+
+  &__filter {
+    position: relative;
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+    padding: 0 0 14px;
+    font-size: 16px;
+    font-weight: 700;
+    color: #68697d;
+    white-space: nowrap;
+
+    span {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 22px;
+      height: 22px;
+      padding: 0 7px;
+      font-size: 12px;
+      color: var(--white);
+      background: var(--accent);
+      border-radius: 999px;
+    }
+
+    &--active {
+      color: var(--accent);
+
+      &::after {
+        position: absolute;
+        right: 0;
+        bottom: -1px;
+        left: 0;
+        height: 3px;
+        content: "";
+        background: var(--accent);
+        border-radius: 999px 999px 0 0;
+      }
+    }
+  }
+
+  &__list {
+    display: grid;
+    gap: 12px;
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+
+  &__empty {
+    display: grid;
+    place-items: center;
+    min-height: 360px;
+    padding: 48px 24px;
+    color: #77798a;
+    text-align: center;
+    border: 1px solid #e8e1ff;
+    border-radius: 8px;
+
+    i {
+      margin-bottom: 16px;
+      color: var(--accent);
+      opacity: 0.75;
+    }
+
+    h2 {
+      margin: 0 0 10px;
+      font-size: 22px;
+      line-height: 1.25;
+      color: var(--black);
+    }
+
+    p {
+      max-width: 470px;
+      margin: 0;
+      font-size: 16px;
+      line-height: 1.5;
+    }
+  }
+}
+
+.notification-card {
+  font: inherit;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: center;
+  width: 100%;
+  padding: 18px 20px;
+  text-align: left;
+  background: var(--white);
+  border: 1px solid #e9e9ef;
+  border-radius: 8px;
+
+  &--unread {
+    background: #fbf9ff;
+    border-color: #dfd3ff;
+  }
+
+  &__icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 58px;
+    height: 58px;
+    color: var(--accent);
+    background: #f0ebff;
+    border-radius: 50%;
+
+    i {
+      color: currentColor;
+    }
+  }
+
+  &__content {
+    display: grid;
+    min-width: 0;
+    gap: 6px;
+  }
+
+  &__title {
+    overflow: hidden;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.3;
+    color: var(--black);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__message {
+    font-size: 15px;
+    line-height: 1.45;
+    color: #4f5166;
+  }
+
+  &__meta {
+    display: inline-flex;
+    gap: 14px;
+    align-items: center;
+    color: #77798a;
+    white-space: nowrap;
+  }
+
+  &__dot {
+    width: 8px;
+    height: 8px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+
+  &__arrow {
+    font-size: 30px;
+    line-height: 1;
+    color: #7a7d8f;
+  }
+}
+
+@media (max-width: 767px) {
+  .notifications-page {
+    padding: 8px 0 32px;
+
+    &__header {
+      display: grid;
+    }
+
+    &__title {
+      font-size: 28px;
+    }
+
+    &__mark-all {
+      width: 100%;
+    }
+  }
+
+  .notification-card {
+    grid-template-columns: 48px minmax(0, 1fr);
+
+    &__icon {
+      width: 48px;
+      height: 48px;
+    }
+
+    &__meta {
+      grid-column: 2;
+      justify-content: space-between;
+    }
+  }
+}
