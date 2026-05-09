@@ -31,6 +31,8 @@ import { ApiService, PRODUCTION } from "@corelib";
 })
 export class TokenService {
   private readonly TOKEN_API_URL = "/api/token";
+  private readonly cookieExpiresDays = 30;
+  private readonly procollabCookieDomain = ".procollab.ru";
 
   constructor(private apiService: ApiService, @Inject(PRODUCTION) private production: boolean) {}
 
@@ -67,16 +69,36 @@ export class TokenService {
    * - Cookies привязаны к текущему домену
    */
   getCookieOptions(): CookieAttributes {
-    if (this.production) {
+    if (this.isProcollabHttpsOrigin()) {
       return {
-        domain: ".procollab.ru", // Домен для production окружения
-        expires: new Date(Date.now() + 1000 * 60 * 60 * 24 * 30), // 30 дней
+        domain: this.procollabCookieDomain,
+        expires: this.cookieExpiresDays,
         secure: true,
         sameSite: "None",
       };
     }
 
-    return {}; // Дефолтные настройки для development
+    return this.getOriginCookieOptions();
+  }
+
+  private isProcollabHttpsOrigin(): boolean {
+    if (!this.production || typeof window === "undefined") {
+      return false;
+    }
+
+    const hostname = window.location.hostname.toLowerCase();
+
+    return (
+      window.location.protocol === "https:" &&
+      (hostname === "procollab.ru" || hostname.endsWith(this.procollabCookieDomain))
+    );
+  }
+
+  private getOriginCookieOptions(): CookieAttributes {
+    return {
+      expires: this.cookieExpiresDays,
+      sameSite: "Lax",
+    };
   }
 
   /**
@@ -111,8 +133,12 @@ export class TokenService {
    */
   clearTokens(): void {
     const options = this.getCookieOptions();
+    const originOptions = this.getOriginCookieOptions();
+
     Cookies.remove("accessToken", options);
     Cookies.remove("refreshToken", options);
+    Cookies.remove("accessToken", originOptions);
+    Cookies.remove("refreshToken", originOptions);
   }
 
   /**

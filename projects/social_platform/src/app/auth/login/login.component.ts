@@ -90,8 +90,16 @@ export class LoginComponent implements OnInit {
     this.showPassword = !this.showPassword;
   }
 
+  private getRedirectUrl(redirectType?: string): string {
+    if (redirectType === "profile") {
+      return "/office";
+    }
+
+    return "/office/program";
+  }
+
   onSubmit() {
-    const redirectType = this.route.snapshot.queryParams["redirect"];
+    const redirectType = this.route.snapshot.queryParamMap.get("redirect") ?? undefined;
 
     if (!this.validationService.getFormValidation(this.loginForm) || this.loginIsSubmitting) {
       return;
@@ -106,14 +114,9 @@ export class LoginComponent implements OnInit {
 
         this.cdref.detectChanges();
 
-        if (!redirectType)
-          this.router
-            .navigateByUrl("/office")
-            .then(() => console.debug("Route changed from LoginComponent"));
-        else if (redirectType === "program")
-          this.router
-            .navigateByUrl("/office/program")
-            .then(() => console.debug("Route changed from LoginComponent"));
+        this.router
+          .navigateByUrl(this.getRedirectUrl(redirectType))
+          .then(() => console.debug("Route changed from LoginComponent"));
       },
       error: error => {
         if (error.status === 401) {
