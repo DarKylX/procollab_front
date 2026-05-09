@@ -53,6 +53,77 @@
           </div>
           }
         </div>
+        @if (program.isUserMember) {
+        <article class="participant-project">
+          <div class="participant-project__head">
+            <div>
+              <h3 class="text-body-12 participant-project__title">Ваш проект</h3>
+              <p class="text-body-10 participant-project__status">
+                {{ participantProjectStatusText }}
+              </p>
+            </div>
+            @if (participantProjectSubmitted) {
+            <span class="participant-project__badge participant-project__badge--success">
+              Сдан
+            </span>
+            } @else {
+            <span class="participant-project__badge">Черновик</span>
+            }
+          </div>
+
+          @if (participantProject; as project) {
+          <div class="participant-project__body">
+            <h4 class="text-body-12 participant-project__name">
+              {{ project.name || "Проект без названия" }}
+            </h4>
+            @if (project.shortDescription || project.description) {
+            <p class="text-body-10 participant-project__description">
+              {{ project.shortDescription || project.description }}
+            </p>
+            }
+            @if (participantProjectSubmittedAt) {
+            <p class="text-body-10 participant-project__submitted-at">
+              Дата сдачи: {{ participantProjectSubmittedAt | date: "dd.MM.yyyy HH:mm" }}
+            </p>
+            }
+          </div>
+
+          @if (participantProjectSubmitError) {
+          <p class="text-body-10 participant-project__error">
+            {{ participantProjectSubmitError }}
+          </p>
+          }
+
+          <div class="participant-project__actions">
+            @if (!participantProjectSubmitted) {
+            <app-button
+              size="medium"
+              customTypographyClass="text-body-10"
+              [disabled]="!participantProjectRelationId || participantProjectSubmitting"
+              [loader]="participantProjectSubmitting"
+              (click)="submitParticipantProject()"
+              >Сдать проект</app-button
+            >
+            <a
+              class="participant-project__link text-body-10"
+              [routerLink]="['/office/projects', project.id, 'edit']"
+              >Редактировать</a
+            >
+            } @else {
+            <a
+              class="participant-project__link participant-project__link--primary text-body-10"
+              [routerLink]="['/office/projects', project.id]"
+              >Открыть проект</a
+            >
+            }
+          </div>
+          } @else {
+          <p class="text-body-10 participant-project__description">
+            Участие подтверждено. Вы сможете выбрать или создать проект для чемпионата на следующем шаге.
+          </p>
+          }
+        </article>
+        }
         <div class="news">
           @if (program.isUserManager) {
           <app-news-form class="news__form" (addNews)="onAddNews($event)"></app-news-form>

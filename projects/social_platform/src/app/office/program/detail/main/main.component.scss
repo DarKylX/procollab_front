@@ -154,6 +154,73 @@
   }
 }
 
+.participant-project {
+  padding: 24px;
+  margin-top: 20px;
+  background-color: var(--light-white);
+  border: 0.5px solid var(--medium-grey-for-outline);
+  border-radius: var(--rounded-lg);
+
+  &__head,
+  &__actions {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  &__title,
+  &__name {
+    color: var(--black);
+  }
+
+  &__status,
+  &__description,
+  &__submitted-at {
+    margin-top: 6px;
+    color: var(--dark-grey);
+  }
+
+  &__badge {
+    flex-shrink: 0;
+    padding: 4px 10px;
+    color: var(--dark-grey);
+    background-color: var(--white);
+    border: 0.5px solid var(--medium-grey-for-outline);
+    border-radius: var(--rounded-lg);
+
+    &--success {
+      color: var(--white);
+      background-color: var(--green);
+      border-color: var(--green);
+    }
+  }
+
+  &__body {
+    margin-top: 16px;
+  }
+
+  &__actions {
+    justify-content: flex-start;
+    margin-top: 18px;
+  }
+
+  &__link {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+
+    &--primary {
+      font-weight: 600;
+    }
+  }
+
+  &__error {
+    margin-top: 12px;
+    color: var(--red);
+  }
+}
+
 .news {
   &__form {
     display: block;
