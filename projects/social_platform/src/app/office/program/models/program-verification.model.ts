@@ -55,6 +55,7 @@ export interface ProgramVerificationRequest {
   submittedBy?: VerificationPerson | null;
   decidedBy?: VerificationPerson | null;
   reviewedBy?: VerificationPerson | null;
+  requestsHistory?: ProgramVerificationRequest[];
   program?: Partial<Program> & {
     verificationStatus?: VerificationStatus;
   };
