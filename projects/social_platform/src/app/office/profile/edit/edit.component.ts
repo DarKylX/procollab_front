@@ -53,6 +53,11 @@ import { generateOptionsList } from "@utils/generate-options-list";
 import { UploadFileComponent } from "@ui/components/upload-file/upload-file.component";
 import { navProfileItems } from "projects/core/src/consts/navigation/nav-profile-items.const";
 import { FileItemComponent } from "@ui/components/file-item/file-item.component";
+import {
+  formatRussianPhone,
+  normalizeRussianPhone,
+  RUSSIAN_PHONE_PATTERN,
+} from "@utils/phone-format";
 
 dayjs.extend(cpf);
 
@@ -124,7 +129,7 @@ export class ProfileEditComponent implements OnInit, OnDestroy, AfterViewInit {
       userType: [0],
       birthday: ["", [Validators.required]],
       city: ["", [Validators.required, Validators.maxLength(100)]],
-      phoneNumber: ["", Validators.maxLength(12)],
+      phoneNumber: ["", [Validators.maxLength(18), Validators.pattern(RUSSIAN_PHONE_PATTERN)]],
       additionalRole: [null],
       coverImageAddress: [null],
 
@@ -228,7 +233,7 @@ export class ProfileEditComponent implements OnInit, OnDestroy, AfterViewInit {
         birthday: profile.birthday ? dayjs(profile.birthday).format("DD.MM.YYYY") : "",
         city: profile.city ?? "",
         coverImageAddress: profile.coverImageAddress ?? "",
-        phoneNumber: profile.phoneNumber ?? "",
+        phoneNumber: formatRussianPhone(profile.phoneNumber),
         additionalRole: profile.v2Speciality?.name ?? "",
         speciality: profile.speciality ?? "",
         skills: profile.skills ?? [],
@@ -1072,7 +1077,7 @@ export class ProfileEditComponent implements OnInit, OnDestroy, AfterViewInit {
       name => this.profileForm.get(name)?.valid
     );
 
-    if (!mainFieldsValid || this.profileFormSubmitting) {
+    if (!mainFieldsValid || this.profileForm.invalid || this.profileFormSubmitting) {
       this.isModalErrorSkillsChoose.set(true);
       return;
     }
@@ -1103,10 +1108,7 @@ export class ProfileEditComponent implements OnInit, OnDestroy, AfterViewInit {
         ? dayjs(this.profileForm.value.birthday, "DD.MM.YYYY").format("YYYY-MM-DD")
         : undefined,
       skillsIds: this.profileForm.value.skills.map((s: Skill) => s.id),
-      phoneNumber:
-        typeof this.profileForm.value.phoneNumber === "string"
-          ? this.profileForm.value.phoneNumber.replace(/^([87])/, "+7")
-          : this.profileForm.value.phoneNumber,
+      phoneNumber: normalizeRussianPhone(this.profileForm.value.phoneNumber),
     };
 
     console.log(newProfile);

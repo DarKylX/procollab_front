@@ -11,6 +11,7 @@
     (blur)="onBlur()"
     [disabled]="disabled"
     [placeholder]="placeholder"
+    [attr.maxlength]="maxLength ?? null"
     class="text-body-12 field__input"
     [class.field__input--small]="size === 'small'"
     [class.field__input--big]="size === 'big'"

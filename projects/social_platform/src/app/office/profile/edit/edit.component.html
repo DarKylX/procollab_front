@@ -273,6 +273,11 @@
             <div class="text-body-10 error">
               {{ errorMessage.VALIDATION_REQUIRED }}
             </div>
+            } @if (aboutMe | controlError: "maxlength") {
+            <div class="text-body-10 error">
+              {{ errorMessage.VALIDATION_TOO_LONG }}
+              {{ aboutMe.errors?.["maxlength"]?.requiredLength }} символов
+            </div>
             }
           </fieldset>
           }
@@ -326,10 +331,9 @@
               <app-input
                 size="big"
                 id="phoneNumber"
-                mask="0-000-000-00-00"
                 [error]="phoneNumber | controlError"
-                type="text"
-                placeholder="+79030195823"
+                type="tel"
+                placeholder="+7 (___) ___-__-__"
                 formControlName="phoneNumber"
                 style="flex-grow: 1"
               ></app-input>

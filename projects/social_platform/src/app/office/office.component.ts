@@ -1,6 +1,6 @@
 /** @format */
 
-import { Component, OnDestroy, OnInit, signal, Signal } from "@angular/core";
+import { Component, HostListener, OnDestroy, OnInit, signal, Signal } from "@angular/core";
 import { IndustryService } from "@services/industry.service";
 import { forkJoin, map, noop, Subscription } from "rxjs";
 import { ActivatedRoute, Router, RouterOutlet, RouterLink } from "@angular/router";
@@ -10,7 +10,7 @@ import { User } from "@auth/models/user.model";
 import { ChatService } from "@services/chat.service";
 import { SnackbarComponent } from "@ui/components/snackbar/snackbar.component";
 import { DeleteConfirmComponent } from "@ui/components/delete-confirm/delete-confirm.component";
-import { ButtonComponent } from "@ui/components";
+import { ButtonComponent, IconComponent } from "@ui/components";
 import { ModalComponent } from "@ui/components/modal/modal.component";
 import { NavComponent } from "./features/nav/nav.component";
 import { ProfileControlPanelComponent, SidebarComponent } from "@uilib";
@@ -20,6 +20,17 @@ import { toSignal } from "@angular/core/rxjs-interop";
 import { ProgramSidebarCardComponent } from "./features/program-sidebar-card/program-sidebar-card.component";
 import { ProgramService } from "./program/services/program.service";
 import { Program } from "./program/models/program.model";
+import { ProjectRatingService } from "./program/services/project-rating.service";
+import { NotificationService } from "@services/notification.service";
+import type { Notification } from "@models/notification.model";
+
+type OfficeNavItem = {
+  name: string;
+  icon: string;
+  link: string;
+  isExternal?: boolean;
+  isActive?: boolean;
+};
 
 /**
  * Главный компонент офиса - корневой компонент рабочего пространства
@@ -48,6 +59,7 @@ import { Program } from "./program/models/program.model";
     SnackbarComponent,
     AsyncPipe,
     RouterLink,
+    IconComponent,
     ProfileControlPanelComponent,
     ProgramSidebarCardComponent,
   ],
@@ -60,8 +72,13 @@ export class OfficeComponent implements OnInit, OnDestroy {
     private readonly inviteService: InviteService,
     private readonly router: Router,
     public readonly chatService: ChatService,
-    private readonly programService: ProgramService
+    private readonly programService: ProgramService,
+    private readonly projectRatingService: ProjectRatingService,
+    private readonly notificationService: NotificationService
   ) {}
+
+  readonly notifications$ = this.notificationService.notifications$;
+  readonly notificationUnreadCount$ = this.notificationService.unreadCount$;
 
   invites: Signal<Invite[]> = toSignal(
     this.route.data.pipe(
@@ -75,31 +92,26 @@ export class OfficeComponent implements OnInit, OnDestroy {
   waitVerificationModal = false;
   waitVerificationAccepted = false;
 
-  showRegisteredProgramModal = signal<boolean>(false);
-
-  registeredProgramToShow?: Program | null = null;
-
   inviteErrorModal = false;
 
   protected readonly programs = signal<Program[]>([]);
+  protected showExpertEvaluationsLink = false;
+  protected mobileDrawerOpen = false;
 
-  navItems: {
-    name: string;
-    icon: string;
-    link: string;
-    isExternal?: boolean;
-    isActive?: boolean;
-  }[] = [];
+  navItems: OfficeNavItem[] = [];
 
   subscriptions$: Subscription[] = [];
 
   ngOnInit(): void {
+    this.notificationService.refreshSummary();
+
     const globalSubscription$ = forkJoin([this.industryService.getAll()]).subscribe(noop);
     this.subscriptions$.push(globalSubscription$);
 
     const profileSub$ = this.authService.profile.subscribe(profile => {
       this.profile = profile;
       this.buildNavItems(profile);
+      this.setupExpertEvaluationEntry(profile);
 
       if (!this.profile.doesCompleted()) {
         this.router
@@ -131,21 +143,62 @@ export class OfficeComponent implements OnInit, OnDestroy {
       this.waitVerificationAccepted = true;
     }
 
-    const programsSub$ = this.programService.getActualPrograms().subscribe({
-      next: ({ results: programs }) => {
-        const resultPrograms = programs.filter(
-          (program: Program) => Date.now() < Date.parse(program.datetimeRegistrationEnds)
-        );
-        this.programs.set(resultPrograms.slice(0, 3));
-        this.tryShowRegisteredProgramModal();
-      },
-    });
+    if (!this.router.url.split("?")[0].startsWith("/office/program")) {
+      const programsSub$ = this.programService.getActualPrograms().subscribe({
+        next: ({ results: programs }) => {
+          const resultPrograms = programs.filter(
+            (program: Program) => Date.now() < Date.parse(program.datetimeRegistrationEnds)
+          );
+          this.programs.set(resultPrograms.slice(0, 3));
+        },
+      });
 
-    this.subscriptions$.push(programsSub$);
+      this.subscriptions$.push(programsSub$);
+    }
   }
 
   ngOnDestroy(): void {
     this.subscriptions$.forEach($ => $.unsubscribe());
+  }
+
+  @HostListener("document:keydown.escape")
+  onEscape(): void {
+    this.closeMobileDrawer();
+  }
+
+  protected openMobileDrawer(): void {
+    this.mobileDrawerOpen = true;
+  }
+
+  protected closeMobileDrawer(): void {
+    this.mobileDrawerOpen = false;
+  }
+
+  protected onMobileNavClick(): void {
+    this.closeMobileDrawer();
+  }
+
+  protected navItemUrl(item: OfficeNavItem): string {
+    return item.link.startsWith("/") ? item.link : `/office/${item.link}`;
+  }
+
+  protected isMobileNavItemActive(item: OfficeNavItem): boolean {
+    const currentUrl = this.router.url.split("?")[0].split("#")[0];
+
+    if (this.isProjectRatingRoute(currentUrl)) {
+      return item.link === "expert/evaluations";
+    }
+
+    const itemUrl = this.navItemUrl(item);
+
+    return currentUrl === itemUrl || currentUrl.startsWith(`${itemUrl}/`);
+  }
+
+  protected profileInitials(user: User): string {
+    const firstNameInitial = user.firstName?.trim().charAt(0) ?? "";
+    const lastNameInitial = user.lastName?.trim().charAt(0) ?? "";
+
+    return `${firstNameInitial}${lastNameInitial}` || "P";
   }
 
   onAcceptWaitVerification() {
@@ -192,38 +245,35 @@ export class OfficeComponent implements OnInit, OnDestroy {
       );
   }
 
-  private tryShowRegisteredProgramModal(): void {
-    const programs = this.programs();
-    if (!programs || programs.length === 0) return;
+  onNotificationClick(notification: Notification): void {
+    const navigate = () => {
+      if (notification.url) {
+        this.router
+          .navigateByUrl(notification.url)
+          .then(() => console.debug("Route changed from OfficeComponent notification"));
+      }
+    };
 
-    const memberProgram = programs.find(p => p.isUserMember);
-    if (!memberProgram) return;
-
-    if (this.hasSeenRegisteredProgramModal(memberProgram.id)) return;
-
-    this.registeredProgramToShow = memberProgram;
-    this.showRegisteredProgramModal.set(true);
-    this.markSeenRegisteredProgramModal(memberProgram.id);
-  }
-
-  private getRegisteredProgramSeenKey(programId: number): string {
-    return `program_${this.profile?.id}_registered_modal_seen_${programId}`;
-  }
-
-  private hasSeenRegisteredProgramModal(programId: number): boolean {
-    try {
-      return !!localStorage.getItem(this.getRegisteredProgramSeenKey(programId));
-    } catch (e) {
-      return false;
+    if (notification.is_read) {
+      navigate();
+      return;
     }
+
+    this.notificationService.markRead(notification.id).subscribe({
+      next: navigate,
+      error: navigate,
+    });
   }
 
-  private markSeenRegisteredProgramModal(programId: number): void {
-    try {
-      localStorage.setItem(this.getRegisteredProgramSeenKey(programId), "1");
-    } catch (e) {
-      // ignore storage errors
-    }
+  onMarkAllNotificationsRead(): void {
+    this.notificationService.markAllRead().subscribe();
+  }
+
+  onOpenNotificationsPage(): void {
+    this.closeMobileDrawer();
+    this.router
+      .navigateByUrl("/office/notifications")
+      .then(() => console.debug("Route changed from OfficeComponent notifications"));
   }
 
   private buildNavItems(profile: User) {
@@ -232,13 +282,50 @@ export class OfficeComponent implements OnInit, OnDestroy {
       { name: "новости", icon: "feed", link: "feed" },
       { name: "проекты", icon: "projects", link: "projects" },
       { name: "участники", icon: "people-bold", link: "members" },
-      { name: "программы", icon: "program", link: "program" },
-      ...(profile.isStaff
-        ? [{ name: "модерация", icon: "check", link: "admin/moderation" }]
-        : []),
+      { name: "чемпионаты", icon: "program", link: "program" },
+      { name: "уведомления", icon: "bell", link: "notifications" },
       { name: "курсы", icon: "trajectories", link: "courses" },
-      { name: "вакансии", icon: "search-sidebar", link: "vacancies" },
-      // { name: "чаты", icon: "message", link: "chats" },
     ];
+
+    if (this.showExpertEvaluationsLink) {
+      this.navItems.splice(5, 0, {
+        name: "оценка проектов",
+        icon: "task",
+        link: "expert/evaluations",
+      });
+    }
+
+    if (profile.isStaff) {
+      this.navItems.splice(6, 0, {
+        name: "модерация",
+        icon: "deadline",
+        link: "admin/moderation",
+      });
+    }
+  }
+
+  private setupExpertEvaluationEntry(profile: User): void {
+    if (profile.isStaff) {
+      this.showExpertEvaluationsLink = true;
+      this.buildNavItems(profile);
+      return;
+    }
+
+    const expertProgramsSub$ = this.projectRatingService.getExpertEvaluationPrograms().subscribe({
+      next: programs => {
+        this.showExpertEvaluationsLink = programs.length > 0;
+        this.buildNavItems(profile);
+      },
+      error: () => {
+        this.showExpertEvaluationsLink = false;
+        this.buildNavItems(profile);
+      },
+    });
+
+    this.subscriptions$.push(expertProgramsSub$);
+  }
+
+  private isProjectRatingRoute(url: string): boolean {
+    return /^\/office\/program\/[^/]+\/projects-rating/.test(url);
   }
 }

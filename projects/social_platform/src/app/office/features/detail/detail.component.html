@@ -3,28 +3,33 @@
 <div class="detail">
   <div class="detail__body">
     @if (info()) {
-    <div class="info detail__section detail__info">
+    <div
+      class="info detail__section detail__info"
+      [class.info--program-card]="listType === 'program'"
+    >
       <div class="info__cover" [class.info__cover--program]="listType === 'program'">
-        @if (appWidth > 920) {
+        @if (shouldRenderDetailCoverImage) {
         <img
           class="info__cover"
           [class.info__cover--program]="listType === 'program'"
-          [src]="
-            info().coverImageAddress
-              ? info().coverImageAddress
-              : '/assets/images/office/profile/detail/cover.png'
-          "
+          draggable="false"
+          data-no-image-search="true"
+          [src]="detailCoverImageAddress"
           alt="cover"
         />
         }
 
+        @if (!(listType === "program" && hasProgramCoverImageAddress)) {
         <div class="info__cover--mobile"></div>
+        }
         <div
           class="info__avatar"
           (click)="redirectDetailInfo()"
           [class.info__avatar--program]="listType === 'program'"
           [style.width]="
-            appWidth < 920
+            listType === 'program' && appWidth < 768
+              ? '76px'
+              : appWidth < 920
               ? '105px'
               : listType === 'project' || listType === 'profile'
               ? '110px'
@@ -41,7 +46,13 @@
             [onlineBadgeBorder]="0"
             [onlineBadgeOffset]="8"
             [size]="
-              appWidth < 920 ? 105 : listType === 'project' || listType === 'profile' ? 110 : 123
+              listType === 'program' && appWidth < 768
+                ? 76
+                : appWidth < 920
+                ? 105
+                : listType === 'project' || listType === 'profile'
+                ? 110
+                : 123
             "
             [isOnline]="cache[info().id] !== undefined ? cache[info().id] : info().isOnline"
           ></app-avatar>
@@ -63,7 +74,66 @@
         </div>
       </div>
 
+      @if (listType === "program") {
+      <section
+        class="info__program-summary"
+        [class.info__program-summary--guest]="isNotRegisteredProgramGuest"
+      >
+        <div class="info__program-title-row">
+          <h1 class="info__program-title">{{ info().name }}</h1>
+          <div class="info__program-badges">
+            @if (isProgramParticipant) {
+            <span class="info__participant-chip">Вы участвуете</span>
+            } @else if (isProgramRegistrationOpen) {
+            <span class="info__status-chip">Регистрация открыта</span>
+            } @if (isProgramVerified) {
+            <span class="info__verified-chip">
+              <span aria-hidden="true">✓</span>
+              Официальная компания
+            </span>
+            } @else if (shouldShowVerificationStatusChip) {
+            <span class="info__unverified-chip">
+              <span aria-hidden="true">!</span>
+              {{ verificationStatusLabel }}
+            </span>
+            } @if (!isNotRegisteredProgramGuest && !isProgramParticipant) {
+            <app-program-status-badge
+              [status]="programStatus"
+              size="small"
+            ></app-program-status-badge>
+            }
+          </div>
+        </div>
+
+        @if (info().shortDescription && !isNotRegisteredProgramGuest) {
+        <p class="info__program-subtitle">{{ info().shortDescription }}</p>
+        }
+
+        <dl class="info__program-meta">
+          <div>
+            <dt>Город</dt>
+            <dd>{{ info().city || "онлайн" }}</dd>
+          </div>
+          <div>
+            <dt>Регистрация до</dt>
+            <dd>{{ info().datetimeRegistrationEnds | date: "d MMMM yyyy" }}</dd>
+          </div>
+          <div>
+            <dt>Прием проектов до</dt>
+            <dd>{{ info().datetimeProjectSubmissionEnds | date: "d MMMM yyyy" }}</dd>
+          </div>
+        </dl>
+
+        @if (isNotRegisteredProgramGuest) {
+        <div class="info__program-action-panel">
+          <ng-container *ngTemplateOutlet="programTpl"></ng-container>
+        </div>
+        }
+      </section>
+      }
+
       <div class="info__body">
+        @if (!(listType === "program" && isNotRegisteredProgramGuest)) {
         <div class="info__actions">
           <ng-container
             *ngTemplateOutlet="
@@ -71,6 +141,7 @@
             "
           ></ng-container>
         </div>
+        }
 
         <ng-template #programTpl>
           @if (userType() !== undefined) { @if ((isProjectsPage || isProjectsRatingPage) && appWidth
@@ -89,10 +160,11 @@
           <app-button
             appearance="outline"
             size="small"
-            [disabled]="!info().links?.length"
             class="info__contacts"
+            [class.info__nav-action--disabled]="!contactLinks.length"
+            [attr.title]="!contactLinks.length ? 'контакты не добавлены организаторами' : null"
             customTypographyClass="text-body-12"
-            (click)="isContactsModalOpen = true"
+            (click)="contactLinks.length ? isContactsModalOpen = true : preventDisabledLink($event)"
           >
             <i appIcon icon="phone" appSquare="12"></i>
           </app-button>
@@ -106,47 +178,60 @@
               title="контакты"
               icon="phone"
               [links]="contactLinks"
+              emptyText="Контакты пока не добавлены"
             ></app-program-links>
           </app-modal>
-          } @else {
+          } @else { @if (!isNotRegisteredProgramGuest && appWidth > 920) {
+          <a [routerLink]="'/office/program/' + info().id" class="info__home">
+            <app-button
+              [appearance]="
+                !isProjectsPage && !isMembersPage && !isProjectsRatingPage ? 'inline' : 'outline'
+              "
+              size="medium"
+              customTypographyClass="text-body-12"
+            >
+              главная
+            </app-button>
+          </a>
+          }
+
           <div class="info__primary-action">
-            @if (!isUserMember && !isUserManager) { @if (info().name.includes("Кейс-чемпионат MIR"))
-            {
+            @if (!isUserMember && !isUserManager && !isUserExpert && !isPlatformAdmin) { @if (info().name.includes("Кейс-чемпионат MIR")
+            && shouldUseExternalRegistrationLink) {
             <a
               (click)="checkPrograRegistrationEnded($event)"
               href="https://case-champ.ru/corporate#rec1176757836"
             >
-              <app-button appearance="outline" size="medium" customTypographyClass="text-body-12">
-                зарегистрироваться
+              <app-button size="medium" customTypographyClass="text-body-12">
+                {{ isNotRegisteredProgramGuest ? "Зарегистрироваться" : "зарегистрироваться" }}
               </app-button>
             </a>
-            } @else if (info().registrationLink) {
+            } @else if (shouldUseExternalRegistrationLink) {
             <a (click)="checkPrograRegistrationEnded($event)" [href]="info().registrationLink">
-              <app-button appearance="outline" size="medium" customTypographyClass="text-body-12">
-                зарегистрироваться
+              <app-button size="medium" customTypographyClass="text-body-12">
+                {{ isNotRegisteredProgramGuest ? "Зарегистрироваться" : "зарегистрироваться" }}
               </app-button>
             </a>
             } @else {
-            <a (click)="checkPrograRegistrationEnded($event)">
-              <app-button appearance="outline" size="medium" customTypographyClass="text-body-12">
-                зарегистрироваться
+            <a (click)="openRegistrationModal($event)">
+              <app-button size="medium" customTypographyClass="text-body-12">
+                {{ isNotRegisteredProgramGuest ? "Зарегистрироваться" : "зарегистрироваться" }}
               </app-button>
             </a>
-            } } @if (isUserMember && !isUserManager && !isUserExpert) {
+            } } @if (isUserMember && !isUserManager && !isUserExpert && !isPlatformAdmin && isProjectAssigned) {
             <app-button
               [size]="appWidth > 920 ? 'medium' : 'big'"
-              [disabled]="!!submissionProjectDateExpired || isProjectAssigned"
-              [appearance]="isProjectAssigned ? 'outline' : 'inline'"
-              (click)="isProjectAssigned ? null : addNewProject()"
+              [disabled]="true"
+              appearance="outline"
               customTypographyClass="text-body-12 bar__add-project"
             >
-              <span>{{ isProjectAssigned ? "вы подали проект" : "создать заявку" }}</span>
-              <i appIcon icon="plus" appSquare="10"></i>
+              <span>проект выбран</span>
+              <i appIcon icon="circle-check" appSquare="12"></i>
             </app-button>
-            } @if ((isUserManager || isUserExpert) && isUserMember) {
+            } @if (isUserManager || isUserExpert || isPlatformAdmin) {
             <a [routerLink]="'/office/program/' + info().id + '/projects-rating'">
               <app-button
-                [appearance]="isProjectsRatingPage || appWidth < 920 ? 'inline' : 'outline'"
+                [appearance]="isProjectsRatingPage ? 'inline' : 'outline'"
                 [size]="appWidth > 920 ? 'medium' : 'big'"
                 customTypographyClass="text-body-12"
               >
@@ -156,83 +241,106 @@
             }
           </div>
 
-          <a [href]="info().presentationAddress" download="" target="_blank">
+          @if (false && (isUserManager || isPlatformAdmin)) {
+          <a [routerLink]="'/office/program/' + info().id + '/analytics'">
             <app-button
-              [disabled]="isUserManager"
+              [appearance]="isAnalyticsPage ? 'inline' : 'outline'"
+              [size]="appWidth > 920 ? 'medium' : 'small'"
+              customTypographyClass="text-body-12"
+            >
+              <span>Аналитика</span>
+            </app-button>
+          </a>
+          } @else {
+          <a
+            class="info__presentation"
+            [class.info__nav-action--disabled]="!programPresentationLink"
+            [attr.href]="programPresentationLink"
+            [attr.title]="!programPresentationLink ? 'положение не добавлено организаторами' : null"
+            download=""
+            target="_blank"
+            (click)="!programPresentationLink ? preventDisabledLink($event) : null"
+          >
+            <app-button
               appearance="outline"
               [size]="appWidth > 920 ? 'medium' : 'small'"
               customTypographyClass="text-body-12"
             >
-              @if (appWidth > 920) {
               <span>{{
                 info().name.includes("Технолидеры Будущего")
-                  ? "Каталог лучших стартапов 2022/23"
-                  : isUserManager
-                  ? "аналитика"
+                  ? "каталог лучших стартапов 2022/23"
                   : "положение"
               }}</span>
-              } @if (isUserManager && appWidth > 920) {
-              <app-tooltip
-                [text]="'Скоро здесь будет аналитика по включенности участников и проектов'"
-                [isVisible]="isTooltipVisible"
-                [position]="'right'"
-                [tooltipWidth]="180"
-                customClass="content__hint"
-                (show)="showTooltip()"
-                (hide)="hideTooltip()"
-              ></app-tooltip>
-              } @else {
               <i
                 appIcon
                 class="info__presentation-icon"
                 [icon]="appWidth > 920 ? 'arrow-down' : 'file'"
                 [appSquare]="appWidth > 920 ? '8' : '12'"
               ></i>
-              }
+            </app-button>
+          </a>
+          }
+
+          <a
+            class="info__details"
+            [class.info__nav-action--disabled]="!programLandingLink"
+            [attr.href]="programLandingLink"
+            [attr.title]="!programLandingLink ? 'сайт чемпионата не добавлен' : null"
+            target="_blank"
+            rel="noreferrer"
+            (click)="!programLandingLink ? preventDisabledLink($event) : null"
+          >
+            <app-button
+              appearance="outline"
+              [size]="appWidth > 920 ? 'medium' : 'small'"
+              customTypographyClass="text-body-12"
+            >
+              <span>сайт чемпионата</span>
             </app-button>
           </a>
 
-          @if (appWidth > 920) {
+          @if (!isNotRegisteredProgramGuest) { @if (appWidth > 920) {
           <div class="info__divider"></div>
           } @if (appWidth < 920) {
           <app-button
             appearance="outline"
             size="small"
-            [disabled]="!info().links?.length"
             class="info__contacts"
+            [class.info__nav-action--disabled]="!contactLinks.length"
+            [attr.title]="!contactLinks.length ? 'контакты не добавлены организаторами' : null"
             customTypographyClass="text-body-12"
-            (click)="isContactsModalOpen = true"
+            (click)="contactLinks.length ? isContactsModalOpen = true : preventDisabledLink($event)"
           >
             <i appIcon icon="phone" appSquare="12"></i>
+            <span>контакты</span>
           </app-button>
-          } @if (isUserManager || (isUserExpert && appWidth > 920)) {
-          <a [routerLink]="'/office/program/' + info().id + '/projects'">
+          } @if (canViewProgramLists && appWidth > 920) {
+          <a [routerLink]="'/office/program/' + info().id + '/projects'" class="info__projects">
             <app-button
               [appearance]="isProjectsPage ? 'inline' : 'outline'"
               size="medium"
-              [disabled]="isUserExpert && !isUserManager"
               customTypographyClass="text-body-12"
             >
               проекты-участники
             </app-button>
           </a>
-          } @if (!isUserManager && !isUserExpert && appWidth > 920) {
-          <a class="info__more">
-            <app-button
-              appearance="outline"
-              [disabled]="true"
-              size="medium"
-              customTypographyClass="text-body-12"
-            >
-              узнать подробнее
-            </app-button>
-          </a>
-          } @if (isUserManager || (isUserExpert && appWidth > 920)) {
+          } @if (appWidth > 920) {
+          <app-button
+            appearance="outline"
+            size="medium"
+            class="info__contacts"
+            [class.info__nav-action--disabled]="!contactLinks.length"
+            [attr.title]="!contactLinks.length ? 'контакты не добавлены организаторами' : null"
+            customTypographyClass="text-body-12"
+            (click)="contactLinks.length ? isContactsModalOpen = true : preventDisabledLink($event)"
+          >
+            контакты
+          </app-button>
+          } @if (canViewProgramLists && appWidth > 920) {
           <a [routerLink]="'/office/program/' + info().id + '/members'" class="info__members">
             <app-button
               [appearance]="isMembersPage ? 'inline' : 'outline'"
               size="medium"
-              [disabled]="isUserExpert && !isUserManager"
               customTypographyClass="text-body-12"
             >
               участники
@@ -242,15 +350,16 @@
           <app-button
             appearance="outline"
             size="big"
-            [disabled]="!info().materials?.length"
             class="info__materials"
             [class.info__materials--full]="isUserManager || isUserExpert"
+            [class.info__nav-action--disabled]="!info().materials?.length"
+            [attr.title]="!info().materials?.length ? 'материалы не добавлены организаторами' : null"
             customTypographyClass="text-body-12"
-            (click)="isMaterialsModalOpen = true"
+            (click)="info().materials?.length ? isMaterialsModalOpen = true : preventDisabledLink($event)"
           >
             материалы
           </app-button>
-          } @if (!isUserManager && !isUserExpert) {
+          } @if (!isUserManager && !isUserExpert && !isPlatformAdmin && isUserMember) {
           <app-button
             (click)="
               info().courses?.length
@@ -258,13 +367,15 @@
                 : null
             "
             appearance="outline"
-            [disabled]="!info().courses?.length"
+            class="info__course"
+            [class.info__nav-action--disabled]="!info().courses?.length"
+            [attr.title]="!info().courses?.length ? 'у кейс-чемпионата нет курса' : null"
             [size]="appWidth > 920 ? 'medium' : 'big'"
             customTypographyClass="text-body-12"
           >
             {{ appWidth > 920 ? "перейти в курс" : "курс" }}
           </app-button>
-          }
+          } }
 
           <app-modal
             [open]="isAssignProjectToProgramModalOpen()"
@@ -326,6 +437,7 @@
               title="контакты"
               icon="phone"
               [links]="contactLinks"
+              emptyText="Контакты пока не добавлены"
             ></app-program-links>
           </app-modal>
 
@@ -338,6 +450,7 @@
               title="материалы"
               icon="book"
               [links]="materialLinks"
+              emptyText="Материалы пока не добавлены"
             ></app-program-links>
           </app-modal>
           } }
@@ -631,7 +744,7 @@
                   <div class="project__item--info">
                     <app-avatar [url]="project.imageAddress" [size]="40"></app-avatar>
                     <p class="text-body-12">
-                      {{ project.name ?? "Проект без названия" | truncate: 20 }}
+                      {{ (project.name || "Проект без названия") | truncate: 20 }}
                     </p>
                   </div>
                   <app-input
@@ -822,4 +935,471 @@
     </div>
     }
   </div>
+
+  @if (isRegistrationModalOpen) {
+  <section
+    class="program-registration-modal"
+    aria-modal="true"
+    role="dialog"
+    aria-labelledby="program-registration-title"
+    (click)="closeRegistrationModal()"
+  >
+    <form
+      class="program-registration-modal__dialog"
+      [formGroup]="registrationForm"
+      (ngSubmit)="submitRegistration()"
+      (click)="$event.stopPropagation()"
+    >
+      <button
+        class="program-registration-modal__close"
+        type="button"
+        aria-label="Закрыть"
+        (click)="closeRegistrationModal()"
+      >
+        <i appIcon icon="cross" appSquare="16"></i>
+      </button>
+
+      <header class="program-registration-modal__header">
+        <h2 id="program-registration-title">Регистрация на чемпионат</h2>
+        <p class="program-registration-modal__program-name">{{ info().name }}</p>
+        <p class="program-registration-modal__description">
+          Заполните форму, чтобы принять участие в кейс-чемпионате.
+        </p>
+      </header>
+
+      <dl class="program-registration-modal__info">
+        <div>
+          <dt>Регистрация до</dt>
+          <dd>{{ info().datetimeRegistrationEnds | date: "d MMMM yyyy" }}</dd>
+        </div>
+        <div>
+          <dt>Прием проектов до</dt>
+          <dd>{{ info().datetimeProjectSubmissionEnds | date: "d MMMM yyyy" }}</dd>
+        </div>
+        <div>
+          <dt>Формат</dt>
+          <dd>{{ programFormatLabel }}</dd>
+        </div>
+        <div>
+          <dt>Город</dt>
+          <dd>{{ info().city || "онлайн" }}</dd>
+        </div>
+      </dl>
+
+      @if (isRegistrationModalLoading) {
+      <div class="program-registration-modal__loading">Загружаем форму регистрации...</div>
+      } @else {
+      <div class="program-registration-modal__content">
+        <div class="program-registration-modal__fields">
+          @for (field of registrationFields; track field.key) {
+          <div
+            class="program-registration-field"
+            [class.program-registration-field--checkbox]="field.type === 'checkbox'"
+            [class.program-registration-field--invalid]="isRegistrationFieldInvalid(field)"
+          >
+            @if (field.type !== "checkbox") {
+            <label class="program-registration-field__label" [for]="'registration-' + field.key">
+              {{ field.label }}
+              @if (field.required) {
+              <span>*</span>
+              }
+            </label>
+            } @if (field.type === "textarea") {
+            <textarea
+              [id]="'registration-' + field.key"
+              [formControlName]="field.key"
+              [placeholder]="field.placeholder"
+              rows="4"
+            ></textarea>
+            } @else if (field.type === "select") {
+            <select [id]="'registration-' + field.key" [formControlName]="field.key">
+              <option value="" disabled>Выберите вариант</option>
+              @for (option of field.options; track option) {
+              <option [value]="option">{{ option }}</option>
+              }
+            </select>
+            } @else if (field.type === "radio") {
+            <div class="program-registration-field__options">
+              @for (option of field.options; track option) {
+              <label class="program-registration-field__option">
+                <input type="radio" [value]="option" [formControlName]="field.key" />
+                <span>{{ option }}</span>
+              </label>
+              }
+            </div>
+            } @else if (field.type === "checkbox") {
+            <label class="program-registration-field__checkbox">
+              <input type="checkbox" [formControlName]="field.key" />
+              <span>
+                {{ field.label }}
+                @if (field.required) {
+                <b>*</b>
+                } @if (field.hint) {
+                <small>{{ field.hint }}</small>
+                }
+              </span>
+            </label>
+            } @else if (field.type === "file") {
+            <div class="program-registration-field__file">
+              <input type="hidden" [formControlName]="field.key" />
+              <input
+                [id]="'registration-' + field.key"
+                type="file"
+                (change)="onRegistrationFileSelected($event, field)"
+              />
+              @if (registrationFileUploading[field.key]) {
+              <span>Файл загружается...</span>
+              } @else if (getRegistrationFileName(field)) {
+              <span>{{ getRegistrationFileName(field) }}</span>
+              }
+            </div>
+            } @else {
+            <input
+              [id]="'registration-' + field.key"
+              [formControlName]="field.key"
+              [placeholder]="field.placeholder"
+              [type]="getRegistrationInputType(field)"
+              (input)="onRegistrationTextInput($event, field)"
+            />
+            } @if (field.hint && field.type !== "checkbox") {
+            <p class="program-registration-field__hint">{{ field.hint }}</p>
+            } @if (getRegistrationFieldError(field)) {
+            <p class="program-registration-field__error">{{ getRegistrationFieldError(field) }}</p>
+            }
+          </div>
+          }
+        </div>
+
+        <div
+          class="program-registration-legal"
+          [class.program-registration-legal--invalid]="isLegalConsentInvalid()"
+        >
+          <label class="program-registration-legal__checkbox">
+            <input type="checkbox" formControlName="legalConsent" />
+            <span>
+              Я соглашаюсь на обработку персональных данных и принимаю условия участия в
+              кейс-чемпионате.
+            </span>
+          </label>
+          <div class="program-registration-legal__links">
+            @if (getLegalDocumentHref("privacy_policy")) {
+            <a [href]="getLegalDocumentHref('privacy_policy')" target="_blank" rel="noopener">
+              {{
+                getLegalDocumentTitle(
+                  "privacy_policy",
+                  "Политика обработки персональных данных PROCOLLAB"
+                )
+              }}
+            </a>
+            } @else {
+            <span>Политика обработки персональных данных PROCOLLAB</span>
+            } @if (getLegalDocumentHref("participant_consent")) {
+            <a [href]="getLegalDocumentHref('participant_consent')" target="_blank" rel="noopener">
+              {{ getLegalDocumentTitle("participant_consent", "Согласие на обработку данных") }}
+            </a>
+            } @else {
+            <span>Согласие на обработку данных</span>
+            } @if (getParticipationRulesHref()) {
+            <a [href]="getParticipationRulesHref()" target="_blank" rel="noopener">
+              Правила участия в чемпионате
+            </a>
+            } @else if (getLegalDocumentHref("participation_terms")) {
+            <a [href]="getLegalDocumentHref('participation_terms')" target="_blank" rel="noopener">
+              {{ getLegalDocumentTitle("participation_terms", "Правила участия в чемпионате") }}
+            </a>
+            } @else {
+            <span>Правила участия в чемпионате</span>
+            }
+          </div>
+          <details class="program-registration-legal__details">
+            <summary>Кто увидит мои данные?</summary>
+            <p>
+              Данные используются для регистрации, участия в чемпионате, связи по организационным
+              вопросам, проверки и оценки проектов. Организатор чемпионата получает доступ только к
+              данным, необходимым для проведения данного чемпионата.
+            </p>
+          </details>
+          @if (isLegalConsentInvalid()) {
+          <p class="program-registration-field__error">Подтвердите согласие</p>
+          }
+        </div>
+
+        <aside class="program-registration-modal__next">
+          <h3>Что будет после регистрации</h3>
+          <ol>
+            <li>
+              <span>1</span>
+              <p>Вы будете зарегистрированы в чемпионате</p>
+            </li>
+            <li>
+              <span>2</span>
+              <p>Сможете создать проект или привязать существующий</p>
+            </li>
+            <li>
+              <span>3</span>
+              <p>Сможете присоединиться к проектной команде по приглашению</p>
+            </li>
+          </ol>
+        </aside>
+      </div>
+      } @if (registrationServerError) {
+      <p class="program-registration-modal__server-error">{{ registrationServerError }}</p>
+      }
+
+      <footer class="program-registration-modal__footer">
+        <app-button
+          type="button"
+          appearance="outline"
+          size="medium"
+          customTypographyClass="text-body-12"
+          (click)="closeRegistrationModal()"
+        >
+          Назад
+        </app-button>
+        <app-button
+          type="submit"
+          size="medium"
+          customTypographyClass="text-body-12"
+          [loader]="isRegistrationSubmitting"
+          [disabled]="registrationSubmitDisabled"
+        >
+          Зарегистрироваться
+        </app-button>
+      </footer>
+    </form>
+  </section>
+  } @if (isRegistrationSuccessModalOpen) {
+  <section
+    class="program-registration-modal program-registration-modal--success"
+    aria-modal="true"
+    role="dialog"
+    aria-labelledby="program-registration-success-title"
+    (click)="closeRegistrationSuccessModal()"
+  >
+    <div class="program-registration-modal__dialog" (click)="$event.stopPropagation()">
+      <button
+        class="program-registration-modal__close"
+        type="button"
+        aria-label="Закрыть"
+        (click)="closeRegistrationSuccessModal()"
+      >
+        <i appIcon icon="cross" appSquare="16"></i>
+      </button>
+
+      <div class="registration-success">
+        <header class="registration-success__header">
+          <span class="registration-success__check" aria-hidden="true">
+            <i appIcon icon="circle-check" appSquare="36"></i>
+          </span>
+          <div>
+            <h2 id="program-registration-success-title">Вы зарегистрированы</h2>
+            <p class="registration-success__program">{{ info().name }}</p>
+          </div>
+        </header>
+
+        <p class="registration-success__lead">Следующий шаг — выбрать проект для участия</p>
+
+        <div class="registration-success__actions">
+          <article class="registration-success-action">
+            <span class="registration-success-action__icon" aria-hidden="true">
+              <i appIcon icon="plus" appSquare="28"></i>
+            </span>
+            <div class="registration-success-action__body">
+              <h3>Создать новый проект</h3>
+              <p>Создайте проект на платформе и пригласите участников в команду проекта</p>
+            </div>
+            <button
+              type="button"
+              class="registration-success-action__button"
+              (click)="addNewProject()"
+            >
+              Создать проект
+            </button>
+          </article>
+
+          <article class="registration-success-action">
+            <span class="registration-success-action__icon" aria-hidden="true">
+              <i appIcon icon="people" appSquare="28"></i>
+            </span>
+            <div class="registration-success-action__body">
+              <h3>Привязать существующий проект</h3>
+              <p>Выберите проект, в команде которого вы уже состоите</p>
+            </div>
+            <button
+              type="button"
+              class="registration-success-action__button registration-success-action__button--outline"
+              (click)="openProjectPickerModal()"
+            >
+              Привязать проект
+            </button>
+          </article>
+
+          <article class="registration-success-action">
+            <span class="registration-success-action__icon" aria-hidden="true">
+              <i appIcon icon="mail" appSquare="28"></i>
+            </span>
+            <div class="registration-success-action__body">
+              <h3>Присоединиться к проектной команде</h3>
+              <p>Введите приглашение, если проектная команда уже работает над проектом</p>
+            </div>
+            <button
+              type="button"
+              class="registration-success-action__button registration-success-action__button--outline"
+              (click)="openProjectInviteCodeModal()"
+            >
+              Ввести приглашение
+            </button>
+          </article>
+        </div>
+
+        <footer class="registration-success__footer">
+          <button type="button" (click)="closeRegistrationSuccessModal()">Позже</button>
+        </footer>
+      </div>
+    </div>
+  </section>
+  } @if (isProjectPickerModalOpen) {
+  <section
+    class="program-registration-modal program-registration-modal--picker"
+    aria-modal="true"
+    role="dialog"
+    aria-labelledby="program-project-picker-title"
+    (click)="closeProjectPickerModal()"
+  >
+    <div class="program-registration-modal__dialog" (click)="$event.stopPropagation()">
+      <button
+        class="program-registration-modal__close"
+        type="button"
+        aria-label="Закрыть"
+        (click)="closeProjectPickerModal()"
+      >
+        <i appIcon icon="cross" appSquare="16"></i>
+      </button>
+
+      <div class="project-choice-modal">
+        <header class="project-choice-modal__header">
+          <h2 id="program-project-picker-title">Привязать существующий проект</h2>
+          <p>Выберите проект, команда которого будет участвовать в чемпионате.</p>
+        </header>
+
+        @if (availableProgramProjects.length) {
+        <div class="project-choice-modal__list">
+          @for (project of availableProgramProjects; track project.id) {
+          <label
+            class="project-choice-card"
+            [class.project-choice-card--selected]="selectedProjectId === project.id"
+            [class.project-choice-card--disabled]="project.leader !== profile?.id"
+          >
+            <input
+              type="radio"
+              name="program-project"
+              [value]="project.id"
+              [checked]="selectedProjectId === project.id"
+              [disabled]="project.leader !== profile?.id"
+              (change)="selectedProjectId = project.id"
+            />
+            <app-avatar [url]="project.imageAddress" [size]="44"></app-avatar>
+            <span>
+              <b>{{ project.name || "Проект без названия" }}</b>
+              <small>
+                {{
+                  project.leader === profile?.id
+                    ? "Вы лидер проекта"
+                    : "Привязать может только лидер проекта"
+                }}
+              </small>
+            </span>
+          </label>
+          }
+        </div>
+        } @else {
+        <div class="project-choice-modal__empty">
+          У вас пока нет доступных проектов для привязки.
+        </div>
+        } @if (projectBindingError) {
+        <p class="project-choice-modal__error">{{ projectBindingError }}</p>
+        }
+
+        <footer class="project-choice-modal__footer">
+          <button
+            type="button"
+            class="project-choice-modal__ghost"
+            (click)="backToRegistrationSuccessModal()"
+          >
+            Назад
+          </button>
+          <button
+            type="button"
+            class="project-choice-modal__primary"
+            [disabled]="!selectedProjectId || !canBindSelectedProject || isProjectBinding"
+            (click)="bindSelectedProjectToProgram()"
+          >
+            {{ isProjectBinding ? "Привязываем..." : "Привязать проект" }}
+          </button>
+        </footer>
+      </div>
+    </div>
+  </section>
+  } @if (isProjectInviteCodeModalOpen) {
+  <section
+    class="program-registration-modal program-registration-modal--invite"
+    aria-modal="true"
+    role="dialog"
+    aria-labelledby="program-project-invite-title"
+    (click)="closeProjectInviteCodeModal()"
+  >
+    <div class="program-registration-modal__dialog" (click)="$event.stopPropagation()">
+      <button
+        class="program-registration-modal__close"
+        type="button"
+        aria-label="Закрыть"
+        (click)="closeProjectInviteCodeModal()"
+      >
+        <i appIcon icon="cross" appSquare="16"></i>
+      </button>
+
+      <div class="project-choice-modal">
+        <header class="project-choice-modal__header">
+          <h2 id="program-project-invite-title">Присоединиться к проектной команде</h2>
+          <p>
+            Введите код приглашения в существующий проект. После вступления лидер сможет привязать
+            проект к чемпионату.
+          </p>
+        </header>
+
+        <label class="project-choice-modal__field">
+          <span>Код приглашения</span>
+          <input
+            type="text"
+            [value]="projectInviteCode"
+            placeholder="Например, INV-123"
+            (input)="projectInviteCode = $any($event.target).value"
+          />
+        </label>
+
+        @if (projectInviteCodeError) {
+        <p class="project-choice-modal__error">{{ projectInviteCodeError }}</p>
+        }
+
+        <footer class="project-choice-modal__footer">
+          <button
+            type="button"
+            class="project-choice-modal__ghost"
+            (click)="backToRegistrationSuccessModal()"
+          >
+            Назад
+          </button>
+          <button
+            type="button"
+            class="project-choice-modal__primary"
+            [disabled]="!projectInviteCode.trim() || isProjectInviteAccepting"
+            (click)="acceptProjectInviteCode()"
+          >
+            {{ isProjectInviteAccepting ? "Проверяем..." : "Продолжить" }}
+          </button>
+        </footer>
+      </div>
+    </div>
+  </section>
+  }
 </div>

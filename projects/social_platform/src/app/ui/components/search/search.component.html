@@ -1,6 +1,11 @@
 <!-- @format -->
 
-<div class="search" (click)="onSwitchSearch(true)" (clickOutside)="onClickOutside($event)">
+<div
+  class="search"
+  [class.search--static]="!openable"
+  (click)="onSwitchSearch(true)"
+  (clickOutside)="onClickOutside($event)"
+>
   <i
     class="search__icon"
     [class.search__icon--open]="open"
@@ -18,6 +23,7 @@
         class="text-body-12"
         type="text"
         [placeholder]="placeholder"
+        [value]="value"
         (input)="onInput($event)"
       />
     </div>
