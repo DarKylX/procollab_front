@@ -67,6 +67,8 @@ export class User {
   skillsIds!: number[];
   isOnline!: boolean;
   isActive!: boolean;
+  isStaff!: boolean;
+  isSuperuser!: boolean;
   isMospolytechStudent?: boolean;
   studyGroup?: string;
   progress?: number;
@@ -139,6 +141,8 @@ export class User {
       timeUpdated: "",
       verificationDate: "",
       isSubscribed: false,
+      isStaff: false,
+      isSuperuser: false,
       isAutopayAllowed: false,
       lastSubscribeDate: "",
       subscriptionDateOver: null,

@@ -1,0 +1,343 @@
+<!-- @format -->
+
+<main class="verification-detail">
+  @if (isLoading()) {
+  <div class="verification-detail__loading">
+    <app-loader color="var(--accent)" size="28px"></app-loader>
+  </div>
+  } @else {
+  @if (request(); as item) {
+  <header class="verification-detail__header">
+    <div>
+      <a routerLink="/office/admin/moderation/verification">← К заявкам</a>
+      <h1>Проверка заявки на верификацию</h1>
+      <p>Заявка №{{ item.id }} · {{ statusLabel(item.status) }}</p>
+    </div>
+  </header>
+
+  <section class="verification-detail__mobile-intro">
+    <div class="verification-detail__mobile-title-row">
+      <a routerLink="/office/admin/moderation/verification" aria-label="Назад">←</a>
+      <span>Проверка верификации</span>
+    </div>
+    <span class="verification-detail__mobile-status">{{ statusLabel(item.status) }}</span>
+  </section>
+
+  <section class="verification-detail__layout">
+    <div class="verification-detail__main">
+      <article class="verification-card verification-card--mobile-note">
+        <strong>Решение по верификации влияет только на бейдж «Официальная компания» и не меняет статус чемпионата.</strong>
+      </article>
+
+      <article class="verification-card verification-card--mobile-statuses">
+        <dl>
+          <div>
+            <dt>Статус чемпионата</dt>
+            <dd>{{ statusLabel(item.program?.status || "") }}</dd>
+          </div>
+          <div>
+            <dt>Статус заявки</dt>
+            <dd>{{ statusLabel(item.status) }}</dd>
+          </div>
+        </dl>
+      </article>
+
+      <article class="verification-card">
+        <header>
+          <h2>Компания</h2>
+        </header>
+        <dl>
+          <div>
+            <dt>Название компании</dt>
+            <dd>{{ item.companyName }}</dd>
+          </div>
+          <div>
+            <dt>ИНН</dt>
+            <dd>{{ item.inn }}</dd>
+          </div>
+          <div>
+            <dt>Юридическое наименование</dt>
+            <dd>{{ item.legalName || "Не указано" }}</dd>
+          </div>
+          <div>
+            <dt>ОГРН / ОГРНИП</dt>
+            <dd>{{ item.ogrn || "Не указан" }}</dd>
+          </div>
+          <div>
+            <dt>Сайт</dt>
+            <dd>
+              @if (item.website) {
+              <a [href]="item.website" target="_blank" rel="noreferrer">{{ item.website }}</a>
+              } @else { Не указан }
+            </dd>
+          </div>
+          <div>
+            <dt>Регион</dt>
+            <dd>{{ item.region || "Не указан" }}</dd>
+          </div>
+        </dl>
+      </article>
+
+      <article class="verification-card">
+        <header>
+          <h2>Контактное лицо</h2>
+        </header>
+        <dl>
+          <div>
+            <dt>ФИО</dt>
+            <dd>{{ item.contactFullName }}</dd>
+          </div>
+          <div>
+            <dt>Должность</dt>
+            <dd>{{ item.contactPosition }}</dd>
+          </div>
+          <div>
+            <dt>Email</dt>
+            <dd>{{ item.contactEmail }}</dd>
+          </div>
+          <div>
+            <dt>Телефон</dt>
+            <dd>{{ item.contactPhone }}</dd>
+          </div>
+        </dl>
+      </article>
+
+      <article class="verification-card">
+        <header>
+          <h2>Чемпионат</h2>
+          @if (item.program?.id) {
+          <a [routerLink]="['/office/program', item.program?.id]">
+            Открыть чемпионат
+          </a>
+          }
+        </header>
+        <dl>
+          <div>
+            <dt>Название</dt>
+            <dd>{{ item.program?.name || "Не указан" }}</dd>
+          </div>
+          <div>
+            <dt>Статус чемпионата</dt>
+            <dd>{{ statusLabel(item.program?.status || "") }}</dd>
+          </div>
+          <div>
+            <dt>Верификация чемпионата</dt>
+            <dd>{{ statusLabel(item.program?.verificationStatus || "") }}</dd>
+          </div>
+        </dl>
+        <p>{{ item.companyRoleDescription }}</p>
+      </article>
+
+      <article class="verification-card">
+        <header>
+          <h2>Документы</h2>
+          <span>{{ item.documents.length }}</span>
+        </header>
+        @if (item.documents.length) {
+        <ul class="verification-documents">
+          @for (document of item.documents; track document.id ?? document.link ?? document.url) {
+          <li>
+            <div>
+              <strong>{{ documentName(document) }}</strong>
+              <span>
+                {{ documentType(document) }}
+                @if (documentSize(document)) {
+                · {{ documentSize(document) }}
+                }
+              </span>
+            </div>
+            <span class="verification-documents__actions">
+              <a [href]="documentUrl(document)" target="_blank" rel="noreferrer">Открыть</a>
+              <a [href]="documentUrl(document)" [attr.download]="documentName(document)">Скачать</a>
+            </span>
+          </li>
+          }
+        </ul>
+        } @else {
+        <p>Документы не приложены.</p>
+        }
+      </article>
+
+      @if (item.requestsHistory?.length) {
+      <article class="verification-card">
+        <header>
+          <h2>История заявок</h2>
+        </header>
+        <ul class="verification-history">
+          @for (historyItem of item.requestsHistory; track historyItem.id) {
+          <li>
+            <strong>№{{ historyItem.id }}</strong>
+            <span>{{ statusLabel(historyItem.status) }}</span>
+            <time>{{ submittedAt(historyItem) }}</time>
+            @if (historyItem.adminComment) {
+            <p>{{ historyItem.adminComment }}</p>
+            }
+          </li>
+          }
+        </ul>
+      </article>
+      }
+    </div>
+
+    <aside class="verification-decision">
+      <header>
+        <h2>Решение по заявке</h2>
+      </header>
+
+      <dl>
+        <div>
+          <dt>Статус заявки</dt>
+          <dd>{{ statusLabel(item.status) }}</dd>
+        </div>
+        <div>
+          <dt>Дата подачи</dt>
+          <dd>{{ submittedAt(item) }}</dd>
+        </div>
+        <div>
+          <dt>ID заявки</dt>
+          <dd>VRF-{{ item.id }}</dd>
+        </div>
+        @if (item.status !== "pending") {
+        <div>
+          <dt>Дата решения</dt>
+          <dd>{{ decidedAt(item) }}</dd>
+        </div>
+        }
+      </dl>
+
+      <form [formGroup]="decisionForm" novalidate>
+        <div class="verification-decision__choices">
+          <button
+            type="button"
+            [class.verification-decision__choice--active]="decision() === 'approve'"
+            [disabled]="!canDecide"
+            (click)="setDecision('approve')"
+          >
+            <strong>Одобрить</strong>
+            <span>Организация будет верифицирована</span>
+          </button>
+          <button
+            type="button"
+            [class.verification-decision__choice--active]="decision() === 'reject'"
+            [disabled]="!canDecide"
+            (click)="setDecision('reject')"
+          >
+            <strong>Отклонить</strong>
+            <span>Заявка будет отклонена</span>
+          </button>
+        </div>
+
+        @if (isReject && rejectionReasons().length) {
+        <label>
+          <span>Причина отклонения *</span>
+          <select formControlName="reasonCode">
+            <option value="" disabled>Выберите причину</option>
+            @for (reason of rejectionReasons(); track reason.code) {
+            <option [value]="reason.code">{{ reason.label }}</option>
+            }
+          </select>
+        </label>
+        }
+
+        <label>
+          <span>Комментарий модератора@if (isReject) { * }</span>
+          <textarea
+            formControlName="comment"
+            rows="6"
+            [placeholder]="
+              isReject
+                ? 'Опишите, что нужно исправить заявителю'
+                : 'Комментарий для заявителя или внутренней истории'
+            "
+          ></textarea>
+        </label>
+
+        @if (decisionError()) {
+        <p class="verification-decision__error">{{ decisionError() }}</p>
+        }
+
+        @if (!canDecide) {
+        <p class="verification-decision__hint">
+          Решение можно сохранить только для заявки в статусе «На рассмотрении».
+        </p>
+        }
+
+        <button
+          type="button"
+          class="verification-decision__submit"
+          [disabled]="!canSaveDecision"
+          (click)="isReject ? submitDecision() : approve()"
+        >
+          {{ isDeciding() ? "Сохраняем..." : "Сохранить решение" }}
+        </button>
+      </form>
+    </aside>
+  </section>
+
+  @if (canDecide) {
+  <section class="verification-detail__mobile-actions" aria-label="Решение по верификации">
+    <button type="button" class="verification-detail__mobile-approve" [disabled]="isDeciding()" (click)="approve()">
+      Одобрить
+    </button>
+    <button type="button" class="verification-detail__mobile-reject" [disabled]="isDeciding()" (click)="openRejectSheet()">
+      Отклонить
+    </button>
+  </section>
+  }
+
+  <app-modal [open]="approveConfirmOpen()" (openChange)="approveConfirmOpen.set($event)">
+    <div class="verification-detail__confirm">
+      <h2>Подтвердить компанию?</h2>
+      <p>Компания получит бейдж «Официальная компания». Статус чемпионата не изменится.</p>
+      <div>
+        <button type="button" (click)="cancelApprove()">Отмена</button>
+        <button type="button" [disabled]="isDeciding()" (click)="confirmApprove()">
+          {{ isDeciding() ? "Подтверждаем..." : "Подтвердить" }}
+        </button>
+      </div>
+    </div>
+  </app-modal>
+
+  @if (rejectSheetOpen()) {
+  <div class="verification-detail__sheet" role="dialog" aria-modal="true" (click)="closeRejectSheet()">
+    <form class="verification-detail__sheet-card" [formGroup]="decisionForm" (click)="$event.stopPropagation()">
+      <button type="button" class="verification-detail__sheet-close" aria-label="Закрыть" (click)="closeRejectSheet()">
+        ×
+      </button>
+      <h2>Отклонение верификации</h2>
+      @if (rejectionReasons().length) {
+      <label>
+        <span>Причина отклонения</span>
+        <select formControlName="reasonCode">
+          <option value="">Выберите причину</option>
+          @for (reason of rejectionReasons(); track reason.code) {
+          <option [value]="reason.code">{{ reason.label }}</option>
+          }
+        </select>
+      </label>
+      }
+      <label>
+        <span>Комментарий заявителю</span>
+        <textarea
+          rows="5"
+          maxlength="500"
+          formControlName="comment"
+          placeholder="Опишите, каких данных не хватает или что нужно исправить"
+        ></textarea>
+        <small>{{ decisionForm.controls.comment.value.length }}/500</small>
+      </label>
+      @if (decisionError()) {
+      <p class="verification-decision__error">{{ decisionError() }}</p>
+      }
+      <div class="verification-detail__sheet-actions">
+        <button type="button" (click)="closeRejectSheet()">Отмена</button>
+        <button type="button" [disabled]="!canSaveDecision" (click)="submitDecision()">
+          {{ isDeciding() ? "Отправляем..." : "Отклонить заявку" }}
+        </button>
+      </div>
+    </form>
+  </div>
+  }
+  }
+  }
+</main>

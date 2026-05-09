@@ -233,6 +233,9 @@ export class OfficeComponent implements OnInit, OnDestroy {
       { name: "проекты", icon: "projects", link: "projects" },
       { name: "участники", icon: "people-bold", link: "members" },
       { name: "программы", icon: "program", link: "program" },
+      ...(profile.isStaff
+        ? [{ name: "модерация", icon: "check", link: "admin/moderation" }]
+        : []),
       { name: "курсы", icon: "trajectories", link: "courses" },
       { name: "вакансии", icon: "search-sidebar", link: "vacancies" },
       // { name: "чаты", icon: "message", link: "chats" },

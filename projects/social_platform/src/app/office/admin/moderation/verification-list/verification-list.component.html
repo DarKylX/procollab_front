@@ -1,0 +1,206 @@
+<!-- @format -->
+
+<main class="verification-list">
+  <header class="verification-list__mobile-top">
+    <img src="/assets/images/shared/logo.svg" alt="PROCOLLAB" />
+    @if (profile$ | async; as user) {
+    <a class="verification-list__profile" [routerLink]="['/office/profile', user.id]" aria-label="Профиль администратора">
+      @if (user.avatar) {
+      <img [src]="user.avatar" alt="" />
+      } @else {
+      <span>{{ (user.firstName || user.email || "A").slice(0, 1) }}</span>
+      }
+    </a>
+    }
+  </header>
+
+  <header class="verification-list__header">
+    <div>
+      <h1>Модерация</h1>
+      <p>Быстрые проверки с телефона</p>
+    </div>
+  </header>
+
+  <section class="verification-list__stats">
+    <article>
+      <span>Верификация</span>
+      <strong>{{ pendingCount() }}</strong>
+    </article>
+    @if (revisionCount() !== null) {
+    <article class="verification-list__stat--revision">
+      <span>На доработке</span>
+      <strong>{{ revisionCount() }}</strong>
+    </article>
+    }
+  </section>
+
+  <section class="verification-list__toolbar">
+    <label>
+      <span>Поиск</span>
+      <input
+        type="search"
+        [formControl]="searchControl"
+        placeholder="Компания, ИНН, чемпионат или контакт"
+      />
+    </label>
+
+    <div class="verification-list__tabs" role="tablist" aria-label="Статус заявок">
+      @for (tab of statusTabs; track tab.value) {
+      <button
+        type="button"
+        role="tab"
+        [class.verification-list__tab--active]="activeStatus === tab.value"
+        (click)="setStatus(tab.value)"
+      >
+        {{ tab.label }}
+      </button>
+      }
+    </div>
+
+    <label>
+      <span>Сортировка</span>
+      <select [value]="ordering" (change)="setOrdering($any($event.target).value)">
+        <option value="-submitted">Сначала новые подачи</option>
+        <option value="submitted">Сначала старые подачи</option>
+        <option value="-decided">Сначала новые решения</option>
+        <option value="decided">Сначала старые решения</option>
+      </select>
+    </label>
+
+    <div class="verification-list__mobile-filters" aria-label="Фильтры заявок">
+      <button
+        type="button"
+        [class.verification-list__mobile-filter--active]="isMobileFilterActive('new')"
+        (click)="setMobileFilter('new')"
+      >
+        Новые
+      </button>
+      <button
+        type="button"
+        [class.verification-list__mobile-filter--active]="isMobileFilterActive('urgent')"
+        (click)="setMobileFilter('urgent')"
+      >
+        Сначала срочные
+      </button>
+      <button
+        type="button"
+        [class.verification-list__mobile-filter--active]="isMobileFilterActive('all')"
+        (click)="setMobileFilter('all')"
+      >
+        Все
+      </button>
+    </div>
+  </section>
+
+  <section class="verification-list__table-card">
+    @if (isLoading()) {
+    <div class="verification-list__loading">
+      <app-loader color="var(--accent)" size="28px"></app-loader>
+    </div>
+    } @else if (requests.length) {
+    <div class="verification-list__table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Заявка</th>
+            <th>Компания</th>
+            <th>Чемпионат</th>
+            <th>Контакт</th>
+            <th>Подана</th>
+            <th>Документы</th>
+            <th>Статус</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (request of requests; track request.id) {
+          <tr>
+            <td>
+              <strong>№{{ request.id }}</strong>
+              <span>{{ request.inn }}</span>
+            </td>
+            <td>
+              <strong>{{ request.companyName || "Компания не указана" }}</strong>
+              <span>{{ request.legalName || request.region || "Данные не указаны" }}</span>
+            </td>
+            <td>
+              <strong>{{ request.program?.name || "Чемпионат не указан" }}</strong>
+              <span>Статус чемпионата: {{ request.program?.status || "не указан" }}</span>
+            </td>
+            <td>
+              <strong>{{ request.contactFullName }}</strong>
+              <span>{{ request.contactEmail }}</span>
+            </td>
+            <td>{{ submittedAt(request) }}</td>
+            <td>{{ request.documents.length }}</td>
+            <td>
+              <span class="verification-list__status" [ngClass]="statusClass(request.status)">
+                {{ statusLabel(request.status) }}
+              </span>
+            </td>
+            <td>
+              <a
+                class="verification-list__check"
+                [routerLink]="['/office/admin/moderation/verification', request.id]"
+              >
+                Открыть
+              </a>
+            </td>
+          </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+
+    <div class="verification-list__mobile-cards">
+      @for (request of requests; track request.id) {
+      <article class="verification-list__mobile-card">
+        <div class="verification-list__mobile-card-head">
+          <span class="verification-list__mobile-icon">В</span>
+          <div>
+            <span class="verification-list__mobile-type">Запрос на верификацию</span>
+            <h2>{{ request.companyName || "Компания не указана" }}</h2>
+            <p>ИНН {{ request.inn || "не указан" }}</p>
+          </div>
+        </div>
+        <div class="verification-list__mobile-meta">
+          <span>Чемпионат</span>
+          <strong>{{ request.program?.name || "Не указан" }}</strong>
+          <span>Заявитель</span>
+          <strong>{{ requesterLabel(request) }}</strong>
+          <span>Дата подачи</span>
+          <strong>{{ submittedAt(request) }}</strong>
+          <span>Документы</span>
+          <strong>{{ documentCountLabel(request) }}</strong>
+        </div>
+        <a
+          class="verification-list__mobile-check"
+          [routerLink]="['/office/admin/moderation/verification', request.id]"
+        >
+          Проверить
+          <span>→</span>
+        </a>
+      </article>
+      }
+    </div>
+
+    <footer class="verification-list__pagination">
+      <span>Всего: {{ totalCount }}</span>
+      <div>
+        <button type="button" [disabled]="!hasPreviousPage" (click)="goToPage(page - 1)">
+          Назад
+        </button>
+        <b>{{ page }}</b>
+        <button type="button" [disabled]="!hasNextPage" (click)="goToPage(page + 1)">
+          Вперед
+        </button>
+      </div>
+    </footer>
+    } @else {
+    <div class="verification-list__empty">
+      <h2>{{ activeStatus === "pending" ? "Нет заявок на верификацию" : "Заявок нет" }}</h2>
+      <p>Попробуйте изменить поиск или вкладку статуса.</p>
+    </div>
+    }
+  </section>
+</main>

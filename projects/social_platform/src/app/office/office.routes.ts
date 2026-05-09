@@ -64,6 +64,11 @@ export const OFFICE_ROUTES: Routes = [
         loadChildren: () => import("./program/program.routes").then(c => c.PROGRAM_ROUTES),
       },
       {
+        path: "admin/moderation",
+        loadChildren: () =>
+          import("./admin/moderation/moderation.routes").then(c => c.MODERATION_ROUTES),
+      },
+      {
         path: "courses",
         loadChildren: () => import("./courses/courses.routes").then(c => c.COURSES_ROUTES),
       },
