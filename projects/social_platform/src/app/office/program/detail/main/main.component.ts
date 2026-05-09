@@ -22,7 +22,7 @@ import {
   tap,
   throttleTime,
 } from "rxjs";
-import { Program } from "@office/program/models/program.model";
+import { formatProgramParticipation, Program } from "@office/program/models/program.model";
 import { ProgramNewsService } from "@office/program/services/program-news.service";
 import { FeedNews } from "@office/projects/models/project-news.model";
 import { expandElement } from "@utils/expand-element";
@@ -378,5 +378,9 @@ export class ProgramDetailMainComponent implements OnInit, OnDestroy {
 
   get materialLinks(): { label: string; url: string }[] {
     return (this.program?.materials ?? []).map(m => ({ label: m.title, url: m.url }));
+  }
+
+  get participationText(): string {
+    return formatProgramParticipation(this.program);
   }
 }

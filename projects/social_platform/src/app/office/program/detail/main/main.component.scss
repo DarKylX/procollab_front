@@ -101,6 +101,11 @@
     color: var(--dark-grey);
   }
 
+  &__participation {
+    margin-bottom: 8px;
+    color: var(--accent);
+  }
+
   /* stylelint-disable value-no-vendor-prefix */
   &__text {
     p {

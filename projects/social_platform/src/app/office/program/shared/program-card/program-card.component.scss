@@ -47,6 +47,14 @@
     white-space: nowrap;
   }
 
+  &__participation {
+    margin-top: 2px;
+    overflow: hidden;
+    color: var(--accent);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   &__dates {
     display: flex;
     gap: 2px;
