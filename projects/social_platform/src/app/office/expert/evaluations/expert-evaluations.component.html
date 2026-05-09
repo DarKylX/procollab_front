@@ -1,0 +1,70 @@
+<!-- @format -->
+
+<section class="expert-entry">
+  <header class="expert-entry__header">
+    <div>
+      <h1>оценка проектов</h1>
+      <p>Чемпионаты, где вам доступна оценка сданных проектов.</p>
+    </div>
+  </header>
+
+  @if (loading) {
+  <div class="expert-entry__state">
+    <p>Загружаем чемпионаты для экспертизы...</p>
+  </div>
+  } @else if (errorMessage) {
+  <div class="expert-entry__state">
+    <h2>Не удалось открыть экспертизу</h2>
+    <p>{{ errorMessage }}</p>
+  </div>
+  } @else if (!programs.length) {
+  <div class="expert-entry__state">
+    <h2>Нет назначений на оценку</h2>
+    <p>Когда вас назначат экспертом чемпионата, он появится в этом списке.</p>
+  </div>
+  } @else {
+  <div class="expert-entry__table" role="table" aria-label="Чемпионаты для экспертизы">
+    <div class="expert-entry__row expert-entry__row--head" role="row">
+      <span role="columnheader">Чемпионат</span>
+      <span role="columnheader">Дедлайн оценки</span>
+      <span role="columnheader">Назначено</span>
+      <span role="columnheader">Оценено</span>
+      <span role="columnheader">Осталось</span>
+      <span role="columnheader">Статус этапа</span>
+      <span role="columnheader">Действие</span>
+    </div>
+
+    @for (program of programs; track program.id) {
+    <div class="expert-entry__row" role="row">
+      <div class="expert-entry__program" role="cell">
+        <strong>{{ program.name }}</strong>
+        <span>{{ program.stage }}</span>
+      </div>
+
+      <time role="cell" [attr.datetime]="program.evaluationDeadline">
+        {{
+          program.evaluationDeadline
+            ? (program.evaluationDeadline | date: "d MMMM yyyy")
+            : "дата не указана"
+        }}
+      </time>
+
+      <strong role="cell">{{ program.assigned }}</strong>
+      <strong role="cell" class="expert-entry__done">{{ program.evaluated }}</strong>
+      <strong role="cell" class="expert-entry__left">{{ program.remaining }}</strong>
+
+      <span role="cell">
+        <span class="expert-entry__status">{{ program.stageStatus }}</span>
+      </span>
+
+      <span role="cell">
+        <a class="expert-entry__action" [routerLink]="'/office/program/' + program.id + '/projects-rating'">
+          Открыть оценку
+          <span aria-hidden="true">›</span>
+        </a>
+      </span>
+    </div>
+    }
+  </div>
+  }
+</section>

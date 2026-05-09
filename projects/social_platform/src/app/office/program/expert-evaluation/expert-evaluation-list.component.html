@@ -1,0 +1,150 @@
+<!-- @format -->
+
+<section class="expert-list">
+  @if (forbidden) {
+  <div class="expert-list__state">
+    <h1>Доступ запрещен</h1>
+    <p>Экран оценки доступен только экспертам этого чемпионата и сотрудникам платформы.</p>
+  </div>
+  } @else {
+  <header class="expert-list__header">
+    <div>
+      <h1>Оценка проектов</h1>
+      @if (program; as currentProgram) {
+      <p>{{ currentProgram.name }}</p>
+      }
+    </div>
+
+    @if (program; as currentProgram) {
+    <div class="expert-list__badges">
+      <span>{{ currentProgram.stage || "Экспертная оценка" }}</span>
+      <span>
+        Оценить до
+        {{
+          currentProgram.datetimeEvaluationEnds
+            ? (currentProgram.datetimeEvaluationEnds | date: "d MMMM yyyy")
+            : "дата не указана"
+        }}
+      </span>
+    </div>
+    }
+  </header>
+
+  <div class="expert-list__counters" aria-label="Счетчики оценки">
+    <article class="expert-list__counter expert-list__counter--assigned">
+      <span class="expert-list__counter-icon">□</span>
+      <div>
+        <p>Назначено проектов</p>
+        <strong>{{ counters.assigned }}</strong>
+      </div>
+    </article>
+    <article class="expert-list__counter expert-list__counter--evaluated">
+      <span class="expert-list__counter-icon">✓</span>
+      <div>
+        <p>Оценено</p>
+        <strong>{{ counters.evaluated }}</strong>
+      </div>
+    </article>
+    <article class="expert-list__counter expert-list__counter--remaining">
+      <span class="expert-list__counter-icon">⌛</span>
+      <div>
+        <p>Осталось</p>
+        <strong>{{ counters.remaining }}</strong>
+      </div>
+    </article>
+  </div>
+
+  <div class="expert-list__toolbar">
+    <div class="expert-list__filters" aria-label="Фильтр статуса оценки">
+      @for (filter of filters; track filter.key) {
+      <button
+        type="button"
+        [class.expert-list__filter--active]="activeFilter === filter.key"
+        (click)="setFilter(filter.key)"
+      >
+        {{ filter.label }}
+      </button>
+      }
+    </div>
+
+    <label class="expert-list__search">
+      <span>Поиск</span>
+      <input
+        type="search"
+        [ngModel]="searchValue"
+        (ngModelChange)="onSearchChange($event)"
+        placeholder="Поиск по названию проекта или команде..."
+      />
+    </label>
+  </div>
+
+  <p class="expert-list__notice">
+    Вы видите только проекты, доступные вам для оценки и успешно отправленные командами.
+  </p>
+
+  @if (errorMessage) {
+  <div class="expert-list__state expert-list__state--compact">
+    <p>{{ errorMessage }}</p>
+  </div>
+  } @else if (loading) {
+  <div class="expert-list__state expert-list__state--compact">
+    <p>Загружаем проекты для оценки...</p>
+  </div>
+  } @else if (!submissions.length) {
+  <div class="expert-list__state expert-list__state--compact">
+    <p>Нет проектов, подходящих под выбранные условия.</p>
+  </div>
+  } @else {
+  <div class="expert-list__table" role="table" aria-label="Проекты для экспертной оценки">
+    <div class="expert-list__row expert-list__row--head" role="row">
+      <span role="columnheader">Проект и команда</span>
+      <span role="columnheader">Участники</span>
+      <span role="columnheader">Дата отправки</span>
+      <span role="columnheader">Статус оценки</span>
+      <span role="columnheader">Действие</span>
+    </div>
+
+    @for (submission of submissions; track submission.id) {
+    <div class="expert-list__row" role="row">
+      <div class="expert-list__project" role="cell">
+        <span class="expert-list__file-icon">□</span>
+        <div>
+          <strong>{{ submission.projectName }}</strong>
+          <p>{{ submission.teamName || submission.teamLabel }}</p>
+        </div>
+      </div>
+
+      <div class="expert-list__participants" role="cell" [title]="participantNames(submission)">
+        <div class="expert-list__avatars" aria-hidden="true">
+          @for (participant of submission.participants.slice(0, 4); track participant.userId) {
+          <span class="expert-list__avatar">{{ participantInitials(participant) }}</span>
+          }
+        </div>
+        <span>{{ participantsCountLabel(submission.participantsCount) }}</span>
+      </div>
+
+      <time role="cell" [attr.datetime]="submission.submittedAt">
+        {{
+          submission.submittedAt
+            ? (submission.submittedAt | date: "d MMMM yyyy, HH:mm")
+            : "дата не указана"
+        }}
+      </time>
+
+      <span role="cell">
+        <span [class]="statusClass(submission)">
+          {{ statusLabel(submission.evaluationStatus) }}
+        </span>
+      </span>
+
+      <span role="cell">
+        <button type="button" class="expert-list__action" (click)="openSubmission(submission)">
+          {{ actionLabel(submission) }}
+          <span aria-hidden="true">›</span>
+        </button>
+      </span>
+    </div>
+    }
+  </div>
+  } }
+</section>

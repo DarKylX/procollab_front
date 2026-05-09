@@ -8,6 +8,12 @@ import { ApiPagination } from "@models/api-pagination.model";
 import { ProjectRate } from "../models/project-rate";
 import { ProjectRatingCriterion } from "../models/project-rating-criterion";
 import { ProjectRatingCriterionOutput } from "../models/project-rating-criterion-output";
+import {
+  ExpertEvaluationPayload,
+  ExpertEvaluationProgramSummary,
+  ExpertProjectSubmissionDetail,
+  ExpertSubmissionsResponse,
+} from "../models/project-evaluation.model";
 
 /**
  * Сервис для оценки проектов в рамках программы
@@ -45,6 +51,48 @@ export class ProjectRatingService {
 
   getAll(programId: number, params?: HttpParams): Observable<ApiPagination<ProjectRate>> {
     return this.apiService.get(`${this.RATE_PROJECT_URL}/${programId}`, params);
+  }
+
+  getExpertEvaluationPrograms(): Observable<ExpertEvaluationProgramSummary[]> {
+    return this.apiService.get(`${this.RATE_PROJECT_URL}/expert/evaluations/`);
+  }
+
+  getSubmissions(
+    programId: number,
+    params?: HttpParams
+  ): Observable<ExpertSubmissionsResponse> {
+    return this.apiService.get(`${this.RATE_PROJECT_URL}/${programId}/submissions/`, params);
+  }
+
+  getSubmission(
+    programId: number,
+    programProjectId: number
+  ): Observable<ExpertProjectSubmissionDetail> {
+    return this.apiService.get(
+      `${this.RATE_PROJECT_URL}/${programId}/submissions/${programProjectId}/`
+    );
+  }
+
+  saveDraft(
+    programId: number,
+    programProjectId: number,
+    payload: ExpertEvaluationPayload
+  ): Observable<ExpertProjectSubmissionDetail> {
+    return this.apiService.put(
+      `${this.RATE_PROJECT_URL}/${programId}/submissions/${programProjectId}/draft/`,
+      payload
+    );
+  }
+
+  submitEvaluation(
+    programId: number,
+    programProjectId: number,
+    payload: ExpertEvaluationPayload
+  ): Observable<ExpertProjectSubmissionDetail> {
+    return this.apiService.post(
+      `${this.RATE_PROJECT_URL}/${programId}/submissions/${programProjectId}/submit/`,
+      payload
+    );
   }
 
   postFilters(

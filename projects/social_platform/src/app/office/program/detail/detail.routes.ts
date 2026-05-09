@@ -9,6 +9,8 @@ import { ProgramMembersResolver } from "@office/program/detail/list/members.reso
 import { ProgramListComponent } from "./list/list.component";
 import { ProgramDetailResolver } from "./detail.resolver";
 import { DeatilComponent } from "@office/features/detail/detail.component";
+import { ExpertEvaluationDetailComponent } from "@office/program/expert-evaluation/expert-evaluation-detail.component";
+import { ExpertEvaluationListComponent } from "@office/program/expert-evaluation/expert-evaluation-list.component";
 
 /**
  * Маршруты для детальной страницы программы
@@ -24,6 +26,14 @@ import { DeatilComponent } from "@office/features/detail/detail.component";
  * @returns {Routes} Конфигурация маршрутов для детальной страницы программы
  */
 export const PROGRAM_DETAIL_ROUTES: Routes = [
+  {
+    path: "projects-rating/:programProjectId",
+    component: ExpertEvaluationDetailComponent,
+  },
+  {
+    path: "projects-rating",
+    component: ExpertEvaluationListComponent,
+  },
   {
     path: "",
     component: DeatilComponent,
@@ -51,11 +61,6 @@ export const PROGRAM_DETAIL_ROUTES: Routes = [
           data: ProgramMembersResolver,
         },
         data: { listType: "members" },
-      },
-      {
-        path: "projects-rating",
-        component: ProgramListComponent,
-        data: { listType: "rating" },
       },
     ],
   },
