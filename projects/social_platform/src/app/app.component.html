@@ -1,10 +1,7 @@
 <!-- @format -->
 
-<mat-progress-bar
-  [style.display]="(isLoading$ | async) ? 'block' : 'none'"
-  class="loader"
-  mode="query"
->
-</mat-progress-bar>
+@if (isLoading$ | async) {
+<mat-progress-bar class="loader" mode="query"></mat-progress-bar>
+}
 <router-outlet></router-outlet>
 <app-cookie-consent></app-cookie-consent>

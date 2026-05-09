@@ -44,4 +44,8 @@
       }
     }
   }
+
+  &--static &__input {
+    width: 100%;
+  }
 }

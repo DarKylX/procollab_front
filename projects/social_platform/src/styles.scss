@@ -27,6 +27,9 @@
 
 :root {
   --app-height: 100vh;
+  --mat-badge-text-font: "Mont", sans-serif;
+  --mdc-typography-body2-font-family: "Mont", sans-serif;
+  --mdc-typography-font-family: "Mont", sans-serif;
 }
 
 html {
@@ -42,7 +45,14 @@ body {
 body {
   margin: 0;
   overflow-x: hidden;
-  font-family: Roboto, "Helvetica Neue", sans-serif;
+  font-family: Mont, sans-serif;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: Mont, sans-serif;
 }
 
 // Plus imports for other components in your app.
@@ -52,6 +62,10 @@ body {
 // Be sure that you only ever include this mixin once!
 
 // stylelint-disable
+$procollab-typography: mat.define-typography-config(
+  $font-family: "Mont, sans-serif",
+);
+
 @include mat.core();
 
 .mat-progress-bar {
@@ -77,6 +91,7 @@ $procollab-theme: mat.define-light-theme(
       accent: $procollab-accent,
       warn: $procollab-warn,
     ),
+    typography: $procollab-typography,
   )
 );
 
@@ -84,3 +99,23 @@ $procollab-theme: mat.define-light-theme(
 // Alternatively, you can import and @include the theme mixins for each component
 // that you are using.
 @include mat.all-component-themes($procollab-theme);
+
+button,
+input,
+textarea,
+select,
+.mat-typography,
+.mat-mdc-button,
+.mat-mdc-raised-button,
+.mat-mdc-outlined-button,
+.mat-mdc-unelevated-button,
+.mat-mdc-form-field,
+.mat-mdc-menu-item,
+.mat-mdc-option,
+.mat-mdc-select,
+.mat-mdc-dialog-container,
+.mat-mdc-snack-bar-container,
+.mat-mdc-slide-toggle .mdc-form-field,
+.mat-badge-content {
+  font-family: Mont, sans-serif;
+}

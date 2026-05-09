@@ -31,17 +31,17 @@
                 style="opacity: 0.6"
                 appSquare="10"
               ></i>
-              <p class="text-body-10">{{ project.region ?? "не указан" | truncate: 10 }}</p>
+              <p class="text-body-10">{{ (project.region || "не указан") | truncate: 10 }}</p>
             </li>
 
             <li class="lists__item">
               <i appIcon icon="goal" class="lists__icon" appSquare="10"></i>
-              <p class="text-body-10">{{ project.trl ?? "0" }}</p>
+              <p class="text-body-10">{{ project.trl || "0" }}</p>
             </li>
 
             <li class="lists__item">
               <i appIcon icon="deadline" class="lists__icon" appSquare="10"></i>
-              <p class="text-body-10">{{ project.implementationDeadline ?? "не указана" }}</p>
+              <p class="text-body-10">{{ project.implementationDeadline || "не указана" }}</p>
             </li>
 
             <li class="lists__item">

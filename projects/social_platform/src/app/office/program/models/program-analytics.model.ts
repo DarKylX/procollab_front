@@ -41,6 +41,7 @@ export interface ProgramAnalytics {
   submittedProjectsCount: number;
   evaluatedProjectsCount: number;
   averageScore: number | null;
+  canExportContacts?: boolean;
   verificationStatus?: "not_requested" | "pending" | "verified" | "rejected" | "revoked";
   submissions: ProgramAnalyticsSubmission[];
 }

@@ -16,4 +16,5 @@ export class ProgramLinksComponent {
   @Input({ required: true }) title!: string;
   @Input({ required: true }) icon!: string;
   @Input({ required: true }) links!: { label: string; url: string }[];
+  @Input() emptyText = "Ссылки пока не добавлены";
 }

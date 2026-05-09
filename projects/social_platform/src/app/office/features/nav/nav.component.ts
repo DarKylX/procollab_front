@@ -81,6 +81,7 @@ export class NavComponent implements OnInit, OnDestroy {
   }
 
   @Input() invites: Invite[] = [];
+  @Input() showExpertEvaluations = false;
 
   subscriptions$: Subscription[] = [];
   mobileMenuOpen = false;

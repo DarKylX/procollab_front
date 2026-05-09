@@ -279,7 +279,7 @@
       @for (control of goals.controls; track i; let i = $index) {
       <li class="project__links">
         <div [formGroupName]="i" class="project__links">
-          @if (goals.at(i)?.get("title"); as goalName) {
+          @if (goals.at(i).get("title"); as goalName) {
           <fieldset style="flex-grow: 1">
             <label class="text-body-12 field-label">краткосрочные цели проекта</label>
             <app-input
@@ -294,7 +294,7 @@
             </div>
             }
           </fieldset>
-          } @if (goals.at(i)?.get("completionDate"); as goalDate) {
+          } @if (goals.at(i).get("completionDate"); as goalDate) {
           <fieldset>
             <label class="text-body-12 field-label" style="text-align: center; margin-right: 12px"
               >дата</label
@@ -313,7 +313,7 @@
             </div>
             }
           </fieldset>
-          } @if (goals.at(i)?.get("responsible"); as goalLeader) {
+          } @if (goals.at(i).get("responsible"); as goalLeader) {
           <fieldset>
             <label
               class="text-body-12 field-label"

@@ -51,14 +51,14 @@
 
     &:focus {
       border-color: var(--accent);
+    }
+  }
 
-      +&_arrow {
-        color: var(--accent);
+  &__input-slim:focus + &__input-slim_arrow {
+    color: var(--accent);
 
-        i {
-          transform: rotate(0);
-        }
-      }
+    i {
+      transform: rotate(0);
     }
   }
 

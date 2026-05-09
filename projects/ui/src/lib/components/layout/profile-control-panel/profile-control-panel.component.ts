@@ -5,9 +5,8 @@ import { ChangeDetectionStrategy, Component, Input, Output, EventEmitter } from 
 import { InviteManageCardComponent, ProfileInfoComponent, IconComponent } from "@uilib";
 import { ClickOutsideModule } from "ng-click-outside";
 import type { Invite } from "@office/models/invite.model";
-import { RouterLink } from "@angular/router";
+import type { Notification } from "@office/models/notification.model";
 import type { User } from "../../../models/user.model";
-import { EmptyManageCardComponent } from "../empty-manage-card/empty-manage-card.component";
 import { UserData } from "projects/skills/src/models/profile.model";
 
 /**
@@ -39,8 +38,6 @@ import { UserData } from "projects/skills/src/models/profile.model";
     ProfileInfoComponent,
     ClickOutsideModule,
     IconComponent,
-    RouterLink,
-    EmptyManageCardComponent,
   ],
   templateUrl: "./profile-control-panel.component.html",
   styleUrl: "./profile-control-panel.component.scss",
@@ -56,6 +53,10 @@ export class ProfileControlPanelComponent {
   /** Флаг наличия уведомлений */
   @Input({ required: true }) hasNotifications = false;
 
+  @Input() notificationUnreadCount = 0;
+
+  @Input() notifications: Notification[] = [];
+
   /** Флаг наличия непрочитанных сообщений */
   @Input({ required: true }) hasUnreads = false;
 
@@ -68,12 +69,47 @@ export class ProfileControlPanelComponent {
   /** Событие выхода из системы */
   @Output() logout = new EventEmitter();
 
+  @Output() notificationClick = new EventEmitter<Notification>();
+
+  @Output() markAllNotificationsRead = new EventEmitter<void>();
+
+  @Output() openNotificationsPage = new EventEmitter<void>();
+
   /**
    * Проверяет наличие неотвеченных приглашений
    * @returns true если есть приглашения без ответа
    */
   get hasInvites(): boolean {
     return !!this.invites.filter(invite => invite.isAccepted === null).length;
+  }
+
+  get hasNotificationItems(): boolean {
+    return this.notifications.length > 0;
+  }
+
+  notificationIcon(notification: Notification): string {
+    if (notification.category === "expertise") {
+      return "task";
+    }
+    if (notification.category === "verification") {
+      return "person";
+    }
+    if (notification.type.includes("approved")) {
+      return "circle-check";
+    }
+    if (notification.type.includes("rejected")) {
+      return "deadline";
+    }
+    return "bell";
+  }
+
+  notificationTime(notification: Notification): string {
+    return new Date(notification.created_at).toLocaleString("ru-RU", {
+      day: "2-digit",
+      month: "short",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
   }
 
   /** Флаг отображения панели уведомлений */

@@ -8,9 +8,96 @@
       src="/assets/images/office/shared/backgorund-image-rocket-main.svg"
       class="office__background-image"
     />
+
+    <header class="office-mobile-header" aria-label="Мобильная навигация офиса">
+      <button
+        type="button"
+        class="office-mobile-header__button"
+        aria-label="Открыть меню"
+        (click)="openMobileDrawer()"
+      >
+        <i appIcon icon="menu-burger" appSquare="24"></i>
+      </button>
+
+      <a class="office-mobile-header__brand" routerLink="/office/feed" (click)="closeMobileDrawer()">
+        <img src="/assets/images/shared/logo.svg" alt="PROCOLLAB" />
+      </a>
+
+      <button
+        type="button"
+        class="office-mobile-header__button office-mobile-header__button--notification"
+        aria-label="Открыть уведомления"
+        (click)="onOpenNotificationsPage()"
+      >
+        <i appIcon icon="bell" appSquare="22"></i>
+        @if (((notificationUnreadCount$ | async) ?? 0) > 0) {
+        <span class="office-mobile-header__badge">{{ notificationUnreadCount$ | async }}</span>
+        }
+      </button>
+
+      <a
+        class="office-mobile-header__profile"
+        [routerLink]="['/office/profile', user.id]"
+        aria-label="Открыть профиль"
+        (click)="closeMobileDrawer()"
+      >
+        @if (user.avatar) {
+        <img [src]="user.avatar" alt="" />
+        } @else {
+        <span>{{ profileInitials(user) }}</span>
+        }
+      </a>
+    </header>
+
+    @if (mobileDrawerOpen) {
+    <div class="office-mobile-drawer" role="dialog" aria-modal="true" aria-label="Меню офиса">
+      <button
+        type="button"
+        class="office-mobile-drawer__overlay"
+        aria-label="Закрыть меню"
+        (click)="closeMobileDrawer()"
+      ></button>
+
+      <aside class="office-mobile-drawer__panel">
+        <div class="office-mobile-drawer__header">
+          <img src="/assets/images/shared/logo.svg" alt="PROCOLLAB" />
+          <button
+            type="button"
+            class="office-mobile-drawer__close"
+            aria-label="Закрыть меню"
+            (click)="closeMobileDrawer()"
+          >
+            <i appIcon icon="menu-cross" appSquare="22"></i>
+          </button>
+        </div>
+
+        <nav class="office-mobile-drawer__nav" aria-label="Разделы офиса">
+          @for (item of navItems; track item.link) {
+          @if (item.isExternal) {
+          <a class="office-mobile-drawer__item" [href]="item.link" (click)="onMobileNavClick()">
+            <i appIcon [icon]="item.icon" appSquare="22"></i>
+            <span>{{ item.name }}</span>
+          </a>
+          } @else {
+          <a
+            class="office-mobile-drawer__item"
+            [class.office-mobile-drawer__item--active]="isMobileNavItemActive(item)"
+            [routerLink]="navItemUrl(item)"
+            (click)="onMobileNavClick()"
+          >
+            <i appIcon [icon]="item.icon" appSquare="22"></i>
+            <span>{{ item.name }}</span>
+          </a>
+          }
+          }
+        </nav>
+      </aside>
+    </div>
+    }
+
     <div class="office__body">
-      <div class="office__inner">
-        <div class="office__inner--wrapper">
+      <div class="app-shell office__inner">
+        <div class="office-layout office__inner--wrapper">
           <ui-sidebar
             class="office__sidebar"
             logoSrc="/assets/images/shared/logo.svg"
@@ -33,28 +120,37 @@
             </div>
           </ui-sidebar>
 
-          <div class="office__inner--content">
+          <main class="office-main office__inner--content">
             <div class="office__top">
-              <app-nav [invites]="invites()"></app-nav>
+              <app-nav
+                [invites]="invites()"
+                [showExpertEvaluations]="showExpertEvaluationsLink"
+              ></app-nav>
 
               @if (user !== undefined && invites !== undefined) {
               <app-profile-control-panel
                 [invites]="invites()"
-                [hasNotifications]="false"
+                [notifications]="(notifications$ | async) ?? []"
+                [notificationUnreadCount]="(notificationUnreadCount$ | async) ?? 0"
+                [hasNotifications]="((notificationUnreadCount$ | async) ?? 0) > 0"
                 [hasUnreads]="!!(chatService.unread$ | async)"
                 [user]="user"
                 (acceptInvite)="onAcceptInvite($event)"
                 (rejectInvite)="onRejectInvite($event)"
+                (notificationClick)="onNotificationClick($event)"
+                (markAllNotificationsRead)="onMarkAllNotificationsRead()"
+                (openNotificationsPage)="onOpenNotificationsPage()"
                 (logout)="onLogout()"
               ></app-profile-control-panel>
               }
             </div>
 
             <router-outlet></router-outlet>
-          </div>
+          </main>
         </div>
       </div>
     </div>
+
   </div>
   }
   <app-modal [open]="waitVerificationModal && !waitVerificationAccepted">
@@ -68,46 +164,6 @@
       <app-button class="message-modal__button" (click)="onAcceptWaitVerification()">
         Хорошо
       </app-button>
-    </div>
-  </app-modal>
-
-  <app-modal
-    [open]="showRegisteredProgramModal()"
-    (openChange)="showRegisteredProgramModal.set(!showRegisteredProgramModal())"
-  >
-    <div class="cancel" style="width: 605px; padding: 0px 24px">
-      <div class="cancel__top">
-        <p class="cancel__title text-body-14">Привет!</p>
-      </div>
-
-      <div class="cancel__text-block">
-        <p class="text-body-12">
-          Рады знакомству 🙌 <br />
-          Вы находитесь на платформе procollab – здесь проходит программа, на которую вы ранее
-          регистрировались через форму заявки
-        </p>
-
-        <p class="text-body-12">
-          Ваша программа и её закрытая группа (к которой у вас автоматически есть доступ) находится
-          в одноименной вкладке «программы»
-        </p>
-
-        <p class="text-body-12">
-          На платформе есть еще много интересного: цифровой профиль, проекты, новостная лента, чаты
-          и другое – рекомендуем изучить
-        </p>
-
-        <p class="text-body-12">
-          Поздравляем с регистрацией! Желаем удачи в прохождении программы :)
-        </p>
-      </div>
-
-      <app-button
-        customTypographyClass="text-body-12"
-        size="medium"
-        (click)="showRegisteredProgramModal.set(false)"
-        >спасибо, понятно</app-button
-      >
     </div>
   </app-modal>
 

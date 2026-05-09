@@ -8,7 +8,7 @@
       <li class="project__info">
         <div [formGroupName]="i" class="project__info">
           <div class="project__info--general">
-            @if (partners.at(i)?.get("name"); as name) {
+            @if (partners.at(i).get("name"); as name) {
             <fieldset>
               <label class="text-body-12 field-label">название компании</label>
               <app-input
@@ -23,7 +23,7 @@
               </div>
               }
             </fieldset>
-            } @if (partners.at(i)?.get("inn"); as inn) {
+            } @if (partners.at(i).get("inn"); as inn) {
             <fieldset>
               <label class="text-body-12 field-label">инн компании</label>
               <app-input
@@ -42,7 +42,7 @@
             }
           </div>
 
-          @if (partners.at(i)?.get("contribution"); as contribution) {
+          @if (partners.at(i).get("contribution"); as contribution) {
           <fieldset>
             <label class="text-body-12 field-label">вклад в проект от партнера</label>
             <app-textarea
@@ -58,7 +58,7 @@
             </div>
             }
           </fieldset>
-          } @if (partners.at(i)?.get("decisionMaker"); as decisionMaker) {
+          } @if (partners.at(i).get("decisionMaker"); as decisionMaker) {
           <fieldset>
             <label class="text-body-12 field-label"
               >ссылка на профиль представителя компании партнера</label
@@ -111,7 +111,7 @@
       @for (control of resources.controls; track i; let i = $index) {
       <li class="project__info">
         <div [formGroupName]="i" class="project__info">
-          @if (resources.at(i)?.get("type"); as type) {
+          @if (resources.at(i).get("type"); as type) {
           <fieldset>
             <label class="text-body-12 field-label">тип ресурса</label>
             <app-select
@@ -127,7 +127,7 @@
             </div>
             }
           </fieldset>
-          } @if (resources.at(i)?.get("description"); as description) {
+          } @if (resources.at(i).get("description"); as description) {
           <fieldset>
             <label class="text-body-12 field-label">описание ресурса</label>
             <app-textarea
@@ -143,7 +143,7 @@
             </div>
             }
           </fieldset>
-          } @if (resources.at(i)?.get("partnerCompany"); as partnerCompany) {
+          } @if (resources.at(i).get("partnerCompany"); as partnerCompany) {
           <fieldset>
             <label class="text-body-12 field-label">партнер для запроса ресурса</label>
             <app-select

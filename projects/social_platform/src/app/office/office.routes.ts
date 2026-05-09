@@ -71,7 +71,9 @@ export const OFFICE_ROUTES: Routes = [
       {
         path: "notifications",
         loadComponent: () =>
-          import("./notifications/notifications.component").then(c => c.NotificationsComponent),
+          import("./notifications/notifications.component").then(
+            c => c.NotificationsComponent
+          ),
       },
       {
         path: "admin/moderation",

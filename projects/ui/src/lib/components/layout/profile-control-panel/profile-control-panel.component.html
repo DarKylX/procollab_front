@@ -2,34 +2,108 @@
 
 <div class="control-panel">
   <div class="control-panel__actions">
-    <div class="control-panel__action" (click)="showNotifications = true">
-      <div (clickOutside)="onClickOutside()" class="control-panel__bell">
+    <div class="control-panel__action" (clickOutside)="onClickOutside()">
+      <button
+        type="button"
+        class="control-panel__bell"
+        (click)="showNotifications = !showNotifications"
+        aria-label="Уведомления"
+      >
         @if (hasNotifications || hasInvites) {
-        <div class="attention"></div>
+        <span class="attention"></span>
         }
         <i appIcon icon="bell" appWidth="15" appHeight="17" appViewBox="0 0 15 17"></i>
-        @if (invites.length) {
-        <div class="control-panel__bell--hasInvites"></div>
+        @if (notificationUnreadCount > 0) {
+        <span class="control-panel__badge">{{ notificationUnreadCount }}</span>
         }
+        @if (hasInvites) {
+        <span class="control-panel__bell--hasInvites"></span>
+        }
+      </button>
+
+      @if (showNotifications) {
+      <div class="control-panel__notifications notifications">
+        <div class="notifications__header">
+          <div>
+            <h3 class="notifications__title">Уведомления</h3>
+            @if (notificationUnreadCount > 0) {
+            <span class="notifications__counter">{{ notificationUnreadCount }} новых</span>
+            }
+          </div>
+          @if (notificationUnreadCount > 0) {
+          <button
+            type="button"
+            class="notifications__mark-all"
+            (click)="markAllNotificationsRead.emit()"
+          >
+            Отметить все как прочитанные
+          </button>
+          }
+        </div>
+
+        <ul class="notifications__list">
+          @for (notification of notifications; track notification.id) {
+          <li>
+            <button
+              type="button"
+              class="notifications__item"
+              [class.notifications__item--unread]="!notification.is_read"
+              (click)="notificationClick.emit(notification)"
+            >
+              <span class="notifications__icon">
+                <i
+                  appIcon
+                  [icon]="notificationIcon(notification)"
+                  appSquare="20"
+                  appViewBox="0 0 24 24"
+                ></i>
+              </span>
+              <span class="notifications__content">
+                <span class="notifications__item-title">{{ notification.title }}</span>
+                <span class="notifications__message">{{ notification.message }}</span>
+              </span>
+              <span class="notifications__meta">
+                <span class="notifications__time">{{ notificationTime(notification) }}</span>
+                @if (!notification.is_read) {
+                <span class="notifications__dot"></span>
+                }
+              </span>
+            </button>
+          </li>
+          } @empty {
+          @if (!hasInvites) {
+          <li class="notifications__empty">У вас пока нет уведомлений</li>
+          }
+          }
+        </ul>
+
+        @if (hasInvites) {
+        <div class="notifications__section-title">Приглашения</div>
+        <ul class="notifications__invites">
+          @for (invite of invites; track invite.id) {
+          <li class="notifications__invite">
+            <app-invite-manage-card
+              [invite]="invite"
+              (accept)="acceptInvite.emit($event)"
+              (reject)="rejectInvite.emit($event)"
+            ></app-invite-manage-card>
+          </li>
+          }
+        </ul>
+        }
+
+        <button
+          type="button"
+          class="notifications__all"
+          (click)="openNotificationsPage.emit()"
+        >
+          Все уведомления
+          <span aria-hidden="true">›</span>
+        </button>
       </div>
+      }
     </div>
-    @if (showNotifications) {
-    <div class="control-panel__notifications notifications">
-      <ul class="notifications__invites">
-        @for (invite of invites; track invite.id) {
-        <li class="notifications__invite">
-          <app-invite-manage-card
-            [invite]="invite"
-            (accept)="acceptInvite.emit($event)"
-            (reject)="rejectInvite.emit($event)"
-          ></app-invite-manage-card>
-        </li>
-        } @empty {
-        <app-empty-manage-card></app-empty-manage-card>
-        }
-      </ul>
-    </div>
-    }
+
     <a class="control-panel__action" (click)="logout.emit()">
       <div class="control-panel__bell">
         <i appIcon icon="logout3" appWidth="15" appHeight="17"></i>

@@ -10,6 +10,7 @@ import { MatDatepickerModule } from "@angular/material/datepicker";
 import { MatInputModule } from "@angular/material/input";
 import { MatNativeDateModule } from "@angular/material/core";
 import { MatFormFieldModule } from "@angular/material/form-field";
+import { formatRussianPhone } from "@utils/phone-format";
 
 @Component({
   selector: "app-input",
@@ -103,7 +104,14 @@ export class InputComponent implements ControlValueAccessor {
   }
 
   onInput(event: Event): void {
-    const nextValue = (event.target as HTMLInputElement).value ?? "";
+    const target = event.target as HTMLInputElement;
+    const nextValue = this.shouldFormatRussianPhone
+      ? formatRussianPhone(target.value)
+      : target.value ?? "";
+
+    if (this.shouldFormatRussianPhone && target.value !== nextValue) {
+      target.value = nextValue;
+    }
 
     this.isLengthOverflow = !!this.maxLength && nextValue.length > this.maxLength;
 
@@ -143,7 +151,7 @@ export class InputComponent implements ControlValueAccessor {
 
   writeValue(value: string | null): void {
     setTimeout(() => {
-      this.value = value ?? "";
+      this.value = this.shouldFormatRussianPhone ? formatRussianPhone(value) : value ?? "";
     });
   }
 
@@ -168,5 +176,13 @@ export class InputComponent implements ControlValueAccessor {
   onEnter(event: Event) {
     event.preventDefault();
     this.enter.emit();
+  }
+
+  private get shouldFormatRussianPhone(): boolean {
+    return (
+      this.type === "tel" ||
+      this.name.toLowerCase().includes("phone") ||
+      this.placeholder.includes("+7")
+    );
   }
 }

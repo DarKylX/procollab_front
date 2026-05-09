@@ -12,6 +12,7 @@ import { AuthService } from "@auth/services";
 import { ModalComponent } from "@ui/components/modal/modal.component";
 import { IconComponent } from "@uilib";
 import { CommonModule } from "@angular/common";
+import { normalizeRussianPhone, RUSSIAN_PHONE_PATTERN } from "@utils/phone-format";
 
 dayjs.extend(cpf);
 
@@ -75,7 +76,7 @@ export class RegisterComponent implements OnInit {
         ],
         password: ["", [Validators.required, this.validationService.usePasswordValidator(8)]],
         repeatedPassword: ["", [Validators.required]],
-        phoneNumber: ["", [Validators.maxLength(15)]],
+        phoneNumber: ["", [Validators.maxLength(18), Validators.pattern(RUSSIAN_PHONE_PATTERN)]],
       },
       { validators: [validationService.useMatchValidator("password", "repeatedPassword")] }
     );
@@ -117,10 +118,7 @@ export class RegisterComponent implements OnInit {
       birthday: this.registerForm.value.birthday
         ? dayjs(this.registerForm.value.birthday, "DD.MM.YYYY").format("YYYY-MM-DD")
         : undefined,
-      phoneNumber:
-        typeof this.registerForm.value.phoneNumber === "string"
-          ? this.registerForm.value.phoneNumber.replace(/^([87])/, "+7")
-          : this.registerForm.value.phoneNumber,
+      phoneNumber: normalizeRussianPhone(this.registerForm.value.phoneNumber),
     };
 
     delete payload.repeatedPassword;

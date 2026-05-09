@@ -107,9 +107,9 @@ export class MembersComponent implements OnInit, OnDestroy, AfterViewInit {
     private readonly cdref: ChangeDetectorRef,
     private readonly renderer: Renderer2
   ) {
-    // Форма поиска с обязательным полем для ввода имени
+    // Форма поиска для ввода имени или фамилии
     this.searchForm = this.fb.group({
-      search: ["", [Validators.required]],
+      search: [""],
     });
 
     // Форма фильтрации с полями для различных критериев
@@ -157,7 +157,7 @@ export class MembersComponent implements OnInit, OnDestroy, AfterViewInit {
       });
 
     // Настраиваем синхронизацию значений форм с URL параметрами
-    this.saveControlValue(this.searchForm.get("search"), "fullname");
+    this.saveControlValue(this.searchForm.get("search"), "fullname", 300);
     this.saveControlValue(this.filterForm.get("keySkill"), "skills__contains");
     this.saveControlValue(this.filterForm.get("speciality"), "speciality__icontains");
     this.saveControlValue(this.filterForm.get("age"), "age");
@@ -285,18 +285,27 @@ export class MembersComponent implements OnInit, OnDestroy, AfterViewInit {
    * @param control - Элемент управления формы
    * @param queryName - Имя параметра в URL
    */
-  saveControlValue(control: AbstractControl | null, queryName: string): void {
+  saveControlValue(control: AbstractControl | null, queryName: string, debounceMs = 0): void {
     if (!control) return;
 
-    const sub$ = control.valueChanges.subscribe(value => {
-      this.router
-        .navigate([], {
-          queryParams: { [queryName]: value.toString() },
-          relativeTo: this.route,
-          queryParamsHandling: "merge",
-        })
-        .then(() => console.debug("QueryParams changed from MembersComponent"));
-    });
+    const sub$ = control.valueChanges
+      .pipe(
+        map(value => (typeof value === "string" ? value.trim() : value)),
+        debounceTime(debounceMs),
+        distinctUntilChanged()
+      )
+      .subscribe(value => {
+        const queryValue =
+          value === null || value === undefined || value === "" ? undefined : value.toString();
+
+        this.router
+          .navigate([], {
+            queryParams: { [queryName]: queryValue },
+            relativeTo: this.route,
+            queryParamsHandling: "merge",
+          })
+          .then(() => console.debug("QueryParams changed from MembersComponent"));
+      });
 
     this.subscriptions$.push(sub$);
   }

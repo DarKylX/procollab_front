@@ -27,9 +27,12 @@
   img {
     position: relative;
     z-index: 1;
+    pointer-events: none;
+    user-select: none;
     border-radius: 50%;
     object-fit: cover;
     object-position: center;
+    -webkit-user-drag: none;
   }
 
   &__online {
