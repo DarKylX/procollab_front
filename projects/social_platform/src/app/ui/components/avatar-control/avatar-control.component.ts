@@ -83,6 +83,8 @@ export class AvatarControlComponent implements OnInit, ControlValueAccessor {
   /** Текущее значение URL изображения */
   value = "";
 
+  avatarLoadFailed = false;
+
   /** Показывать ли модальное окно кроппера */
   showCropperModal = false;
 
@@ -99,8 +101,13 @@ export class AvatarControlComponent implements OnInit, ControlValueAccessor {
   croppedBlob: Blob | null = null;
 
   /** Записывает значение URL изображения */
-  writeValue(address: string) {
-    this.value = address;
+  get showImage(): boolean {
+    return Boolean(this.value) && !this.avatarLoadFailed;
+  }
+
+  writeValue(address: string | null | undefined) {
+    this.value = typeof address === "string" ? address.trim() : "";
+    this.avatarLoadFailed = false;
   }
 
   onTouch: () => void = () => {};
@@ -311,6 +318,14 @@ export class AvatarControlComponent implements OnInit, ControlValueAccessor {
    */
   imageLoaded() {}
 
+  onAvatarImageLoad(): void {
+    this.avatarLoadFailed = false;
+  }
+
+  onAvatarImageError(): void {
+    this.avatarLoadFailed = true;
+  }
+
   /**
    * Обработчик готовности обрезки фотографии
    */
@@ -390,6 +405,7 @@ export class AvatarControlComponent implements OnInit, ControlValueAccessor {
 
     this.onChange(url);
     this.value = url;
+    this.avatarLoadFailed = false;
 
     this.onTouch();
   }

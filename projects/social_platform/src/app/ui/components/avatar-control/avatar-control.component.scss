@@ -68,6 +68,14 @@
     object-fit: cover;
   }
 
+  &__placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent);
+    background-color: var(--gray);
+  }
+
   &__tooltip-wrapper {
     position: absolute;
     top: 15%;
@@ -75,10 +83,6 @@
     z-index: 10;
     transform: translateY(-50%);
   }
-}
-
-.placeholder {
-  background-color: var(--gray);
 }
 
 .cancel {

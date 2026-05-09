@@ -21,16 +21,18 @@
     <div class="control__loader">
       <app-loader type="circle" color="accent" size="20px"></app-loader>
     </div>
-    } @if (value) {
-    <img [src]="value" alt="avatar" class="control__img" />
-    } @if(type === 'avatar') {
+    } @if (showImage) {
     <img
-      src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTfRvoKyPWxl-0EExOVhrqc56QcPcWK-Tloew&usqp=CAU"
-      alt="avatar"
+      [src]="value"
+      alt=""
       class="control__img"
+      (load)="onAvatarImageLoad()"
+      (error)="onAvatarImageError()"
     />
-    }@else {
-    <div class="control__img placeholder"></div>
+    } @else {
+    <div class="control__img control__placeholder">
+      <i appIcon icon="upload" appSquare="32"></i>
+    </div>
     }
     <div class="control__overlay">
       <i appIcon icon="edit-pen-old" appSquare="18"></i>
