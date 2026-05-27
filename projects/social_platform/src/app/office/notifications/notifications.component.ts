@@ -37,6 +37,8 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   protected readonly loading = signal(false);
   protected readonly preferences = signal<NotificationPreferences | null>(null);
   protected readonly telegramLink = signal("");
+  protected readonly telegramToken = signal("");
+  protected readonly telegramBotUrl = signal("");
   protected readonly telegramLoading = signal(false);
   protected readonly telegramChecking = signal(false);
   protected readonly telegramError = signal("");
@@ -174,7 +176,9 @@ export class NotificationsComponent implements OnInit, OnDestroy {
     this.notificationService.createTelegramLink().subscribe({
       next: response => {
         this.telegramLink.set(response.link);
-        this.telegramNotice.set("Откройте ссылку в Telegram. Статус обновится автоматически.");
+        this.telegramToken.set(response.token);
+        this.telegramBotUrl.set(response.bot_url || response.link.split("?", 1)[0]);
+        this.telegramNotice.set("Запустите бота и отправьте ему токен из поля ниже. Статус обновится автоматически.");
         this.startTelegramStatusPolling();
         this.telegramLoading.set(false);
       },
@@ -194,6 +198,8 @@ export class NotificationsComponent implements OnInit, OnDestroy {
     this.notificationService.disconnectTelegram().subscribe({
       next: () => {
         this.telegramLink.set("");
+        this.telegramToken.set("");
+        this.telegramBotUrl.set("");
         this.loadPreferences();
         this.telegramLoading.set(false);
       },
@@ -205,7 +211,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   }
 
   protected openTelegramLink(): void {
-    const link = this.telegramLink();
+    const link = this.telegramBotUrl() || this.telegramLink();
 
     if (link) {
       this.startTelegramStatusPolling();
@@ -214,13 +220,13 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   }
 
   protected copyTelegramLink(): void {
-    const link = this.telegramLink();
+    const token = this.telegramToken();
 
-    if (!link || !navigator.clipboard) {
+    if (!token || !navigator.clipboard) {
       return;
     }
 
-    navigator.clipboard.writeText(link).catch(() => undefined);
+    navigator.clipboard.writeText(token).catch(() => undefined);
   }
 
   protected toggleTelegramPreference(type: NotificationEventType, event: Event): void {
@@ -261,6 +267,8 @@ export class NotificationsComponent implements OnInit, OnDestroy {
 
     if (preferences.telegram_connected) {
       this.telegramLink.set("");
+      this.telegramToken.set("");
+      this.telegramBotUrl.set("");
       this.telegramError.set("");
       this.telegramNotice.set("Telegram подключен к вашему аккаунту.");
       this.stopTelegramStatusPolling();
@@ -301,7 +309,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
       next: preferences => {
         this.applyTelegramPreferences(preferences);
         if (!preferences.telegram_connected && showPendingMessage) {
-          this.telegramNotice.set("Подключение пока не подтверждено. Откройте ссылку в Telegram.");
+          this.telegramNotice.set("Подключение пока не подтверждено. Отправьте токен боту и повторите проверку.");
         }
         this.telegramChecking.set(false);
       },
@@ -315,7 +323,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   }
 
   private refreshTelegramStatusAfterReturn(): void {
-    if (!this.telegramLink() && !this.telegramPollingId) {
+    if (!this.telegramToken() && !this.telegramPollingId) {
       return;
     }
     this.refreshTelegramStatus(false);

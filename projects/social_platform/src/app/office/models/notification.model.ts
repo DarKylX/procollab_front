@@ -56,5 +56,7 @@ export interface NotificationPreferencesPatch {
 
 export interface TelegramLinkResponse {
   link: string;
+  token: string;
+  bot_url: string;
   expires_at: string;
 }

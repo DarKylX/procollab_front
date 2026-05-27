@@ -53,7 +53,7 @@
         >
           Подключить Telegram
         </button>
-        @if (telegramLink()) {
+        @if (telegramToken()) {
         <button
           type="button"
           class="telegram-settings__button telegram-settings__button--secondary"
@@ -67,20 +67,23 @@
       </div>
     </div>
 
-    @if (telegramLink()) {
+    @if (telegramToken()) {
     <div class="telegram-settings__link">
-      <input type="text" readonly [value]="telegramLink()" aria-label="Ссылка подключения Telegram" />
+      <input type="text" readonly [value]="telegramToken()" aria-label="Токен подключения Telegram" />
       <button type="button" class="telegram-settings__button" (click)="openTelegramLink()">
-        Открыть
+        Открыть бот
       </button>
       <button
         type="button"
         class="telegram-settings__button telegram-settings__button--secondary"
         (click)="copyTelegramLink()"
       >
-        Скопировать
+        Скопировать токен
       </button>
     </div>
+    <p class="telegram-settings__notice">
+      Нажмите «Открыть бот», запустите его командой /start и отправьте этот токен отдельным сообщением.
+    </p>
     }
 
     @if (preferences()?.telegram_connected) {
