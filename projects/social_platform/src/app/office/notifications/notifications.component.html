@@ -44,6 +44,15 @@
         >
           Отключить
         </button>
+        } @else if (telegramToken()) {
+        <button
+          type="button"
+          class="telegram-settings__button telegram-settings__button--secondary"
+          [disabled]="telegramChecking()"
+          (click)="checkTelegramConnection()"
+        >
+          Проверить подключение
+        </button>
         } @else {
         <button
           type="button"
@@ -53,32 +62,26 @@
         >
           Подключить Telegram
         </button>
-        @if (telegramToken()) {
-        <button
-          type="button"
-          class="telegram-settings__button telegram-settings__button--secondary"
-          [disabled]="telegramChecking()"
-          (click)="checkTelegramConnection()"
-        >
-          Проверить подключение
-        </button>
-        }
         }
       </div>
     </div>
 
     @if (telegramToken()) {
-    <div class="telegram-settings__link">
-      <input type="text" readonly [value]="telegramToken()" aria-label="Токен подключения Telegram" />
+    <div class="telegram-settings__token-row">
+      <div class="telegram-settings__token-field">
+        <input type="text" readonly [value]="telegramToken()" aria-label="Токен подключения Telegram" />
+        <button
+          type="button"
+          class="telegram-settings__copy"
+          aria-label="Скопировать токен Telegram"
+          title="Скопировать токен"
+          (click)="copyTelegramLink()"
+        >
+          <i appIcon icon="link" appSquare="18"></i>
+        </button>
+      </div>
       <button type="button" class="telegram-settings__button" (click)="openTelegramLink()">
         Открыть бот
-      </button>
-      <button
-        type="button"
-        class="telegram-settings__button telegram-settings__button--secondary"
-        (click)="copyTelegramLink()"
-      >
-        Скопировать токен
       </button>
     </div>
     <p class="telegram-settings__notice">
@@ -106,7 +109,12 @@
     <p class="telegram-settings__error">{{ telegramError() }}</p>
     }
     @if (telegramNotice()) {
-    <p class="telegram-settings__notice">{{ telegramNotice() }}</p>
+    <p
+      class="telegram-settings__notice"
+      [class.telegram-settings__notice--strong]="telegramNoticeStrong()"
+    >
+      {{ telegramNotice() }}
+    </p>
     }
   </section>
 
