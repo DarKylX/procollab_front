@@ -83,6 +83,8 @@ export class AvatarControlComponent implements OnInit, ControlValueAccessor {
   /** Текущее значение URL изображения */
   value = "";
 
+  imageLoadFailed = false;
+
   /** Показывать ли модальное окно кроппера */
   showCropperModal = false;
 
@@ -100,7 +102,8 @@ export class AvatarControlComponent implements OnInit, ControlValueAccessor {
 
   /** Записывает значение URL изображения */
   writeValue(address: string) {
-    this.value = address;
+    this.value = this.normalizeMediaUrl(address);
+    this.imageLoadFailed = false;
   }
 
   onTouch: () => void = () => {};
@@ -388,9 +391,26 @@ export class AvatarControlComponent implements OnInit, ControlValueAccessor {
   private updateValue(url: string): void {
     this.loading = false;
 
-    this.onChange(url);
-    this.value = url;
+    const normalizedUrl = this.normalizeMediaUrl(url);
+    this.onChange(normalizedUrl);
+    this.value = normalizedUrl;
+    this.imageLoadFailed = false;
 
     this.onTouch();
+  }
+
+  protected get hasImage(): boolean {
+    return Boolean(this.value) && !this.imageLoadFailed;
+  }
+
+  protected onPreviewError(): void {
+    this.imageLoadFailed = true;
+  }
+
+  private normalizeMediaUrl(url: string | null | undefined): string {
+    if (!url) {
+      return "";
+    }
+    return url.replace("/media/media/", "/media/");
   }
 }
