@@ -53,6 +53,16 @@
         >
           Подключить Telegram
         </button>
+        @if (telegramLink()) {
+        <button
+          type="button"
+          class="telegram-settings__button telegram-settings__button--secondary"
+          [disabled]="telegramChecking()"
+          (click)="checkTelegramConnection()"
+        >
+          Проверить подключение
+        </button>
+        }
         }
       </div>
     </div>
@@ -91,6 +101,9 @@
 
     @if (telegramError()) {
     <p class="telegram-settings__error">{{ telegramError() }}</p>
+    }
+    @if (telegramNotice()) {
+    <p class="telegram-settings__notice">{{ telegramNotice() }}</p>
     }
   </section>
 

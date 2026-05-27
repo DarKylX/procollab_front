@@ -1,7 +1,7 @@
 /** @format */
 
 import { CommonModule } from "@angular/common";
-import { Component, OnInit, signal } from "@angular/core";
+import { Component, OnDestroy, OnInit, signal } from "@angular/core";
 import { Router } from "@angular/router";
 import { IconComponent } from "@ui/components";
 import {
@@ -31,14 +31,16 @@ interface TelegramPreferenceOption {
   templateUrl: "./notifications.component.html",
   styleUrl: "./notifications.component.scss",
 })
-export class NotificationsComponent implements OnInit {
+export class NotificationsComponent implements OnInit, OnDestroy {
   protected readonly notifications = signal<Notification[]>([]);
   protected readonly activeFilter = signal<NotificationFilter>("all");
   protected readonly loading = signal(false);
   protected readonly preferences = signal<NotificationPreferences | null>(null);
   protected readonly telegramLink = signal("");
   protected readonly telegramLoading = signal(false);
+  protected readonly telegramChecking = signal(false);
   protected readonly telegramError = signal("");
+  protected readonly telegramNotice = signal("");
 
   protected readonly filters: NotificationFilterOption[] = [
     { label: "Все", value: "all" },
@@ -58,6 +60,10 @@ export class NotificationsComponent implements OnInit {
     { label: "Назначение эксперту", value: "expert_projects_assigned" },
   ];
 
+  private telegramPollingId: ReturnType<typeof setInterval> | null = null;
+  private telegramPollingAttempts = 0;
+  private readonly telegramPollingMaxAttempts = 40;
+
   constructor(
     private readonly notificationService: NotificationService,
     private readonly router: Router
@@ -66,6 +72,10 @@ export class NotificationsComponent implements OnInit {
   ngOnInit(): void {
     this.loadNotifications();
     this.loadPreferences();
+  }
+
+  ngOnDestroy(): void {
+    this.stopTelegramStatusPolling();
   }
 
   protected filteredNotifications(): Notification[] {
@@ -147,10 +157,13 @@ export class NotificationsComponent implements OnInit {
   protected createTelegramLink(): void {
     this.telegramLoading.set(true);
     this.telegramError.set("");
+    this.telegramNotice.set("");
 
     this.notificationService.createTelegramLink().subscribe({
       next: response => {
         this.telegramLink.set(response.link);
+        this.telegramNotice.set("Откройте ссылку в Telegram. Статус обновится автоматически.");
+        this.startTelegramStatusPolling();
         this.telegramLoading.set(false);
       },
       error: () => {
@@ -163,6 +176,8 @@ export class NotificationsComponent implements OnInit {
   protected disconnectTelegram(): void {
     this.telegramLoading.set(true);
     this.telegramError.set("");
+    this.telegramNotice.set("");
+    this.stopTelegramStatusPolling();
 
     this.notificationService.disconnectTelegram().subscribe({
       next: () => {
@@ -181,6 +196,7 @@ export class NotificationsComponent implements OnInit {
     const link = this.telegramLink();
 
     if (link) {
+      this.startTelegramStatusPolling();
       window.open(link, "_blank", "noopener,noreferrer");
     }
   }
@@ -206,6 +222,10 @@ export class NotificationsComponent implements OnInit {
       });
   }
 
+  protected checkTelegramConnection(): void {
+    this.refreshTelegramStatus(true);
+  }
+
   private loadNotifications(): void {
     this.loading.set(true);
     this.notificationService.getNotifications({ page: 1, page_size: 100 }).subscribe({
@@ -220,7 +240,65 @@ export class NotificationsComponent implements OnInit {
 
   private loadPreferences(): void {
     this.notificationService.getPreferences().subscribe({
-      next: preferences => this.preferences.set(preferences),
+      next: preferences => this.applyTelegramPreferences(preferences),
+    });
+  }
+
+  private applyTelegramPreferences(preferences: NotificationPreferences): void {
+    this.preferences.set(preferences);
+
+    if (preferences.telegram_connected) {
+      this.telegramLink.set("");
+      this.telegramError.set("");
+      this.telegramNotice.set("Telegram подключен к вашему аккаунту.");
+      this.stopTelegramStatusPolling();
+    }
+  }
+
+  private startTelegramStatusPolling(): void {
+    if (this.telegramPollingId) {
+      return;
+    }
+
+    this.telegramPollingAttempts = 0;
+    this.telegramPollingId = setInterval(() => {
+      this.telegramPollingAttempts += 1;
+      this.refreshTelegramStatus(false);
+
+      if (this.telegramPollingAttempts >= this.telegramPollingMaxAttempts) {
+        this.stopTelegramStatusPolling();
+        this.telegramNotice.set("Если бот уже ответил, нажмите «Проверить подключение».");
+      }
+    }, 3000);
+  }
+
+  private stopTelegramStatusPolling(): void {
+    if (!this.telegramPollingId) {
+      return;
+    }
+
+    clearInterval(this.telegramPollingId);
+    this.telegramPollingId = null;
+    this.telegramPollingAttempts = 0;
+  }
+
+  private refreshTelegramStatus(showPendingMessage: boolean): void {
+    this.telegramChecking.set(true);
+
+    this.notificationService.getPreferences().subscribe({
+      next: preferences => {
+        this.applyTelegramPreferences(preferences);
+        if (!preferences.telegram_connected && showPendingMessage) {
+          this.telegramNotice.set("Подключение пока не подтверждено. Откройте ссылку в Telegram.");
+        }
+        this.telegramChecking.set(false);
+      },
+      error: () => {
+        if (showPendingMessage) {
+          this.telegramError.set("Не удалось проверить подключение Telegram");
+        }
+        this.telegramChecking.set(false);
+      },
     });
   }
 }
