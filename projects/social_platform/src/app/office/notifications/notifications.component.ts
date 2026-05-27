@@ -1,7 +1,7 @@
 /** @format */
 
 import { CommonModule } from "@angular/common";
-import { Component, OnDestroy, OnInit, signal } from "@angular/core";
+import { Component, HostListener, OnDestroy, OnInit, signal } from "@angular/core";
 import { Router } from "@angular/router";
 import { IconComponent } from "@ui/components";
 import {
@@ -76,6 +76,18 @@ export class NotificationsComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.stopTelegramStatusPolling();
+  }
+
+  @HostListener("window:focus")
+  protected onWindowFocus(): void {
+    this.refreshTelegramStatusAfterReturn();
+  }
+
+  @HostListener("document:visibilitychange")
+  protected onVisibilityChange(): void {
+    if (!document.hidden) {
+      this.refreshTelegramStatusAfterReturn();
+    }
   }
 
   protected filteredNotifications(): Notification[] {
@@ -239,7 +251,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   }
 
   private loadPreferences(): void {
-    this.notificationService.getPreferences().subscribe({
+    this.notificationService.getPreferences({ fresh: true }).subscribe({
       next: preferences => this.applyTelegramPreferences(preferences),
     });
   }
@@ -285,7 +297,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   private refreshTelegramStatus(showPendingMessage: boolean): void {
     this.telegramChecking.set(true);
 
-    this.notificationService.getPreferences().subscribe({
+    this.notificationService.getPreferences({ fresh: true }).subscribe({
       next: preferences => {
         this.applyTelegramPreferences(preferences);
         if (!preferences.telegram_connected && showPendingMessage) {
@@ -300,5 +312,12 @@ export class NotificationsComponent implements OnInit, OnDestroy {
         this.telegramChecking.set(false);
       },
     });
+  }
+
+  private refreshTelegramStatusAfterReturn(): void {
+    if (!this.telegramLink() && !this.telegramPollingId) {
+      return;
+    }
+    this.refreshTelegramStatus(false);
   }
 }
