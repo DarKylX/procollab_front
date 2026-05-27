@@ -175,9 +175,12 @@ export class NotificationsComponent implements OnInit, OnDestroy {
 
     this.notificationService.createTelegramLink().subscribe({
       next: response => {
+        const token = response.token || this.extractTelegramStartToken(response.link);
+        const botUrl = response.bot_url || this.extractTelegramBotUrl(response.link);
+
         this.telegramLink.set(response.link);
-        this.telegramToken.set(response.token);
-        this.telegramBotUrl.set(response.bot_url || response.link.split("?", 1)[0]);
+        this.telegramToken.set(token);
+        this.telegramBotUrl.set(botUrl);
         this.telegramNotice.set("Запустите бота и отправьте ему токен из поля ниже. Статус обновится автоматически.");
         this.startTelegramStatusPolling();
         this.telegramLoading.set(false);
@@ -327,5 +330,23 @@ export class NotificationsComponent implements OnInit, OnDestroy {
       return;
     }
     this.refreshTelegramStatus(false);
+  }
+
+  private extractTelegramStartToken(link: string): string {
+    try {
+      return new URL(link).searchParams.get("start") || "";
+    } catch {
+      const match = link.match(/[?&]start=([^&]+)/);
+      return match ? decodeURIComponent(match[1]) : "";
+    }
+  }
+
+  private extractTelegramBotUrl(link: string): string {
+    try {
+      const url = new URL(link);
+      return `${url.origin}${url.pathname}`.replace(/\/$/, "");
+    } catch {
+      return link.split("?", 1)[0];
+    }
   }
 }
