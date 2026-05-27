@@ -43,6 +43,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   protected readonly telegramChecking = signal(false);
   protected readonly telegramError = signal("");
   protected readonly telegramNotice = signal("");
+  protected readonly telegramNoticeStrong = signal(false);
 
   protected readonly filters: NotificationFilterOption[] = [
     { label: "Все", value: "all" },
@@ -172,6 +173,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
     this.telegramLoading.set(true);
     this.telegramError.set("");
     this.telegramNotice.set("");
+    this.telegramNoticeStrong.set(false);
 
     this.notificationService.createTelegramLink().subscribe({
       next: response => {
@@ -181,7 +183,6 @@ export class NotificationsComponent implements OnInit, OnDestroy {
         this.telegramLink.set(response.link);
         this.telegramToken.set(token);
         this.telegramBotUrl.set(botUrl);
-        this.telegramNotice.set("Запустите бота и отправьте ему токен из поля ниже. Статус обновится автоматически.");
         this.startTelegramStatusPolling();
         this.telegramLoading.set(false);
       },
@@ -196,6 +197,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
     this.telegramLoading.set(true);
     this.telegramError.set("");
     this.telegramNotice.set("");
+    this.telegramNoticeStrong.set(false);
     this.stopTelegramStatusPolling();
 
     this.notificationService.disconnectTelegram().subscribe({
@@ -230,6 +232,8 @@ export class NotificationsComponent implements OnInit, OnDestroy {
     }
 
     navigator.clipboard.writeText(token).catch(() => undefined);
+    this.telegramNotice.set("Токен скопирован.");
+    this.telegramNoticeStrong.set(false);
   }
 
   protected toggleTelegramPreference(type: NotificationEventType, event: Event): void {
@@ -274,6 +278,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
       this.telegramBotUrl.set("");
       this.telegramError.set("");
       this.telegramNotice.set("Telegram подключен к вашему аккаунту.");
+      this.telegramNoticeStrong.set(false);
       this.stopTelegramStatusPolling();
     }
   }
@@ -291,6 +296,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
       if (this.telegramPollingAttempts >= this.telegramPollingMaxAttempts) {
         this.stopTelegramStatusPolling();
         this.telegramNotice.set("Если бот уже ответил, нажмите «Проверить подключение».");
+        this.telegramNoticeStrong.set(true);
       }
     }, 3000);
   }
@@ -313,6 +319,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
         this.applyTelegramPreferences(preferences);
         if (!preferences.telegram_connected && showPendingMessage) {
           this.telegramNotice.set("Подключение пока не подтверждено. Отправьте токен боту и повторите проверку.");
+          this.telegramNoticeStrong.set(true);
         }
         this.telegramChecking.set(false);
       },
