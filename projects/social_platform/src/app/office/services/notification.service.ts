@@ -84,8 +84,12 @@ export class NotificationService {
       );
   }
 
-  getPreferences(): Observable<NotificationPreferences> {
-    return this.apiService.get<NotificationPreferences>("/auth/users/me/notification-preferences/");
+  getPreferences(options: { fresh?: boolean } = {}): Observable<NotificationPreferences> {
+    const params = options.fresh ? new HttpParams().set("_", Date.now().toString()) : undefined;
+    return this.apiService.get<NotificationPreferences>(
+      "/auth/users/me/notification-preferences/",
+      params
+    );
   }
 
   updatePreferences(payload: NotificationPreferencesPatch): Observable<NotificationPreferences> {
