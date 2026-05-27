@@ -19,6 +19,81 @@
     </button>
   </div>
 
+  <section class="notifications-page__telegram" aria-labelledby="telegram-notifications-title">
+    <div class="telegram-settings">
+      <div class="telegram-settings__summary">
+        <div class="telegram-settings__icon">
+          <i appIcon icon="bell" appSquare="22" appViewBox="0 0 24 24"></i>
+        </div>
+        <div>
+          <h2 id="telegram-notifications-title">Telegram</h2>
+          <p>Короткие уведомления без персональных данных</p>
+        </div>
+      </div>
+
+      <div class="telegram-settings__actions">
+        @if (preferences()?.telegram_connected) {
+        <span class="telegram-settings__status telegram-settings__status--active">
+          {{ preferences()?.telegram_username ? "@" + preferences()?.telegram_username : "Подключен" }}
+        </span>
+        <button
+          type="button"
+          class="telegram-settings__button telegram-settings__button--secondary"
+          [disabled]="telegramLoading()"
+          (click)="disconnectTelegram()"
+        >
+          Отключить
+        </button>
+        } @else {
+        <button
+          type="button"
+          class="telegram-settings__button"
+          [disabled]="telegramLoading()"
+          (click)="createTelegramLink()"
+        >
+          Подключить Telegram
+        </button>
+        }
+      </div>
+    </div>
+
+    @if (telegramLink()) {
+    <div class="telegram-settings__link">
+      <input type="text" readonly [value]="telegramLink()" aria-label="Ссылка подключения Telegram" />
+      <button type="button" class="telegram-settings__button" (click)="openTelegramLink()">
+        Открыть
+      </button>
+      <button
+        type="button"
+        class="telegram-settings__button telegram-settings__button--secondary"
+        (click)="copyTelegramLink()"
+      >
+        Скопировать
+      </button>
+    </div>
+    }
+
+    @if (preferences()?.telegram_connected) {
+    <div class="telegram-settings__preferences" aria-label="Категории Telegram-уведомлений">
+      @for (option of telegramPreferenceOptions; track option.value) {
+      <label class="telegram-settings__preference">
+        <input
+          type="checkbox"
+          [checked]="telegramPreferenceEnabled(option.value)"
+          [disabled]="telegramLoading()"
+          (change)="toggleTelegramPreference(option.value, $event)"
+        />
+        <span>{{ option.label }}</span>
+      </label>
+      }
+    </div>
+    }
+
+    @if (telegramError()) {
+    <p class="telegram-settings__error">{{ telegramError() }}</p>
+    }
+  </section>
+
   <div class="notifications-page__filters" role="tablist" aria-label="Фильтры уведомлений">
     @for (filter of filters; track filter.value) {
     <button

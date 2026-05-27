@@ -7,7 +7,10 @@ import { ApiService } from "projects/core";
 import {
   Notification,
   NotificationListResponse,
+  NotificationPreferences,
+  NotificationPreferencesPatch,
   NotificationQueryParams,
+  TelegramLinkResponse,
 } from "@models/notification.model";
 
 @Injectable({
@@ -79,6 +82,25 @@ export class NotificationService {
           this.unreadCountSubject.next(0);
         })
       );
+  }
+
+  getPreferences(): Observable<NotificationPreferences> {
+    return this.apiService.get<NotificationPreferences>("/auth/users/me/notification-preferences/");
+  }
+
+  updatePreferences(payload: NotificationPreferencesPatch): Observable<NotificationPreferences> {
+    return this.apiService.patch<NotificationPreferences>(
+      "/auth/users/me/notification-preferences/",
+      payload
+    );
+  }
+
+  createTelegramLink(): Observable<TelegramLinkResponse> {
+    return this.apiService.post<TelegramLinkResponse>("/auth/users/me/telegram-link/", {});
+  }
+
+  disconnectTelegram(): Observable<void> {
+    return this.apiService.delete<void>("/auth/users/me/telegram-link/");
   }
 
   private toHttpParams(query: NotificationQueryParams): HttpParams {
