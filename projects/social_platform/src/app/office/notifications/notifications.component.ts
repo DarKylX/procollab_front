@@ -4,7 +4,12 @@ import { CommonModule } from "@angular/common";
 import { Component, OnInit, signal } from "@angular/core";
 import { Router } from "@angular/router";
 import { IconComponent } from "@ui/components";
-import { Notification, NotificationCategory } from "@models/notification.model";
+import {
+  Notification,
+  NotificationCategory,
+  NotificationEventType,
+  NotificationPreferences,
+} from "@models/notification.model";
 import { NotificationService } from "@services/notification.service";
 
 type NotificationFilter = "all" | "unread" | NotificationCategory;
@@ -12,6 +17,11 @@ type NotificationFilter = "all" | "unread" | NotificationCategory;
 interface NotificationFilterOption {
   label: string;
   value: NotificationFilter;
+}
+
+interface TelegramPreferenceOption {
+  label: string;
+  value: NotificationEventType;
 }
 
 @Component({
@@ -25,6 +35,10 @@ export class NotificationsComponent implements OnInit {
   protected readonly notifications = signal<Notification[]>([]);
   protected readonly activeFilter = signal<NotificationFilter>("all");
   protected readonly loading = signal(false);
+  protected readonly preferences = signal<NotificationPreferences | null>(null);
+  protected readonly telegramLink = signal("");
+  protected readonly telegramLoading = signal(false);
+  protected readonly telegramError = signal("");
 
   protected readonly filters: NotificationFilterOption[] = [
     { label: "Все", value: "all" },
@@ -34,6 +48,16 @@ export class NotificationsComponent implements OnInit {
     { label: "Экспертиза", value: "expertise" },
   ];
 
+  protected readonly telegramPreferenceOptions: TelegramPreferenceOption[] = [
+    { label: "Новые заявки на модерацию", value: "program_submitted_to_moderation" },
+    { label: "Одобрение чемпионата", value: "program_moderation_approved" },
+    { label: "Отклонение чемпионата", value: "program_moderation_rejected" },
+    { label: "Заявки на верификацию", value: "company_verification_submitted" },
+    { label: "Подтверждение компании", value: "company_verification_approved" },
+    { label: "Отклонение верификации", value: "company_verification_rejected" },
+    { label: "Назначение эксперту", value: "expert_projects_assigned" },
+  ];
+
   constructor(
     private readonly notificationService: NotificationService,
     private readonly router: Router
@@ -41,6 +65,7 @@ export class NotificationsComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadNotifications();
+    this.loadPreferences();
   }
 
   protected filteredNotifications(): Notification[] {
@@ -115,6 +140,72 @@ export class NotificationsComponent implements OnInit {
     });
   }
 
+  protected telegramPreferenceEnabled(type: NotificationEventType): boolean {
+    return this.preferences()?.telegram_preferences_state?.[type] ?? false;
+  }
+
+  protected createTelegramLink(): void {
+    this.telegramLoading.set(true);
+    this.telegramError.set("");
+
+    this.notificationService.createTelegramLink().subscribe({
+      next: response => {
+        this.telegramLink.set(response.link);
+        this.telegramLoading.set(false);
+      },
+      error: () => {
+        this.telegramError.set("Не удалось создать ссылку подключения");
+        this.telegramLoading.set(false);
+      },
+    });
+  }
+
+  protected disconnectTelegram(): void {
+    this.telegramLoading.set(true);
+    this.telegramError.set("");
+
+    this.notificationService.disconnectTelegram().subscribe({
+      next: () => {
+        this.telegramLink.set("");
+        this.loadPreferences();
+        this.telegramLoading.set(false);
+      },
+      error: () => {
+        this.telegramError.set("Не удалось отключить Telegram");
+        this.telegramLoading.set(false);
+      },
+    });
+  }
+
+  protected openTelegramLink(): void {
+    const link = this.telegramLink();
+
+    if (link) {
+      window.open(link, "_blank", "noopener,noreferrer");
+    }
+  }
+
+  protected copyTelegramLink(): void {
+    const link = this.telegramLink();
+
+    if (!link || !navigator.clipboard) {
+      return;
+    }
+
+    navigator.clipboard.writeText(link).catch(() => undefined);
+  }
+
+  protected toggleTelegramPreference(type: NotificationEventType, event: Event): void {
+    const target = event.target as HTMLInputElement;
+
+    this.notificationService
+      .updatePreferences({ telegram_preferences: { [type]: target.checked } })
+      .subscribe({
+        next: preferences => this.preferences.set(preferences),
+        error: () => this.telegramError.set("Не удалось сохранить настройки Telegram"),
+      });
+  }
+
   private loadNotifications(): void {
     this.loading.set(true);
     this.notificationService.getNotifications({ page: 1, page_size: 100 }).subscribe({
@@ -124,6 +215,12 @@ export class NotificationsComponent implements OnInit {
         this.loading.set(false);
       },
       error: () => this.loading.set(false),
+    });
+  }
+
+  private loadPreferences(): void {
+    this.notificationService.getPreferences().subscribe({
+      next: preferences => this.preferences.set(preferences),
     });
   }
 }
