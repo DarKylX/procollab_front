@@ -101,13 +101,13 @@ export class NotificationsComponent implements OnInit, OnDestroy {
       return notifications;
     }
     if (filter === "unread") {
-      return notifications.filter(notification => !notification.is_read);
+      return notifications.filter(notification => !notification.isRead);
     }
     return notifications.filter(notification => notification.category === filter);
   }
 
   protected unreadCount(): number {
-    return this.notifications().filter(notification => !notification.is_read).length;
+    return this.notifications().filter(notification => !notification.isRead).length;
   }
 
   protected setFilter(filter: NotificationFilter): void {
@@ -129,7 +129,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
       }
     };
 
-    if (notification.is_read) {
+    if (notification.isRead) {
       navigate();
       return;
     }
@@ -157,7 +157,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   }
 
   protected notificationDate(notification: Notification): string {
-    return new Date(notification.created_at).toLocaleString("ru-RU", {
+    return new Date(notification.createdAt).toLocaleString("ru-RU", {
       day: "2-digit",
       month: "long",
       hour: "2-digit",
@@ -166,7 +166,8 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   }
 
   protected telegramPreferenceEnabled(type: NotificationEventType): boolean {
-    return this.preferences()?.telegram_preferences_state?.[type] ?? false;
+    const state = this.preferences()?.telegramPreferencesState ?? {};
+    return state[type] ?? state[this.camelizePreferenceKey(type)] ?? false;
   }
 
   protected createTelegramLink(): void {
@@ -178,7 +179,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
     this.notificationService.createTelegramLink().subscribe({
       next: response => {
         const token = response.token || this.extractTelegramStartToken(response.link);
-        const botUrl = response.bot_url || this.extractTelegramBotUrl(response.link);
+        const botUrl = response.botUrl || this.extractTelegramBotUrl(response.link);
 
         this.telegramLink.set(response.link);
         this.telegramToken.set(token);
@@ -240,9 +241,9 @@ export class NotificationsComponent implements OnInit, OnDestroy {
     const target = event.target as HTMLInputElement;
 
     this.notificationService
-      .updatePreferences({ telegram_preferences: { [type]: target.checked } })
+      .updatePreferences({ telegramPreferences: { [type]: target.checked } })
       .subscribe({
-        next: preferences => this.preferences.set(preferences),
+        next: preferences => this.applyTelegramPreferences(preferences),
         error: () => this.telegramError.set("Не удалось сохранить настройки Telegram"),
       });
   }
@@ -272,7 +273,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   private applyTelegramPreferences(preferences: NotificationPreferences): void {
     this.preferences.set(preferences);
 
-    if (preferences.telegram_connected) {
+    if (preferences.telegramConnected) {
       this.telegramLink.set("");
       this.telegramToken.set("");
       this.telegramBotUrl.set("");
@@ -317,7 +318,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
     this.notificationService.getPreferences({ fresh: true }).subscribe({
       next: preferences => {
         this.applyTelegramPreferences(preferences);
-        if (!preferences.telegram_connected && showPendingMessage) {
+        if (!preferences.telegramConnected && showPendingMessage) {
           this.telegramNotice.set("Подключение пока не подтверждено. Отправьте токен боту и повторите проверку.");
           this.telegramNoticeStrong.set(true);
         }
@@ -355,5 +356,9 @@ export class NotificationsComponent implements OnInit, OnDestroy {
     } catch {
       return link.split("?", 1)[0];
     }
+  }
+
+  private camelizePreferenceKey(type: NotificationEventType): string {
+    return type.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
   }
 }

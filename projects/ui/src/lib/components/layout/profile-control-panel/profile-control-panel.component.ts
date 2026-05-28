@@ -104,7 +104,7 @@ export class ProfileControlPanelComponent {
   }
 
   notificationTime(notification: Notification): string {
-    return new Date(notification.created_at).toLocaleString("ru-RU", {
+    return new Date(notification.createdAt).toLocaleString("ru-RU", {
       day: "2-digit",
       month: "short",
       hour: "2-digit",

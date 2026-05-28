@@ -47,7 +47,7 @@
             <button
               type="button"
               class="notifications__item"
-              [class.notifications__item--unread]="!notification.is_read"
+              [class.notifications__item--unread]="!notification.isRead"
               (click)="notificationClick.emit(notification)"
             >
               <span class="notifications__icon">
@@ -64,7 +64,7 @@
               </span>
               <span class="notifications__meta">
                 <span class="notifications__time">{{ notificationTime(notification) }}</span>
-                @if (!notification.is_read) {
+                @if (!notification.isRead) {
                 <span class="notifications__dot"></span>
                 }
               </span>

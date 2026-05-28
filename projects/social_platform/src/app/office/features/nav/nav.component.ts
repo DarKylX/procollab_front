@@ -148,7 +148,7 @@ export class NavComponent implements OnInit, OnDestroy {
       }
     };
 
-    if (notification.is_read) {
+    if (notification.isRead) {
       navigate();
       return;
     }
@@ -188,7 +188,7 @@ export class NavComponent implements OnInit, OnDestroy {
   }
 
   notificationTime(notification: Notification): string {
-    return new Date(notification.created_at).toLocaleString("ru-RU", {
+    return new Date(notification.createdAt).toLocaleString("ru-RU", {
       day: "2-digit",
       month: "short",
       hour: "2-digit",
