@@ -27,11 +27,31 @@ jobs:
       - run: npm run lint:ts
       - run: npm run build:prod
       - name: deploy to server
-        uses: burnett01/rsync-deployments@5.2.1
-        with:
-          switches: -avzr --delete
-          path: dist/**
-          remote_path: /home/gh_deploy
-          remote_user: gh_deploy
-          remote_key: ${{ secrets.DEPLOY_KEY }}
-          remote_host: app.procollab.ru
+        env:
+          DEPLOY_HOST: ${{ secrets.SERVER_HOST || 'app.procollab.ru' }}
+          DEPLOY_USER: ${{ secrets.SERVER_USER || 'gh_deploy' }}
+          DEPLOY_PASSWORD: ${{ secrets.SERVER_PASSWORD }}
+          DEPLOY_KEY: ${{ secrets.DEPLOY_KEY }}
+          DEPLOY_PATH: /home/gh_deploy
+        run: |
+          set -euo pipefail
+
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends rsync sshpass
+
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+          key_file="$RUNNER_TEMP/deploy_key"
+          printf '%s' "$DEPLOY_KEY" | sed 's/\\n/\n/g' | tr -d '\r' > "$key_file"
+          chmod 600 "$key_file"
+
+          if [ -s "$key_file" ] && ssh-keygen -y -f "$key_file" > /dev/null 2>&1; then
+            rsync -avzr --delete -e "ssh -i $key_file -o IdentitiesOnly=yes" dist/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/"
+          elif [ -n "$DEPLOY_PASSWORD" ]; then
+            sshpass -p "$DEPLOY_PASSWORD" rsync -avzr --delete -e "ssh" dist/ "$DEPLOY_USER@$DEPLOY_HOST:$DEPLOY_PATH/"
+          else
+            echo "No valid SSH key or password was available for deployment." >&2
+            exit 1
+          fi
