@@ -271,14 +271,16 @@
         <h2>Правовые документы и согласия</h2>
         <p>
           Политика обработки персональных данных PROCOLLAB применяется ко всем чемпионатам.
-          Организатор может добавить только правила участия или дополнительные условия чемпионата.
+          Документы платформы подключает администратор. Организатору нужно указать правила участия
+          чемпионата, при необходимости добавить дополнительные условия и принять условия работы с
+          данными участников.
         </p>
       </div>
     </header>
 
     <div class="registration-legal__documents">
       <article>
-        <strong>Platform privacy policy</strong>
+        <strong>Политика обработки персональных данных PROCOLLAB</strong>
         @if (legalDocumentHref("privacy_policy")) {
         <a [href]="legalDocumentHref('privacy_policy')" target="_blank" rel="noopener">
           {{ legalDocumentTitle("privacy_policy", "Политика обработки персональных данных") }}
@@ -289,10 +291,32 @@
       </article>
 
       <article>
-        <strong>Participant consent</strong>
+        <strong>Согласие участника на обработку данных</strong>
         @if (legalDocumentHref("participant_consent")) {
         <a [href]="legalDocumentHref('participant_consent')" target="_blank" rel="noopener">
           {{ legalDocumentTitle("participant_consent", "Согласие на обработку данных") }}
+        </a>
+        } @else {
+        <span>Активный документ не найден</span>
+        }
+      </article>
+
+      <article>
+        <strong>Правила участия платформы</strong>
+        @if (legalDocumentHref("participation_terms")) {
+        <a [href]="legalDocumentHref('participation_terms')" target="_blank" rel="noopener">
+          {{ legalDocumentTitle("participation_terms", "Правила участия платформы") }}
+        </a>
+        } @else {
+        <span>Активный документ не найден</span>
+        }
+      </article>
+
+      <article>
+        <strong>Условия для организатора</strong>
+        @if (legalDocumentHref("organizer_terms")) {
+        <a [href]="legalDocumentHref('organizer_terms')" target="_blank" rel="noopener">
+          {{ legalDocumentTitle("organizer_terms", "Условия для организатора") }}
         </a>
         } @else {
         <span>Активный документ не найден</span>
@@ -322,20 +346,37 @@
 
     <div class="registration-legal__terms">
       <div>
-        <strong>Organizer terms</strong>
+        <strong>Условия для организатора</strong>
+        @if (legalDocumentHref("organizer_terms")) {
+        <a
+          class="registration-legal__terms-link"
+          [href]="legalDocumentHref('organizer_terms')"
+          target="_blank"
+          rel="noopener"
+        >
+          Открыть условия перед принятием
+        </a>
+        }
         @if (organizerTermsAccepted) {
         <span>
           Принято
           {{ currentLegalSettings?.organizerTermsAcceptedAt | date: "d MMMM yyyy, HH:mm" }}
         </span>
         } @else {
-        <span>Не принято. Перед отправкой на модерацию условия обязательны.</span>
+        @if (!legalDocumentHref("organizer_terms")) {
+        <span>Активные условия для организатора не найдены. Обратитесь к администратору платформы.</span>
+        } @else {
+        <span>
+          Не принято. Ознакомьтесь с условиями для организатора и подтвердите согласие на работу с
+          данными участников перед отправкой на модерацию.
+        </span>
+        }
         }
       </div>
       <button
         class="registration-secondary-button"
         type="button"
-        [disabled]="isReadonly || organizerTermsAccepted"
+        [disabled]="isReadonly || organizerTermsAccepted || !legalDocumentHref('organizer_terms')"
         (click)="acceptOrganizerTerms()"
       >
         Принять условия организатора

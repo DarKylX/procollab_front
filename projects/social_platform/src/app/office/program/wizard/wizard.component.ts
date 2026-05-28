@@ -30,6 +30,7 @@ import {
 } from "rxjs";
 import { Program } from "../models/program.model";
 import { ProgramDraftPayload } from "../models/program-draft.model";
+import { ReadinessData, ReadinessSection } from "../models/readiness.model";
 import { ProgramService } from "../services/program.service";
 import { WizardProgressComponent } from "./components/wizard-progress/wizard-progress.component";
 import {
@@ -45,6 +46,30 @@ interface CreatedChecklistItem {
   label: string;
   status: ChecklistStatus;
 }
+
+const CREATED_CHECKLIST_KEYS = [
+  "basic_info",
+  "dates",
+  "registration",
+  "legal_terms",
+  "materials",
+  "criteria_experts",
+  "visual_assets",
+  "verification",
+  "certificate_template",
+];
+
+const CREATED_CHECKLIST_LABELS: Record<string, string> = {
+  basic_info: "Основная информация",
+  dates: "Сроки и формат",
+  registration: "Регистрация",
+  legal_terms: "Правовые документы",
+  materials: "Материалы",
+  criteria_experts: "Критерии и эксперты",
+  visual_assets: "Обложка и визуальные материалы",
+  verification: "Верификация",
+  certificate_template: "Сертификат",
+};
 
 @Component({
   selector: "app-program-wizard",
@@ -63,20 +88,12 @@ export class WizardComponent implements OnInit, OnDestroy {
   private readonly snackbar = inject(SnackbarService);
   readonly wizardState = inject(WizardStateService);
 
-  readonly createdChecklist: CreatedChecklistItem[] = [
-    { label: "Основная информация", status: "done" },
-    { label: "Регистрация", status: "done" },
-    { label: "Сроки и формат", status: "done" },
-    { label: "Материалы", status: "empty" },
-    { label: "Критерии и эксперты", status: "empty" },
-    { label: "Обложка и визуальные материалы", status: "empty" },
-  ];
-
   state: WizardState = this.wizardState.snapshot;
   validity = this.wizardState.validitySnapshot;
   saveStatus: AutosaveStatus = "idle";
   lastSavedAt: Date | null = null;
   createdProgram: Program | null = null;
+  createdReadiness: ReadinessData | null = null;
   createdPopupOpen = false;
   moderationError = "";
   moderationSubmitting = false;
@@ -173,16 +190,63 @@ export class WizardComponent implements OnInit, OnDestroy {
     return this.createdChecklist.filter(item => item.status === "done").length;
   }
 
+  get createdChecklist(): CreatedChecklistItem[] {
+    const sections = this.createdReadiness?.sections;
+
+    if (Array.isArray(sections) && sections.length) {
+      const orderedSections = [
+        ...CREATED_CHECKLIST_KEYS
+          .map(key => sections.find(section => section.id === key))
+          .filter((section): section is ReadinessSection => Boolean(section)),
+        ...sections.filter(section => !CREATED_CHECKLIST_KEYS.includes(section.id)),
+      ];
+
+      return orderedSections.map(section => ({
+        label: section.label || CREATED_CHECKLIST_LABELS[section.id] || section.id,
+        status: this.createdSectionStatus(section),
+      }));
+    }
+
+    return CREATED_CHECKLIST_KEYS.map(key => ({
+      label: CREATED_CHECKLIST_LABELS[key],
+      status: "empty",
+    }));
+  }
+
   get readinessText(): string {
+    const readinessPercent =
+      this.createdReadiness?.readinessPercent ??
+      this.createdReadiness?.readiness_percent ??
+      this.createdReadiness?.percentage;
+
+    if (typeof readinessPercent === "number") {
+      return `${readinessPercent}% готовности`;
+    }
+
     return `${this.completedChecklistCount} из ${this.createdChecklist.length} заполнено`;
   }
 
   get canSubmitCreatedToModeration(): boolean {
-    return this.createdChecklist.every(item => item.status === "done");
+    return Boolean(
+      this.createdReadiness?.canSubmitToModeration ??
+        this.createdReadiness?.can_submit_to_moderation ??
+        false
+    );
   }
 
   get moderationDisabledHint(): string {
-    return "Заполните разделы: материалы, критерии и эксперты, обложка и визуальные материалы.";
+    const missingSections =
+      this.createdReadiness?.missingRequiredSections ??
+      this.createdReadiness?.missing_required_sections ??
+      [];
+
+    if (missingSections.length) {
+      return `Заполните обязательные разделы: ${missingSections
+        .map(key => this.createdReadinessLabel(key))
+        .join(", ")}.`;
+    }
+
+    return "Заполните обязательные разделы чемпионата.";
   }
 
   goBack(): void {
@@ -262,6 +326,7 @@ export class WizardComponent implements OnInit, OnDestroy {
 
   closeCreatedPopup(): void {
     this.createdPopupOpen = false;
+    this.createdReadiness = null;
     this.wizardState.reset();
     this.router.navigate(["/office/program/my"]);
   }
@@ -273,6 +338,7 @@ export class WizardComponent implements OnInit, OnDestroy {
     }
 
     this.createdPopupOpen = false;
+    this.createdReadiness = null;
     this.wizardState.reset();
     this.router.navigate(["/office/program", programId, "edit", "main"]);
   }
@@ -284,6 +350,7 @@ export class WizardComponent implements OnInit, OnDestroy {
     }
 
     this.createdPopupOpen = false;
+    this.createdReadiness = null;
     this.wizardState.reset();
     this.router.navigate(["/office/program", programId]);
   }
@@ -300,8 +367,14 @@ export class WizardComponent implements OnInit, OnDestroy {
       .submitToModeration(programId)
       .pipe(
         catchError(error => {
+          const missingSections =
+            error?.error?.missing_required_sections ?? error?.error?.missingRequiredSections ?? [];
           this.moderationError =
-            error?.error?.detail || "Не удалось отправить чемпионат на модерацию";
+            Array.isArray(missingSections) && missingSections.length
+              ? `Заполните обязательные разделы: ${missingSections
+                  .map(key => this.createdReadinessLabel(key))
+                  .join(", ")}`
+              : error?.error?.detail || "Не удалось отправить чемпионат на модерацию";
           return throwError(() => error);
         }),
         finalize(() => {
@@ -313,6 +386,7 @@ export class WizardComponent implements OnInit, OnDestroy {
       .subscribe({
         next: () => {
           this.createdPopupOpen = false;
+          this.createdReadiness = null;
           this.wizardState.reset();
           this.snackbar.success("Чемпионат отправлен на модерацию");
           this.router.navigate(["/office/program", programId]);
@@ -333,6 +407,20 @@ export class WizardComponent implements OnInit, OnDestroy {
     return "не заполнено";
   }
 
+  private createdSectionStatus(section: ReadinessSection): ChecklistStatus {
+    return section.isReady || section.is_ready ? "done" : "empty";
+  }
+
+  private createdReadinessLabel(key: string): string {
+    const section = this.createdReadiness?.sections?.find(item => item.id === key);
+    return (
+      section?.label ||
+      this.createdReadiness?.labels?.[key] ||
+      CREATED_CHECKLIST_LABELS[key] ||
+      key
+    );
+  }
+
   private setupAutosave(): void {
     this.wizardState
       .getState()
@@ -351,8 +439,21 @@ export class WizardComponent implements OnInit, OnDestroy {
       .subscribe({
         next: program => {
           this.createdProgram = program;
+          this.createdReadiness = null;
           this.createdPopupOpen = true;
           this.moderationError = "";
+          if (program.id) {
+            this.programService
+              .getReadiness(program.id)
+              .pipe(takeUntilDestroyed(this.destroyRef))
+              .subscribe({
+                next: readiness => {
+                  this.createdReadiness = readiness;
+                  this.cdr.markForCheck();
+                },
+                error: () => undefined,
+              });
+          }
           this.cdr.markForCheck();
         },
         error: () => undefined,

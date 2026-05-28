@@ -161,7 +161,7 @@ export class ExpertEvaluationDetailComponent implements OnInit, OnDestroy {
   }
 
   backToList(): void {
-    void this.router.navigate(["../"], { relativeTo: this.route });
+    this.router.navigate(["../"], { relativeTo: this.route });
   }
 
   scoreValue(criterionId: number): ExpertEvaluationValue | undefined {
@@ -326,7 +326,9 @@ export class ExpertEvaluationDetailComponent implements OnInit, OnDestroy {
 
       if (
         requireComplete &&
-        (criterion.maxValue === null || !Number.isFinite(Number(criterion.maxValue)) || criterion.maxValue <= 0)
+        (criterion.maxValue === null ||
+          !Number.isFinite(Number(criterion.maxValue)) ||
+          criterion.maxValue <= 0)
       ) {
         this.formError = "В критериях задана некорректная числовая шкала.";
         valid = false;

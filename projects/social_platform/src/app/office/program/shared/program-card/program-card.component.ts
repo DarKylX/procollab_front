@@ -134,11 +134,7 @@ export class ProgramCardComponent implements OnInit, OnChanges {
   }
 
   get participantsLabel(): string {
-    return this.pluralize(this.resolvedParticipantsCount, [
-      "участник",
-      "участника",
-      "участников",
-    ]);
+    return this.pluralize(this.resolvedParticipantsCount, ["участник", "участника", "участников"]);
   }
 
   private get resolvedParticipantsCount(): number {
@@ -176,20 +172,27 @@ export class ProgramCardComponent implements OnInit, OnChanges {
       return null;
     }
 
-    const requiredKeys = ["basic_info", "dates", "registration"];
-    const percentage = this.readinessPercentage(checklist, requiredKeys);
+    const requiredKeys = ["basic_info", "dates", "registration", "legal_terms"];
+    const percentage = this.weightedReadinessPercentage(checklist);
+    const moderationPercentage = this.readinessPercentage(checklist, requiredKeys);
+    const missingRequiredSections = requiredKeys.filter(key => checklist[key] !== true);
 
     return {
+      readinessPercent: percentage,
+      readiness_percent: percentage,
       percentage,
       checklist,
       labels: {},
-      missingRequiredSections: requiredKeys.filter(key => checklist[key] !== true),
+      missingRequiredSections,
+      missing_required_sections: missingRequiredSections,
       canSubmitToModeration: false,
+      can_submit_to_moderation: false,
       readinessToModeration: {
-        percentage,
+        percentage: moderationPercentage,
         checklist,
         requiredKeys,
-        missingRequiredSections: requiredKeys.filter(key => checklist[key] !== true),
+        missingRequiredSections,
+        missing_required_sections: missingRequiredSections,
         isReady: requiredKeys.every(key => checklist[key] === true),
       },
     };
@@ -229,5 +232,24 @@ export class ProgramCardComponent implements OnInit, OnChanges {
     const completed = requiredKeys.filter(key => checklist[key] === true).length;
 
     return Math.round((completed / requiredKeys.length) * 100);
+  }
+
+  private weightedReadinessPercentage(checklist: ReadinessChecklist): number {
+    const weights: Record<string, number> = {
+      basic_info: 20,
+      dates: 15,
+      registration: 15,
+      legal_terms: 15,
+      materials: 10,
+      criteria_experts: 10,
+      visual_assets: 5,
+      verification: 5,
+      certificate_template: 5,
+    };
+
+    return Object.entries(weights).reduce((sum, [key, weight]) => {
+      const value = checklist[key];
+      return value === true || value === "not_applicable" ? sum + weight : sum;
+    }, 0);
   }
 }

@@ -199,7 +199,7 @@ export class ProgramAnalyticsComponent implements OnInit, OnDestroy {
   }
 
   openProject(submission: ProgramAnalyticsSubmission): void {
-    void this.router.navigate(["/office/projects", submission.projectId]);
+    this.router.navigate(["/office/projects", submission.projectId]);
   }
 
   formatScore(score: number | null): string {

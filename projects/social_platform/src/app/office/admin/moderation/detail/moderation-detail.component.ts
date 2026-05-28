@@ -29,6 +29,7 @@ const FIX_SECTION_OPTIONS = [
   { key: "visual_assets", label: "Обложка и визуальные материалы" },
   { key: "dates", label: "Сроки и формат" },
   { key: "registration", label: "Регистрация" },
+  { key: "legal_terms", label: "Правовые документы" },
   { key: "materials", label: "Материалы" },
   { key: "criteria_experts", label: "Критерии и эксперты" },
 ];
@@ -37,15 +38,25 @@ const MOBILE_MANDATORY_CHECKS = [
   { key: "basic_info", altKey: "basicInfo", label: "Основная информация" },
   { key: "dates", label: "Сроки и формат" },
   { key: "registration", label: "Регистрация" },
-  { key: "visual_assets", altKey: "visualAssets", label: "Обложка / визуальные материалы" },
+  { key: "legal_terms", label: "Правовые документы" },
 ];
 
 const MOBILE_OPTIONAL_CHECKS = [
   { key: "materials", label: "Материалы" },
   { key: "criteria_experts", altKey: "criteriaExperts", label: "Критерии и эксперты" },
+  { key: "visual_assets", altKey: "visualAssets", label: "Обложка и визуальные материалы" },
   { key: "certificate_template", altKey: "certificateTemplate", label: "Сертификат" },
   { key: "verification", label: "Верификация" },
 ];
+
+const REJECTION_REASON_LABELS: Record<string, string> = {
+  insufficient_data: "Недостаточно данных",
+  platform_rules: "Нарушение правил платформы",
+  duplicate: "Дублирующий чемпионат",
+  inappropriate_content: "Некорректное содержание",
+  suspicious_organizer: "Подозрительный организатор",
+  other: "Другая причина",
+};
 
 interface VisualPreview {
   url: string;
@@ -114,7 +125,7 @@ export class ModerationDetailComponent implements OnInit {
       .subscribe({
         next: ({ program, reasons }) => {
           this.program.set(program);
-          this.rejectionReasons.set(reasons);
+          this.rejectionReasons.set(this.normalizeRejectionReasons(reasons));
         },
         error: () => {
           this.snackbar.error("Не удалось загрузить чемпионат для модерации");
@@ -258,7 +269,7 @@ export class ModerationDetailComponent implements OnInit {
     const messages: string[] = [];
     if (warnings.missingLegalDocuments?.length) {
       messages.push(
-        `Нет активных platform legal documents: ${warnings.missingLegalDocuments.join(", ")}.`
+        `Нет активных правовых документов: ${warnings.missingLegalDocuments.join(", ")}.`
       );
     }
     if (warnings.organizerTermsNotAccepted) {
@@ -443,6 +454,8 @@ export class ModerationDetailComponent implements OnInit {
       basic_info: "Основная информация",
       dates: "Сроки и формат",
       registration: "Регистрация",
+      legal_terms: "Правовые документы",
+      legalTerms: "Правовые документы",
       materials: "Материалы",
       criteriaExperts: "Критерии и эксперты",
       criteria_experts: "Критерии и эксперты",
@@ -453,6 +466,13 @@ export class ModerationDetailComponent implements OnInit {
       certificate_template: "Сертификат",
     };
     return labels[key] ?? key;
+  }
+
+  private normalizeRejectionReasons(reasons: RejectionReason[]): RejectionReason[] {
+    return reasons.map(reason => ({
+      ...reason,
+      label: REJECTION_REASON_LABELS[reason.code] ?? reason.label,
+    }));
   }
 
   private readinessValue(

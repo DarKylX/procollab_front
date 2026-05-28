@@ -267,12 +267,7 @@ export class ProgramDetailMainComponent implements OnInit, OnDestroy, AfterViewI
   get participantProject(): Project | null {
     const program = this.program as ProgramParticipationState | undefined;
 
-    return (
-      program?.participantProject ??
-      program?.assignedProject ??
-      program?.project ??
-      null
-    );
+    return program?.participantProject ?? program?.assignedProject ?? program?.project ?? null;
   }
 
   get isParticipantWithProject(): boolean {
@@ -933,7 +928,10 @@ export class ProgramDetailMainComponent implements OnInit, OnDestroy, AfterViewI
             throw new Error("Program is not loaded");
           }
 
-          if (readiness.percentage < 100) {
+          const canSubmit =
+            readiness.canSubmitToModeration ?? readiness.can_submit_to_moderation ?? false;
+
+          if (!canSubmit) {
             this.snackbar.error("Заполните обязательные блоки перед отправкой на модерацию");
             throw new Error("Program is not ready");
           }

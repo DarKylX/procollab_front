@@ -26,6 +26,7 @@ import {
   ReadinessChecklist,
   ReadinessChecklistItem,
   ReadinessData,
+  ReadinessSection,
   ReadinessStageData,
 } from "@office/program/models/readiness.model";
 import { ProgramDataService } from "@office/program/services/program-data.service";
@@ -51,6 +52,8 @@ const READINESS_ROUTE_MAP: Record<string, string> = {
   dates: "schedule",
   materials: "materials",
   registration: "registration",
+  legal_terms: "registration",
+  legalTerms: "registration",
   criteria_experts: "criteria",
   criteriaExperts: "criteria",
   visual_assets: "main",
@@ -65,6 +68,8 @@ const FALLBACK_READINESS_LABELS: Record<string, string> = {
   basicInfo: "Основная информация",
   dates: "Сроки и формат",
   registration: "Регистрация",
+  legal_terms: "Правовые документы",
+  legalTerms: "Правовые документы",
   materials: "Материалы",
   criteria_experts: "Критерии и эксперты",
   criteriaExperts: "Критерии и эксперты",
@@ -75,16 +80,12 @@ const FALLBACK_READINESS_LABELS: Record<string, string> = {
   certificateTemplate: "Сертификат",
 };
 
-const MODERATION_READINESS_KEYS = [
-  "basic_info",
-  "dates",
-  "registration",
-];
+const MODERATION_READINESS_KEYS = ["basic_info", "dates", "registration", "legal_terms"];
 
 const TAB_TO_FIX_SECTION_KEYS: Record<string, string[]> = {
   main: ["basic_info", "visual_assets"],
   schedule: ["dates"],
-  registration: ["registration"],
+  registration: ["registration", "legal_terms"],
   criteria: ["criteria_experts"],
   materials: ["materials"],
   verification: ["verification"],
@@ -240,16 +241,11 @@ export class ProgramEditComponent implements OnInit {
 
   get canSubmitToModeration(): boolean {
     const readiness = this.readinessData();
-    const moderationReadiness = this.moderationReadiness;
-    const moderationReady =
-      moderationReadiness?.isReady ?? moderationReadiness?.is_ready ?? false;
+    const backendCanSubmit =
+      readiness?.canSubmitToModeration ?? readiness?.can_submit_to_moderation ?? false;
 
     return Boolean(
-      this.canShowSubmitToModeration &&
-        (moderationReadiness
-          ? moderationReady
-          : readiness?.canSubmitToModeration) &&
-        !this.hasPendingRevisionSections
+      this.canShowSubmitToModeration && backendCanSubmit && !this.hasPendingRevisionSections
     );
   }
 
@@ -260,6 +256,7 @@ export class ProgramEditComponent implements OnInit {
       moderationReadiness?.missingRequiredSections ??
       moderationReadiness?.missing_required_sections ??
       readiness?.missingRequiredSections ??
+      readiness?.missing_required_sections ??
       [];
 
     if (!missingSections.length) {
@@ -310,17 +307,28 @@ export class ProgramEditComponent implements OnInit {
     return readiness?.readinessToModeration ?? readiness?.readiness_to_moderation ?? null;
   }
 
-  get operationalReadiness(): ReadinessStageData & { items?: OperationalReadinessItem[] } | null {
+  get operationalReadiness(): (ReadinessStageData & { items?: OperationalReadinessItem[] }) | null {
     const readiness = this.readinessData();
     return readiness?.operationalReadiness ?? readiness?.operational_readiness ?? null;
   }
 
   get moderationReadinessPercentage(): number {
-    return this.moderationReadiness?.percentage ?? this.readinessData()?.percentage ?? 0;
+    const readiness = this.readinessData();
+    return (
+      readiness?.readinessPercent ?? readiness?.readiness_percent ?? readiness?.percentage ?? 0
+    );
   }
 
   get moderationReadinessItems(): ReadinessChecklistItem[] {
     const readiness = this.readinessData();
+    const backendSections = this.backendReadinessSections();
+
+    if (backendSections.length) {
+      return backendSections
+        .filter(section => this.isModerationBlockingSection(section))
+        .map(section => this.sectionToChecklistItem(section));
+    }
+
     const moderationReadiness = this.moderationReadiness;
     const checklist = moderationReadiness?.checklist ?? readiness?.checklist ?? {};
     const backendKeys =
@@ -337,11 +345,25 @@ export class ProgramEditComponent implements OnInit {
   }
 
   get optionalReadinessItems(): ReadinessChecklistItem[] {
+    const backendSections = this.backendReadinessSections();
+    if (backendSections.length) {
+      return backendSections
+        .filter(section => !this.isModerationBlockingSection(section))
+        .map(section => ({
+          ...this.sectionToChecklistItem(section),
+          optional: true,
+        }));
+    }
+
     const operationalReadiness = this.operationalReadiness;
     const items = operationalReadiness?.items ?? [];
 
     return items
-      .filter(item => item.optional && (item.key === "certificate_template" || item.key === "certificateTemplate"))
+      .filter(
+        item =>
+          item.optional &&
+          (item.key === "certificate_template" || item.key === "certificateTemplate")
+      )
       .map(item => ({
         key: item.key,
         label: item.label || this.readinessLabel(item.key, operationalReadiness?.labels),
@@ -447,7 +469,15 @@ export class ProgramEditComponent implements OnInit {
       .submitToModeration(programId)
       .pipe(
         catchError(error => {
-          this.snackbar.error("Не удалось отправить чемпионат на модерацию");
+          const missingSections =
+            error?.error?.missing_required_sections ?? error?.error?.missingRequiredSections ?? [];
+          const message =
+            Array.isArray(missingSections) && missingSections.length
+              ? `Заполните обязательные разделы: ${missingSections
+                  .map(key => this.readinessLabel(key))
+                  .join(", ")}`
+              : error?.error?.detail || "Не удалось отправить чемпионат на модерацию";
+          this.snackbar.error(message);
           return throwError(() => error);
         }),
         finalize(() => {
@@ -575,6 +605,34 @@ export class ProgramEditComponent implements OnInit {
   ): boolean | "not_applicable" | undefined {
     const camelKey = this.camelizeKey(key);
     return checklist[key] ?? checklist[camelKey];
+  }
+
+  private backendReadinessSections(): ReadinessSection[] {
+    const readiness = this.readinessData();
+    return readiness && Array.isArray(readiness.sections) ? readiness.sections : [];
+  }
+
+  private sectionToChecklistItem(section: ReadinessSection): ReadinessChecklistItem {
+    return {
+      key: section.id,
+      label: section.label || this.readinessLabel(section.id),
+      completed: section.isReady ?? section.is_ready ?? false,
+      notApplicable:
+        this.checklistValue(this.readinessData()?.checklist ?? {}, section.id) === "not_applicable",
+    };
+  }
+
+  private isModerationBlockingSection(section: ReadinessSection): boolean {
+    const readiness = this.readinessData();
+    const requiredSections =
+      readiness?.requiredSections ??
+      readiness?.required_sections ??
+      this.moderationReadiness?.requiredKeys ??
+      this.moderationReadiness?.required_keys ??
+      MODERATION_READINESS_KEYS;
+    const blockingFlag = section.blockingForModeration ?? section.blocking_for_moderation;
+
+    return blockingFlag ?? requiredSections.includes(section.id);
   }
 
   private camelizeKey(key: string): string {

@@ -71,7 +71,7 @@ export class ExpertEvaluationListComponent implements OnInit, OnDestroy {
     }
 
     this.activeFilter = filter;
-    void this.router.navigate([], {
+    this.router.navigate([], {
       relativeTo: this.route,
       queryParams: { status: filter === "all" ? null : filter },
       queryParamsHandling: "merge",
@@ -87,7 +87,7 @@ export class ExpertEvaluationListComponent implements OnInit, OnDestroy {
     }
 
     this.searchDebounceId = window.setTimeout(() => {
-      void this.router.navigate([], {
+      this.router.navigate([], {
         relativeTo: this.route,
         queryParams: { search: this.searchValue.trim() || null },
         queryParamsHandling: "merge",
@@ -97,7 +97,7 @@ export class ExpertEvaluationListComponent implements OnInit, OnDestroy {
   }
 
   openSubmission(submission: ExpertProjectSubmission): void {
-    void this.router.navigate([submission.id], { relativeTo: this.route });
+    this.router.navigate([submission.id], { relativeTo: this.route });
   }
 
   statusLabel(status: ExpertEvaluationStatus): string {

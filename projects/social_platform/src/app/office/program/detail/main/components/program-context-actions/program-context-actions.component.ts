@@ -50,6 +50,7 @@ const MODERATION_FIX_SECTION_OPTIONS: ModerationFixSectionOption[] = [
   { key: "visual_assets", label: "Обложка и визуальные материалы" },
   { key: "dates", label: "Сроки и формат" },
   { key: "registration", label: "Регистрация" },
+  { key: "legal_terms", label: "Правовые документы" },
   { key: "materials", label: "Материалы" },
   { key: "criteria_experts", label: "Критерии и эксперты" },
 ];

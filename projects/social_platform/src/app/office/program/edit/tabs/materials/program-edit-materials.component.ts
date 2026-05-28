@@ -60,6 +60,7 @@ export class ProgramEditMaterialsComponent implements OnInit, OnDestroy {
     title: ["", [Validators.required, Validators.maxLength(255)]],
     url: ["", [Validators.required]],
   });
+
   readonly programInfoForm = this.fb.nonNullable.group({
     websiteUrl: [""],
     presentationAddress: [""],
@@ -73,13 +74,17 @@ export class ProgramEditMaterialsComponent implements OnInit, OnDestroy {
   };
 
   materials: ProgramMaterial[] = [];
+
   private initialState: MaterialsDraft = {
     materials: [],
     presentationAddress: "",
     links: [],
   };
+
   private hiddenContactLinks: string[] = [];
+
   isUploading = false;
+
   isPresentationUploading = false;
 
   ngOnInit(): void {
