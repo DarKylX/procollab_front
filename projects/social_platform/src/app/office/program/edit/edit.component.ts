@@ -51,6 +51,7 @@ const READINESS_ROUTE_MAP: Record<string, string> = {
   dates: "schedule",
   materials: "materials",
   registration: "registration",
+  legal_terms: "registration",
   criteria_experts: "criteria",
   criteriaExperts: "criteria",
   visual_assets: "main",
@@ -65,6 +66,7 @@ const FALLBACK_READINESS_LABELS: Record<string, string> = {
   basicInfo: "Основная информация",
   dates: "Сроки и формат",
   registration: "Регистрация",
+  legal_terms: "Правовые документы",
   materials: "Материалы",
   criteria_experts: "Критерии и эксперты",
   criteriaExperts: "Критерии и эксперты",
@@ -75,11 +77,7 @@ const FALLBACK_READINESS_LABELS: Record<string, string> = {
   certificateTemplate: "Сертификат",
 };
 
-const MODERATION_READINESS_KEYS = [
-  "basic_info",
-  "dates",
-  "registration",
-];
+const MODERATION_READINESS_KEYS = ["basic_info", "dates", "registration", "legal_terms"];
 
 const TAB_TO_FIX_SECTION_KEYS: Record<string, string[]> = {
   main: ["basic_info", "visual_assets"],
@@ -240,16 +238,11 @@ export class ProgramEditComponent implements OnInit {
 
   get canSubmitToModeration(): boolean {
     const readiness = this.readinessData();
-    const moderationReadiness = this.moderationReadiness;
-    const moderationReady =
-      moderationReadiness?.isReady ?? moderationReadiness?.is_ready ?? false;
+    const backendCanSubmit =
+      readiness?.canSubmitToModeration ?? readiness?.can_submit_to_moderation ?? false;
 
     return Boolean(
-      this.canShowSubmitToModeration &&
-        (moderationReadiness
-          ? moderationReady
-          : readiness?.canSubmitToModeration) &&
-        !this.hasPendingRevisionSections
+      this.canShowSubmitToModeration && backendCanSubmit && !this.hasPendingRevisionSections
     );
   }
 
@@ -260,6 +253,7 @@ export class ProgramEditComponent implements OnInit {
       moderationReadiness?.missingRequiredSections ??
       moderationReadiness?.missing_required_sections ??
       readiness?.missingRequiredSections ??
+      readiness?.missing_required_sections ??
       [];
 
     if (!missingSections.length) {
@@ -310,13 +304,16 @@ export class ProgramEditComponent implements OnInit {
     return readiness?.readinessToModeration ?? readiness?.readiness_to_moderation ?? null;
   }
 
-  get operationalReadiness(): ReadinessStageData & { items?: OperationalReadinessItem[] } | null {
+  get operationalReadiness(): (ReadinessStageData & { items?: OperationalReadinessItem[] }) | null {
     const readiness = this.readinessData();
     return readiness?.operationalReadiness ?? readiness?.operational_readiness ?? null;
   }
 
   get moderationReadinessPercentage(): number {
-    return this.moderationReadiness?.percentage ?? this.readinessData()?.percentage ?? 0;
+    const readiness = this.readinessData();
+    return (
+      readiness?.readinessPercent ?? readiness?.readiness_percent ?? readiness?.percentage ?? 0
+    );
   }
 
   get moderationReadinessItems(): ReadinessChecklistItem[] {
@@ -341,7 +338,11 @@ export class ProgramEditComponent implements OnInit {
     const items = operationalReadiness?.items ?? [];
 
     return items
-      .filter(item => item.optional && (item.key === "certificate_template" || item.key === "certificateTemplate"))
+      .filter(
+        item =>
+          item.optional &&
+          (item.key === "certificate_template" || item.key === "certificateTemplate")
+      )
       .map(item => ({
         key: item.key,
         label: item.label || this.readinessLabel(item.key, operationalReadiness?.labels),
@@ -447,7 +448,15 @@ export class ProgramEditComponent implements OnInit {
       .submitToModeration(programId)
       .pipe(
         catchError(error => {
-          this.snackbar.error("Не удалось отправить чемпионат на модерацию");
+          const missingSections =
+            error?.error?.missing_required_sections ?? error?.error?.missingRequiredSections ?? [];
+          const message =
+            Array.isArray(missingSections) && missingSections.length
+              ? `Заполните обязательные разделы: ${missingSections
+                  .map(key => this.readinessLabel(key))
+                  .join(", ")}`
+              : error?.error?.detail || "Не удалось отправить чемпионат на модерацию";
+          this.snackbar.error(message);
           return throwError(() => error);
         }),
         finalize(() => {

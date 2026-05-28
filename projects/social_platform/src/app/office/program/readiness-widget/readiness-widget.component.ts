@@ -27,6 +27,7 @@ const DEFAULT_READINESS_LABELS: Record<string, string> = {
   basic_info: "Основная информация",
   dates: "Сроки и формат",
   registration: "Регистрация",
+  legal_terms: "Правовые документы",
   materials: "Материалы",
   criteria_experts: "Критерии и эксперты",
   visual_assets: "Основная обложка",
@@ -38,6 +39,7 @@ const EDIT_READINESS_ITEMS: { key: string; label: string; sourceKeys: string[] }
   { key: "basic_info", label: "Основная информация", sourceKeys: ["basic_info"] },
   { key: "dates", label: "Сроки и формат", sourceKeys: ["dates"] },
   { key: "registration", label: "Регистрация", sourceKeys: ["registration"] },
+  { key: "legal_terms", label: "Правовые документы", sourceKeys: ["legal_terms"] },
   { key: "materials", label: "Материалы", sourceKeys: ["materials"] },
   {
     key: "criteria_experts",
@@ -46,9 +48,13 @@ const EDIT_READINESS_ITEMS: { key: string; label: string; sourceKeys: string[] }
   },
   { key: "visual_assets", label: "Основная обложка", sourceKeys: ["visual_assets"] },
   { key: "verification", label: "Верификация · необязательно", sourceKeys: ["verification"] },
-  { key: "certificate_template", label: "Сертификат · необязательно", sourceKeys: ["certificate_template"] },
+  {
+    key: "certificate_template",
+    label: "Сертификат · необязательно",
+    sourceKeys: ["certificate_template"],
+  },
 ];
-const MODERATION_READINESS_KEYS = ["basic_info", "dates", "registration"];
+const MODERATION_READINESS_KEYS = ["basic_info", "dates", "registration", "legal_terms"];
 
 @Component({
   selector: "app-readiness-widget",
@@ -81,10 +87,12 @@ export class ReadinessWidgetComponent implements OnInit, OnChanges {
       return 0;
     }
 
-    const moderationReadiness =
-      readinessData.readinessToModeration ?? readinessData.readiness_to_moderation;
-
-    return this.normalizePercentage(moderationReadiness?.percentage ?? readinessData.percentage ?? 0);
+    return this.normalizePercentage(
+      readinessData.readinessPercent ??
+        readinessData.readiness_percent ??
+        readinessData.percentage ??
+        0
+    );
   });
 
   readonly checklistItems = computed<ReadinessChecklistItem[]>(() => {
