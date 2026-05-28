@@ -74,10 +74,10 @@ export class NotificationService {
       .pipe(
         tap(() => {
           this.notificationsSubject.next(
-            this.notificationsSubject.value.map(notification => ({
-              ...notification,
-              is_read: true,
-            }))
+          this.notificationsSubject.value.map(notification => ({
+            ...notification,
+            isRead: true,
+          }))
           );
           this.unreadCountSubject.next(0);
         })

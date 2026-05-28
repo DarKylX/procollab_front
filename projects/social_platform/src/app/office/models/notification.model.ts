@@ -16,11 +16,11 @@ export interface Notification {
   type: string;
   title: string;
   message: string;
-  object_type: string;
-  object_id: number | null;
+  objectType: string;
+  objectId: number | null;
   url: string;
-  is_read: boolean;
-  created_at: string;
+  isRead: boolean;
+  createdAt: string;
   category: NotificationCategory;
 }
 
@@ -39,24 +39,24 @@ export interface NotificationQueryParams {
 }
 
 export interface NotificationPreferences {
-  email_reminders_enabled: boolean;
-  email_moderation_results: boolean;
-  email_verification_results: boolean;
-  email_certificate_ready: boolean;
-  email_deadline_warnings: boolean;
-  inapp_notifications_enabled: boolean;
-  telegram_connected: boolean;
-  telegram_username: string | null;
-  telegram_preferences_state: Record<NotificationEventType, boolean>;
+  emailRemindersEnabled: boolean;
+  emailModerationResults: boolean;
+  emailVerificationResults: boolean;
+  emailCertificateReady: boolean;
+  emailDeadlineWarnings: boolean;
+  inappNotificationsEnabled: boolean;
+  telegramConnected: boolean;
+  telegramUsername: string | null;
+  telegramPreferencesState: Record<string, boolean>;
 }
 
 export interface NotificationPreferencesPatch {
-  telegram_preferences?: Partial<Record<NotificationEventType, boolean>>;
+  telegramPreferences?: Partial<Record<NotificationEventType, boolean>>;
 }
 
 export interface TelegramLinkResponse {
   link: string;
   token: string;
-  bot_url: string;
-  expires_at: string;
+  botUrl: string;
+  expiresAt: string;
 }

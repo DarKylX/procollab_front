@@ -44,11 +44,11 @@ describe("NotificationService", () => {
             type: "program_moderation_approved",
             title: "Title",
             message: "Message",
-            object_type: "program",
-            object_id: 1,
+            objectType: "program",
+            objectId: 1,
             url: "/office/program/1",
-            is_read: false,
-            created_at: new Date().toISOString(),
+            isRead: false,
+            createdAt: new Date().toISOString(),
             category: "moderation",
           },
         ],
@@ -60,7 +60,7 @@ describe("NotificationService", () => {
     service.markAllRead().subscribe(() => {
       service.notifications$.subscribe(notifications => {
         if (notifications.length) {
-          expect(notifications[0].is_read).toBeTrue();
+          expect(notifications[0].isRead).toBeTrue();
           expect(apiService.post).toHaveBeenCalledWith("/notifications/mark-all-read/", {});
           done();
         }

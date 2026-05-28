@@ -254,7 +254,7 @@ export class OfficeComponent implements OnInit, OnDestroy {
       }
     };
 
-    if (notification.is_read) {
+    if (notification.isRead) {
       navigate();
       return;
     }
