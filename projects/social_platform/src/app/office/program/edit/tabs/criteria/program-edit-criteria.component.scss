@@ -231,6 +231,21 @@
     gap: 6px;
     justify-content: flex-end;
   }
+
+  &__empty {
+    width: 100%;
+    min-height: 40px;
+    padding: 10px 12px;
+    margin: 0;
+    font-family: Mont, sans-serif;
+    font-size: 13px;
+    line-height: 1.35;
+    color: var(--black);
+    background: var(--white);
+    border: 0.5px solid var(--medium-grey-for-outline);
+    border-radius: var(--rounded-md);
+    outline: none;
+  }
 }
 
 .criteria-summary {

@@ -61,7 +61,7 @@
           <h2>Проверяется только публичная основа чемпионата</h2>
           <p>
             Проверяется только публичная основа чемпионата. Материалы, критерии и экспертов можно
-            добавить позже, если они не блокируют публикацию по readiness rules.
+            добавить позже, если они не блокируют публикацию по правилам готовности.
           </p>
         </div>
       </section>
@@ -272,7 +272,7 @@
 
         @if (privacyWarningMessages(p).length) {
         <div class="moderation-detail__privacy-warning">
-          <strong>Privacy warnings</strong>
+          <strong>Предупреждения по персональным данным</strong>
           <ul>
             @for (message of privacyWarningMessages(p); track message) {
             <li>{{ message }}</li>
@@ -342,7 +342,7 @@
       </section>
 
       <section class="moderation-detail__section">
-        <h2>Готовность к модерации</h2>
+        <h2>Готовность чемпионата</h2>
         <div class="moderation-detail__readiness">
           <strong>{{ p.readinessPercentage ?? 0 }}%</strong>
           <span>общая готовность</span>

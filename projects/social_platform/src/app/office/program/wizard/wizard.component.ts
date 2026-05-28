@@ -30,7 +30,7 @@ import {
 } from "rxjs";
 import { Program } from "../models/program.model";
 import { ProgramDraftPayload } from "../models/program-draft.model";
-import { ReadinessData } from "../models/readiness.model";
+import { ReadinessData, ReadinessSection } from "../models/readiness.model";
 import { ProgramService } from "../services/program.service";
 import { WizardProgressComponent } from "./components/wizard-progress/wizard-progress.component";
 import {
@@ -46,6 +46,30 @@ interface CreatedChecklistItem {
   label: string;
   status: ChecklistStatus;
 }
+
+const CREATED_CHECKLIST_KEYS = [
+  "basic_info",
+  "dates",
+  "registration",
+  "legal_terms",
+  "materials",
+  "criteria_experts",
+  "visual_assets",
+  "verification",
+  "certificate_template",
+];
+
+const CREATED_CHECKLIST_LABELS: Record<string, string> = {
+  basic_info: "Основная информация",
+  dates: "Сроки и формат",
+  registration: "Регистрация",
+  legal_terms: "Правовые документы",
+  materials: "Материалы",
+  criteria_experts: "Критерии и эксперты",
+  visual_assets: "Обложка и визуальные материалы",
+  verification: "Верификация",
+  certificate_template: "Сертификат",
+};
 
 @Component({
   selector: "app-program-wizard",
@@ -63,15 +87,6 @@ export class WizardComponent implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly snackbar = inject(SnackbarService);
   readonly wizardState = inject(WizardStateService);
-
-  readonly createdChecklist: CreatedChecklistItem[] = [
-    { label: "Основная информация", status: "done" },
-    { label: "Регистрация", status: "done" },
-    { label: "Сроки и формат", status: "done" },
-    { label: "Материалы", status: "empty" },
-    { label: "Критерии и эксперты", status: "empty" },
-    { label: "Обложка и визуальные материалы", status: "empty" },
-  ];
 
   state: WizardState = this.wizardState.snapshot;
   validity = this.wizardState.validitySnapshot;
@@ -175,6 +190,29 @@ export class WizardComponent implements OnInit, OnDestroy {
     return this.createdChecklist.filter(item => item.status === "done").length;
   }
 
+  get createdChecklist(): CreatedChecklistItem[] {
+    const sections = this.createdReadiness?.sections;
+
+    if (Array.isArray(sections) && sections.length) {
+      const orderedSections = [
+        ...CREATED_CHECKLIST_KEYS
+          .map(key => sections.find(section => section.id === key))
+          .filter((section): section is ReadinessSection => Boolean(section)),
+        ...sections.filter(section => !CREATED_CHECKLIST_KEYS.includes(section.id)),
+      ];
+
+      return orderedSections.map(section => ({
+        label: section.label || CREATED_CHECKLIST_LABELS[section.id] || section.id,
+        status: this.createdSectionStatus(section),
+      }));
+    }
+
+    return CREATED_CHECKLIST_KEYS.map(key => ({
+      label: CREATED_CHECKLIST_LABELS[key],
+      status: "empty",
+    }));
+  }
+
   get readinessText(): string {
     const readinessPercent =
       this.createdReadiness?.readinessPercent ??
@@ -203,7 +241,9 @@ export class WizardComponent implements OnInit, OnDestroy {
       [];
 
     if (missingSections.length) {
-      return `Заполните обязательные разделы: ${missingSections.join(", ")}.`;
+      return `Заполните обязательные разделы: ${missingSections
+        .map(key => this.createdReadinessLabel(key))
+        .join(", ")}.`;
     }
 
     return "Заполните обязательные разделы чемпионата.";
@@ -331,7 +371,9 @@ export class WizardComponent implements OnInit, OnDestroy {
             error?.error?.missing_required_sections ?? error?.error?.missingRequiredSections ?? [];
           this.moderationError =
             Array.isArray(missingSections) && missingSections.length
-              ? `Заполните обязательные разделы: ${missingSections.join(", ")}`
+              ? `Заполните обязательные разделы: ${missingSections
+                  .map(key => this.createdReadinessLabel(key))
+                  .join(", ")}`
               : error?.error?.detail || "Не удалось отправить чемпионат на модерацию";
           return throwError(() => error);
         }),
@@ -363,6 +405,20 @@ export class WizardComponent implements OnInit, OnDestroy {
     }
 
     return "не заполнено";
+  }
+
+  private createdSectionStatus(section: ReadinessSection): ChecklistStatus {
+    return section.isReady || section.is_ready ? "done" : "empty";
+  }
+
+  private createdReadinessLabel(key: string): string {
+    const section = this.createdReadiness?.sections?.find(item => item.id === key);
+    return (
+      section?.label ||
+      this.createdReadiness?.labels?.[key] ||
+      CREATED_CHECKLIST_LABELS[key] ||
+      key
+    );
   }
 
   private setupAutosave(): void {

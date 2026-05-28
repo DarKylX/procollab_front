@@ -26,6 +26,7 @@ import {
   ReadinessChecklist,
   ReadinessChecklistItem,
   ReadinessData,
+  ReadinessSection,
   ReadinessStageData,
 } from "@office/program/models/readiness.model";
 import { ProgramDataService } from "@office/program/services/program-data.service";
@@ -52,6 +53,7 @@ const READINESS_ROUTE_MAP: Record<string, string> = {
   materials: "materials",
   registration: "registration",
   legal_terms: "registration",
+  legalTerms: "registration",
   criteria_experts: "criteria",
   criteriaExperts: "criteria",
   visual_assets: "main",
@@ -67,6 +69,7 @@ const FALLBACK_READINESS_LABELS: Record<string, string> = {
   dates: "Сроки и формат",
   registration: "Регистрация",
   legal_terms: "Правовые документы",
+  legalTerms: "Правовые документы",
   materials: "Материалы",
   criteria_experts: "Критерии и эксперты",
   criteriaExperts: "Критерии и эксперты",
@@ -82,7 +85,7 @@ const MODERATION_READINESS_KEYS = ["basic_info", "dates", "registration", "legal
 const TAB_TO_FIX_SECTION_KEYS: Record<string, string[]> = {
   main: ["basic_info", "visual_assets"],
   schedule: ["dates"],
-  registration: ["registration"],
+  registration: ["registration", "legal_terms"],
   criteria: ["criteria_experts"],
   materials: ["materials"],
   verification: ["verification"],
@@ -318,6 +321,14 @@ export class ProgramEditComponent implements OnInit {
 
   get moderationReadinessItems(): ReadinessChecklistItem[] {
     const readiness = this.readinessData();
+    const backendSections = this.backendReadinessSections();
+
+    if (backendSections.length) {
+      return backendSections
+        .filter(section => this.isModerationBlockingSection(section))
+        .map(section => this.sectionToChecklistItem(section));
+    }
+
     const moderationReadiness = this.moderationReadiness;
     const checklist = moderationReadiness?.checklist ?? readiness?.checklist ?? {};
     const backendKeys =
@@ -334,6 +345,16 @@ export class ProgramEditComponent implements OnInit {
   }
 
   get optionalReadinessItems(): ReadinessChecklistItem[] {
+    const backendSections = this.backendReadinessSections();
+    if (backendSections.length) {
+      return backendSections
+        .filter(section => !this.isModerationBlockingSection(section))
+        .map(section => ({
+          ...this.sectionToChecklistItem(section),
+          optional: true,
+        }));
+    }
+
     const operationalReadiness = this.operationalReadiness;
     const items = operationalReadiness?.items ?? [];
 
@@ -584,6 +605,34 @@ export class ProgramEditComponent implements OnInit {
   ): boolean | "not_applicable" | undefined {
     const camelKey = this.camelizeKey(key);
     return checklist[key] ?? checklist[camelKey];
+  }
+
+  private backendReadinessSections(): ReadinessSection[] {
+    const readiness = this.readinessData();
+    return readiness && Array.isArray(readiness.sections) ? readiness.sections : [];
+  }
+
+  private sectionToChecklistItem(section: ReadinessSection): ReadinessChecklistItem {
+    return {
+      key: section.id,
+      label: section.label || this.readinessLabel(section.id),
+      completed: section.isReady ?? section.is_ready ?? false,
+      notApplicable:
+        this.checklistValue(this.readinessData()?.checklist ?? {}, section.id) === "not_applicable",
+    };
+  }
+
+  private isModerationBlockingSection(section: ReadinessSection): boolean {
+    const readiness = this.readinessData();
+    const requiredSections =
+      readiness?.requiredSections ??
+      readiness?.required_sections ??
+      this.moderationReadiness?.requiredKeys ??
+      this.moderationReadiness?.required_keys ??
+      MODERATION_READINESS_KEYS;
+    const blockingFlag = section.blockingForModeration ?? section.blocking_for_moderation;
+
+    return blockingFlag ?? requiredSections.includes(section.id);
   }
 
   private camelizeKey(key: string): string {
