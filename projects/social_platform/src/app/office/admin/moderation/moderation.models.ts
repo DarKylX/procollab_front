@@ -21,6 +21,12 @@ export type ModerationProgramStatus =
 
 export type ModerationProgramStatusFilter = ModerationProgramStatus | "all" | "attention";
 
+export interface ModerationCompany {
+  id: number;
+  name: string;
+  inn?: string;
+}
+
 export interface ModerationPerson {
   id: number;
   fullName: string;
@@ -28,12 +34,6 @@ export interface ModerationPerson {
   company?: ModerationCompany | null;
   publishedProgramsCount?: number;
   completedProgramsCount?: number;
-}
-
-export interface ModerationCompany {
-  id: number;
-  name: string;
-  inn?: string;
 }
 
 export interface ModerationMaterial {

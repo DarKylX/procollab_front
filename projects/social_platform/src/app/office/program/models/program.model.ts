@@ -170,8 +170,11 @@ export class Program {
       fullName?: string;
     } | null;
   } | null;
+
   publishProjectsAfterFinish!: boolean;
+
   courseId!: number | null;
+
   courses!: { id: number; title: string; isAvailable: boolean }[];
 
   static default(): Program {
