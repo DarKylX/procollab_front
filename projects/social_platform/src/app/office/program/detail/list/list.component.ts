@@ -214,8 +214,7 @@ export class ProgramListComponent implements OnInit, OnDestroy, AfterViewInit {
             queryParams: { [this.searchParamName]: search || null },
             relativeTo: this.route,
             queryParamsHandling: "merge",
-          })
-          .then(() => console.debug("QueryParams changed from ProgramListComponent"));
+          });
       });
 
     searchFormSearch$ && this.subscriptions$.push(searchFormSearch$);
@@ -337,13 +336,11 @@ export class ProgramListComponent implements OnInit, OnDestroy, AfterViewInit {
   // Универсальный метод скролла
   private onScroll() {
     if (this.listTotalCount && this.list.length >= this.listTotalCount) {
-      console.log("All items loaded");
       return of({});
     }
 
     const target = document.querySelector(".office__body");
     if (!target) {
-      console.log("Target not found");
       return of({});
     }
 
@@ -352,7 +349,6 @@ export class ProgramListComponent implements OnInit, OnDestroy, AfterViewInit {
     if (this.listType === "rating") {
       const scrollBottom = target.scrollHeight - target.scrollTop - target.clientHeight;
       shouldFetch = scrollBottom <= 200;
-      console.log("Rating scroll check:", { scrollBottom, shouldFetch });
     } else {
       if (!this.listRoot) return of({});
       const diff =
@@ -361,11 +357,9 @@ export class ProgramListComponent implements OnInit, OnDestroy, AfterViewInit {
         window.innerHeight;
       const threshold = this.listType === "projects" ? -200 : 0;
       shouldFetch = diff > threshold;
-      console.log("Projects/Members scroll check:", { diff, threshold, shouldFetch });
     }
 
     if (shouldFetch) {
-      console.log("Fetching next page:", this.listPage + 1);
       this.listPage++;
       return this.onFetch();
     }
@@ -379,15 +373,6 @@ export class ProgramListComponent implements OnInit, OnDestroy, AfterViewInit {
     const programId = this.route.parent?.snapshot.params["programId"];
     const offset = this.listPage * this.itemsPerPage;
 
-    console.log("onFetch called:", {
-      listType: this.listType,
-      programId,
-      offset,
-      itemsPerPage: this.itemsPerPage,
-      currentPage: this.listPage,
-      currentListLength: this.list.length,
-    });
-
     // Получаем текущие query параметры для фильтров
     const currentQuery = this.route.snapshot.queryParams;
     const { filters, extraParams } = this.buildFilterQuery(currentQuery);
@@ -400,8 +385,6 @@ export class ProgramListComponent implements OnInit, OnDestroy, AfterViewInit {
       },
     });
 
-    console.log("Request params:", { filters, extraParams, paramsKeys: params.keys() });
-
     switch (this.listType) {
       case "rating": {
         const ratingRequest$ =
@@ -411,14 +394,6 @@ export class ProgramListComponent implements OnInit, OnDestroy, AfterViewInit {
 
         return ratingRequest$.pipe(
           tap(({ count, results }) => {
-            console.log("Rating response:", {
-              count,
-              resultsLength: results.length,
-              currentListLength: this.list.length,
-              offset,
-              expectedNewLength: this.list.length + results.length,
-            });
-
             this.listTotalCount = count;
 
             if (this.listPage === 0) {
@@ -427,7 +402,6 @@ export class ProgramListComponent implements OnInit, OnDestroy, AfterViewInit {
               const newResults = results.filter(
                 newItem => !this.list.some(existingItem => existingItem.id === newItem.id)
               );
-              console.log("New unique items to add:", newResults.length);
               this.list = [...this.list, ...newResults];
             }
 
@@ -450,13 +424,6 @@ export class ProgramListComponent implements OnInit, OnDestroy, AfterViewInit {
 
         return projectsRequest$.pipe(
           tap((projects: ApiPagination<Project>) => {
-            console.log("Projects response:", {
-              count: projects.count,
-              resultsLength: projects.results.length,
-              currentListLength: this.list.length,
-              offset,
-            });
-
             this.listTotalCount = projects.count;
 
             if (this.listPage === 0) {
@@ -465,7 +432,6 @@ export class ProgramListComponent implements OnInit, OnDestroy, AfterViewInit {
               const newResults = projects.results.filter(
                 newItem => !this.list.some(existingItem => existingItem.id === newItem.id)
               );
-              console.log("New unique projects to add:", newResults.length);
               this.list = [...this.list, ...newResults];
             }
 
@@ -483,13 +449,6 @@ export class ProgramListComponent implements OnInit, OnDestroy, AfterViewInit {
       case "members": {
         return this.programService.getAllMembers(programId, offset, this.itemsPerPage).pipe(
           tap((members: ApiPagination<User>) => {
-            console.log("Members response:", {
-              count: members.count,
-              resultsLength: members.results.length,
-              currentListLength: this.list.length,
-              offset,
-            });
-
             this.listTotalCount = members.count;
 
             if (this.listPage === 0) {
@@ -498,7 +457,6 @@ export class ProgramListComponent implements OnInit, OnDestroy, AfterViewInit {
               const newResults = members.results.filter(
                 newItem => !this.list.some(existingItem => existingItem.id === newItem.id)
               );
-              console.log("New unique members to add:", newResults.length);
               this.list = [...this.list, ...newResults];
             }
 
@@ -527,8 +485,6 @@ export class ProgramListComponent implements OnInit, OnDestroy, AfterViewInit {
 
     const filters: Record<string, any> = {};
     const extraParams: Record<string, any> = {};
-
-    console.log("buildFilterQuery input:", q);
 
     Object.keys(q).forEach(key => {
       const value = q[key];
@@ -659,8 +615,7 @@ export class ProgramListComponent implements OnInit, OnDestroy, AfterViewInit {
         },
         relativeTo: this.route,
         queryParamsHandling: "merge",
-      })
-      .then(() => console.log("Query change from ProjectsComponent"));
+      });
   }
 
   openHintModal(event: Event): void {

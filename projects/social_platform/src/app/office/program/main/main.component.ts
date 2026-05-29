@@ -8,7 +8,6 @@ import {
   combineLatest,
   debounceTime,
   distinctUntilChanged,
-  forkJoin,
   map,
   of,
   Observable,
@@ -37,6 +36,9 @@ type ProgramWithParticipantCounters = Program & {
   registeredUsersCount?: number;
   membersCount?: number;
   members_count?: number;
+  projects_count?: number;
+  active_projects_count?: number;
+  experts_count?: number;
   members?: unknown[];
   registrations?: unknown[];
 };
@@ -82,8 +84,6 @@ export class ProgramMainComponent implements OnInit, OnDestroy {
   private currentSearch = "";
   private lastRequestKey = "";
   private readonly programsResponseCache = new Map<string, ApiPagination<Program>>();
-  private readonly participantCountCache = new Map<number, number>();
-  private requestVersion = 0;
 
   ngOnInit(): void {
     this.syncSearchControl(this.route.snapshot.queryParamMap.get("search") ?? "");
@@ -119,7 +119,6 @@ export class ProgramMainComponent implements OnInit, OnDestroy {
           this.currentSearch = query.search;
           const requestKey = JSON.stringify({ tab, filter: query.filter });
           const shouldLoadPrograms = requestKey !== this.lastRequestKey || !this.hasLoadedPrograms();
-          const requestVersion = shouldLoadPrograms ? ++this.requestVersion : this.requestVersion;
           this.isLoadingPrograms.set(shouldLoadPrograms && !this.programs.length);
           this.syncSearchControl(query.search);
           this.isPparticipating.set(query.filter["participating"] === "true");
@@ -136,8 +135,6 @@ export class ProgramMainComponent implements OnInit, OnDestroy {
             return of({
               response: cachedResponse,
               search: query.search,
-              requestVersion,
-              hydrateCounters: false,
             });
           }
 
@@ -145,8 +142,6 @@ export class ProgramMainComponent implements OnInit, OnDestroy {
             return of({
               response: this.buildCachedProgramsResponse(),
               search: query.search,
-              requestVersion,
-              hydrateCounters: false,
             });
           }
 
@@ -175,26 +170,20 @@ export class ProgramMainComponent implements OnInit, OnDestroy {
             map(response => ({
               response,
               search: query.search,
-              requestVersion,
-              hydrateCounters: tab === "all",
             }))
           );
         })
       )
       .subscribe({
-        next: ({ response, search, requestVersion, hydrateCounters }) => {
+        next: ({ response, search }) => {
           this.isLoadingPrograms.set(false);
           this.hasLoadedPrograms.set(true);
           this.programCount = response.count;
           this.programs = (response.results ?? []).map(program =>
-            this.mergeCachedParticipantCounter(program)
+            this.normalizeProgramCounters(program)
           );
           this.searchedPrograms = this.filterBySearch(this.programs, search);
           this.cdref.detectChanges();
-
-          if (hydrateCounters) {
-            this.hydrateParticipantCountersInBackground(response, search, requestVersion);
-          }
         },
         error: () => {
           this.isLoadingPrograms.set(false);
@@ -247,27 +236,6 @@ export class ProgramMainComponent implements OnInit, OnDestroy {
     return fuse.search(search).map(el => el.item);
   }
 
-  private hydrateParticipantCountersInBackground(
-    response: ApiPagination<Program>,
-    search: string,
-    requestVersion: number
-  ): void {
-    const hydrationSubscription = this.hydrateParticipantCounters(response).subscribe(hydrated => {
-      if (requestVersion !== this.requestVersion || this.activeTab !== "all") {
-        return;
-      }
-
-      this.programs = (hydrated.results ?? []).map(program => {
-        this.cacheParticipantCounter(program);
-        return this.mergeCachedParticipantCounter(program);
-      });
-      this.searchedPrograms = this.filterBySearch(this.programs, this.currentSearch || search);
-      this.cdref.detectChanges();
-    });
-
-    this.subscriptions$.push(hydrationSubscription);
-  }
-
   private buildCachedProgramsResponse(): ApiPagination<Program> {
     return {
       count: this.programs.length,
@@ -286,92 +254,15 @@ export class ProgramMainComponent implements OnInit, OnDestroy {
     } as ApiPagination<Program>;
   }
 
-  private hydrateParticipantCounters(
-    response: ApiPagination<Program>
-  ): Observable<ApiPagination<Program>> {
-    const programs = response.results ?? [];
-
-    if (!programs.length) {
-      return of(response);
-    }
-
-    const hydratedPrograms$ = programs.map(program =>
-      this.hydrateProgramParticipantCounter(program)
-    );
-
-    return forkJoin(hydratedPrograms$).pipe(
-      map(results => ({
-        ...response,
-        results,
-      }))
-    );
-  }
-
-  private hydrateProgramParticipantCounter(program: Program): Observable<Program> {
-    const cachedCount = this.participantCountCache.get(program.id);
-    if (cachedCount !== undefined) {
-      return of(this.withParticipantCounter(program, cachedCount));
-    }
-
-    const currentCount = this.resolveParticipantsCount(program);
-
-    if (this.hasKnownParticipantsCount(program)) {
-      this.participantCountCache.set(program.id, currentCount);
-      return of(program);
-    }
-
-    return this.programService.getStats(program.id).pipe(
-      switchMap(stats => {
-        const statsCount = stats.participantsCount ?? currentCount;
-
-        if (statsCount > 0) {
-          return of(this.withParticipantCounter(program, statsCount));
-        }
-
-        return this.programService.getAllMembers(program.id, 0, 1).pipe(
-          map(members => this.withParticipantCounter(program, members.count ?? statsCount)),
-          catchError(() => of(this.withParticipantCounter(program, statsCount)))
-        );
-      }),
-      catchError(() =>
-        this.programService.getAllMembers(program.id, 0, 1).pipe(
-          map(members => this.withParticipantCounter(program, members.count ?? currentCount)),
-          catchError(() => of(program))
-        )
-      )
-    );
-  }
-
-  private mergeCachedParticipantCounter(program: Program): Program {
-    const cachedCount = this.participantCountCache.get(program.id);
-    const currentCount = this.resolveParticipantsCount(program);
-
-    if (this.hasKnownParticipantsCount(program)) {
-      this.participantCountCache.set(program.id, currentCount);
-      return program;
-    }
-
-    if (cachedCount === undefined) {
-      return program;
-    }
-
-    return this.withParticipantCounter(program, cachedCount);
-  }
-
-  private cacheParticipantCounter(program: Program): void {
-    const count = this.resolveParticipantsCount(program);
-
-    if (this.hasKnownParticipantsCount(program)) {
-      this.participantCountCache.set(program.id, count);
-    }
-  }
-
-  private withParticipantCounter(program: Program, participantsCount: number): Program {
-    this.participantCountCache.set(program.id, participantsCount);
+  private normalizeProgramCounters(program: Program): Program {
+    const item = program as ProgramWithParticipantCounters;
 
     return {
       ...program,
-      participantsCount,
+      participantsCount: this.resolveParticipantsCount(program),
+      projectsCount: program.projectsCount ?? item.projects_count ?? 0,
+      activeProjectsCount: program.activeProjectsCount ?? item.active_projects_count ?? 0,
+      expertsCount: program.expertsCount ?? item.experts_count ?? program.experts?.length ?? 0,
     };
   }
 
@@ -395,27 +286,6 @@ export class ProgramMainComponent implements OnInit, OnDestroy {
     const numericValues = values.filter((value): value is number => typeof value === "number");
 
     return numericValues.find(value => value > 0) ?? numericValues[0] ?? 0;
-  }
-
-  private hasKnownParticipantsCount(program: Program): boolean {
-    const item = program as ProgramWithParticipantCounters;
-    const values = [
-      item.participantsCount,
-      item.participants_count,
-      item.participantCount,
-      item.participantTotal,
-      item.participantsTotal,
-      item.registrationsCount,
-      item.registeredParticipantsCount,
-      item.registeredUsersCount,
-      item.membersCount,
-      item.members_count,
-      item.participants?.length,
-      item.members?.length,
-      item.registrations?.length,
-    ];
-
-    return values.some(value => typeof value === "number");
   }
 
   private buildFilterQuery(q: Params): Record<string, string> {

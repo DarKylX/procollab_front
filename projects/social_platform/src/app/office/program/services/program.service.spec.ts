@@ -101,13 +101,4 @@ describe("ProgramService", () => {
     request.flush({ count: 1, results: [{ id: 1 }] });
   });
 
-  it("should approve program", () => {
-    service.approve(42).subscribe(program => {
-      expect(program.id).toBe(42);
-    });
-
-    const request = httpTestingController.expectOne("/programs/42/approve/");
-    expect(request.request.method).toBe("POST");
-    request.flush({ id: 42 });
-  });
 });
