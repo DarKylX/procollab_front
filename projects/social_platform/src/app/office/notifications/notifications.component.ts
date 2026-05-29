@@ -123,9 +123,7 @@ export class NotificationsComponent implements OnInit, OnDestroy {
   protected openNotification(notification: Notification): void {
     const navigate = () => {
       if (notification.url) {
-        this.router
-          .navigateByUrl(notification.url)
-          .then(() => console.debug("Route changed from NotificationsComponent"));
+        this.router.navigateByUrl(notification.url);
       }
     };
 

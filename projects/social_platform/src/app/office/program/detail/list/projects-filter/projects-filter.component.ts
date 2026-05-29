@@ -101,9 +101,7 @@ export class ProjectsFilterComponent implements OnInit {
           this.subscribeToFormChanges();
           this.filtersLoaded.emit(filter);
         },
-        error(err) {
-          console.log(err);
-        },
+        error: () => undefined,
       });
     }
   }
@@ -160,8 +158,7 @@ export class ProjectsFilterComponent implements OnInit {
         },
         relativeTo: this.route,
         queryParamsHandling: "merge",
-      })
-      .then(() => console.log("Query change from ProjectsComponent"));
+      });
 
     this.clear.emit();
   }
@@ -232,9 +229,6 @@ export class ProjectsFilterComponent implements OnInit {
       .navigate([], {
         queryParams: currentParams,
         relativeTo: this.route,
-      })
-      .then(() => {
-        console.log("Query params updated:", currentParams);
       });
   }
 

@@ -277,14 +277,6 @@ export class ProgramService {
     return this.getReadiness(programId);
   }
 
-  approve(programId: number): Observable<Program> {
-    return this.apiService.post<Program>(`${this.PROGRAMS_URL}/${programId}/approve/`, {});
-  }
-
-  reject(programId: number, comment: string): Observable<Program> {
-    return this.apiService.post<Program>(`${this.PROGRAMS_URL}/${programId}/reject/`, { comment });
-  }
-
   freeze(programId: number, comment: string): Observable<Program> {
     return this.apiService
       .post<ModerationProgramActionResponse>(

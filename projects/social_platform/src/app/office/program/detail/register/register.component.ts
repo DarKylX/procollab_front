@@ -162,9 +162,7 @@ export class ProgramRegisterComponent implements OnInit, OnDestroy {
       })
       .subscribe({
         next: () => {
-          this.router
-            .navigateByUrl(`/office/program/${this.route.snapshot.params["programId"]}`)
-            .then(() => console.debug("Route changed from ProgramRegisterComponent"));
+          this.router.navigateByUrl(`/office/program/${this.route.snapshot.params["programId"]}`);
         },
         error: (error: HttpErrorResponse) => {
           this.isSubmitting = false;

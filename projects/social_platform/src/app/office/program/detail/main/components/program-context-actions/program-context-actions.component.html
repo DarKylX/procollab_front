@@ -46,10 +46,12 @@
         Связаться с поддержкой
       </button>
       } @case ("completed") {
-      <a class="context-card__button" [routerLink]="['/office/program', program.id, 'results']"
+      <a class="context-card__button" [routerLink]="['/office/program', program.id, 'analytics']"
         >Просмотреть итоги</a
       >
-      <button class="context-card__button" type="button">Скачать сертификаты</button>
+      <a class="context-card__button" [routerLink]="['/office/program', program.id, 'edit', 'certificate']"
+        >Сертификаты</a
+      >
       <a class="context-card__button" [routerLink]="['/office/program', program.id, 'analytics']"
         >Аналитика</a
       >
@@ -80,7 +82,7 @@
     </p>
     <a
       class="context-card__button context-card__button--primary"
-      [routerLink]="['/office/program', program.id, 'evaluation']"
+      [routerLink]="['/office/program', program.id, 'projects-rating']"
     >
       Перейти к оценке проектов
     </a>
