@@ -129,6 +129,14 @@ export class ProgramCardComponent implements OnInit, OnChanges {
     return (this.program?.status ?? "draft") as ProgramStatus;
   }
 
+  get programFormatLabel(): string {
+    const value = (this.program?.city || "").trim().toLowerCase();
+    if (!value) {
+      return "";
+    }
+    return value === "онлайн" || value === "online" ? "Онлайн" : "Оффлайн";
+  }
+
   get participantsCount(): string {
     return this.formatCount(this.resolvedParticipantsCount);
   }

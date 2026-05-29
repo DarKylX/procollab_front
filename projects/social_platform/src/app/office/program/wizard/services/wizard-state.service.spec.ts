@@ -17,7 +17,7 @@ describe("WizardStateService", () => {
       datetimeRegistrationEnds: "2026-05-25",
       datetimeProjectSubmissionEnds: "2026-06-05",
       datetimeFinished: "2026-06-20",
-      city: "Москва",
+      city: "Онлайн",
     });
 
     expect(service.snapshot.name).toBe("Case championship");

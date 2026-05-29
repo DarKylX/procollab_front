@@ -16,7 +16,7 @@ import { ReadinessChecklist, ReadinessData } from "./readiness.model";
  * @param {string} advertisementImageAddress - URL рекламного изображения
  * @param {string} name - Название программы
  * @param {string} description - Полное описание программы
- * @param {string} city - Город проведения программы
+ * @param {string} city - Формат проведения программы
  * @param {string} tag - Тег/категория программы
  * @param {number} year - Год проведения программы
  * @param {string[]} links - Массив полезных ссылок

@@ -33,6 +33,14 @@ export const APP_ROUTES: Routes = [
     canActivate: [AuthRequiredGuard],
   },
   {
+    path: "invite/:token",
+    loadComponent: () =>
+      import("./office/program/invite/program-invite-accept.component").then(
+        c => c.ProgramInviteAcceptComponent
+      ),
+    canActivate: [AuthRequiredGuard],
+  },
+  {
     path: "**",
     redirectTo: "error/404",
   },

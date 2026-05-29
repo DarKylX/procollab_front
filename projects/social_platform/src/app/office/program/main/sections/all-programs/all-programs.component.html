@@ -102,7 +102,7 @@
     <form class="invite-code-modal" (ngSubmit)="continueInviteCode()">
       <header class="invite-code-modal__header">
         <h2>Присоединиться по коду</h2>
-        <p>Введите код приглашения, который вы получили от организатора или участника проекта.</p>
+        <p>Введите код приглашения, который вы получили от организатора чемпионата.</p>
       </header>
 
       <label class="invite-code-modal__field">
@@ -124,8 +124,12 @@
         <button class="invite-code-modal__button" type="button" (click)="closeInviteCodeModal()">
           Отмена
         </button>
-        <button class="invite-code-modal__button invite-code-modal__button--primary" type="submit">
-          Продолжить
+        <button
+          class="invite-code-modal__button invite-code-modal__button--primary"
+          type="submit"
+          [disabled]="inviteCodeSubmitting"
+        >
+          {{ inviteCodeSubmitting ? "Проверяем..." : "Продолжить" }}
         </button>
       </div>
     </form>

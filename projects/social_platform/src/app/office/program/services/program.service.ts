@@ -60,6 +60,22 @@ export interface ProgramExpert {
   status?: "added" | "available";
 }
 
+export interface ProgramInvite {
+  id: number;
+  program: number;
+  email: string;
+  token: string;
+  acceptUrl: string;
+  status: "pending" | "used" | "expired" | "revoked";
+  datetimeCreated: string;
+  acceptedAt?: string | null;
+  expiresAt: string;
+  acceptedBy?: number | null;
+  acceptedByName?: string | null;
+  createdBy?: number | null;
+  createdByName?: string | null;
+}
+
 interface ModerationProgramActionResponse {
   program: Partial<Program>;
 }
@@ -98,6 +114,8 @@ interface ModerationProgramActionResponse {
 })
 export class ProgramService {
   private readonly PROGRAMS_URL = "/programs";
+  private readonly PROGRAM_INVITES_URL = "/partner-programs";
+  private readonly PUBLIC_INVITES_URL = "/invites";
   private readonly MODERATION_PROGRAMS_URL = "/api/admin/moderation/programs";
 
   constructor(private readonly apiService: ApiService) {}
@@ -344,6 +362,45 @@ export class ProgramService {
 
   getProgramExperts(programId: number): Observable<ProgramExpert[]> {
     return this.apiService.get<ProgramExpert[]>(`${this.PROGRAMS_URL}/${programId}/experts/`);
+  }
+
+  getInvites(programId: number): Observable<ProgramInvite[]> {
+    return this.apiService.get<ProgramInvite[]>(
+      `${this.PROGRAM_INVITES_URL}/${programId}/invites/`
+    );
+  }
+
+  createInvites(
+    programId: number,
+    payload: { emails: string[]; customMessage?: string; expiresInDays?: number }
+  ): Observable<ProgramInvite[]> {
+    return this.apiService.post<ProgramInvite[]>(
+      `${this.PROGRAM_INVITES_URL}/${programId}/invites/`,
+      payload
+    );
+  }
+
+  resendInvite(programId: number, inviteId: number): Observable<ProgramInvite> {
+    return this.apiService.post<ProgramInvite>(
+      `${this.PROGRAM_INVITES_URL}/${programId}/invites/${inviteId}/resend/`,
+      {}
+    );
+  }
+
+  revokeInvite(programId: number, inviteId: number): Observable<ProgramInvite> {
+    return this.apiService.post<ProgramInvite>(
+      `${this.PROGRAM_INVITES_URL}/${programId}/invites/${inviteId}/revoke/`,
+      {}
+    );
+  }
+
+  acceptInviteCode(
+    token: string
+  ): Observable<{ programId: number; inviteId: number; status: string }> {
+    return this.apiService.post<{ programId: number; inviteId: number; status: string }>(
+      `${this.PUBLIC_INVITES_URL}/${token}/accept/`,
+      {}
+    );
   }
 
   searchProgramExperts(programId: number, query: string): Observable<ProgramExpert[]> {

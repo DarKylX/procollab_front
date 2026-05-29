@@ -188,6 +188,14 @@ export class ModerationListComponent implements OnInit {
     return registrationType === "external" ? "Внешняя ссылка" : "Встроенная форма";
   }
 
+  programFormatLabel(program: ModerationProgramListItem): string {
+    const value = (program.city || "").trim().toLowerCase();
+    if (!value) {
+      return "Формат не указан";
+    }
+    return value === "онлайн" || value === "online" ? "Онлайн" : "Оффлайн";
+  }
+
   submittedLabel(program: ModerationProgramListItem): string {
     const rawDate = program.submittedAt || program.decisionAt || program.datetimeUpdated;
     return rawDate ? new Date(rawDate).toLocaleString("ru-RU") : "нет данных";

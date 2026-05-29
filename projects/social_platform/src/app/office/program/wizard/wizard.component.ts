@@ -515,13 +515,16 @@ export class WizardComponent implements OnInit, OnDestroy {
   }
 
   private buildPayload(state: WizardState): ProgramDraftPayload {
+    const registrationEnds = state.datetimeRegistrationEnds || state.datetimeFinished;
+    const projectSubmissionEnds = state.datetimeProjectSubmissionEnds || registrationEnds;
+
     return {
       name: state.name.trim(),
       description: state.description.trim(),
       city: state.city.trim(),
       datetimeStarted: this.toDateTime(state.datetimeStarted, "00:00"),
-      datetimeRegistrationEnds: this.toDateTime(state.datetimeRegistrationEnds, "23:59"),
-      datetimeProjectSubmissionEnds: this.toDateTime(state.datetimeProjectSubmissionEnds, "23:59"),
+      datetimeRegistrationEnds: this.toDateTime(registrationEnds, "23:59"),
+      datetimeProjectSubmissionEnds: this.toDateTime(projectSubmissionEnds, "23:59"),
       datetimeFinished: this.toDateTime(state.datetimeFinished, "23:59"),
       isPrivate: state.isPrivate,
       registrationType: "internal",
@@ -535,8 +538,6 @@ export class WizardComponent implements OnInit, OnDestroy {
         state.description ||
         state.city ||
         state.datetimeStarted ||
-        state.datetimeRegistrationEnds ||
-        state.datetimeProjectSubmissionEnds ||
         state.datetimeFinished
     );
   }

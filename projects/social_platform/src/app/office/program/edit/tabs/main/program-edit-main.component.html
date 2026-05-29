@@ -43,26 +43,21 @@
       @if (isInvalid("description")) {
       <span class="edit-field__error">{{ errorText("description") }}</span>
       }
-      <span class="edit-field__hint">Минимум {{ descriptionMinLength }} символов</span>
     </label>
 
     <label class="edit-field">
-      <span class="edit-field__label">Город <span class="edit-field__required">*</span></span>
-      <input
+      <span class="edit-field__label">
+        Формат проведения <span class="edit-field__required">*</span>
+      </span>
+      <select
         class="edit-field__control"
-        type="text"
         formControlName="city"
-        list="program-edit-cities"
-        placeholder="Москва или онлайн"
-      />
-      <datalist id="program-edit-cities">
-        <option value="Москва"></option>
-        <option value="Санкт-Петербург"></option>
-        <option value="Казань"></option>
-        <option value="Новосибирск"></option>
-        <option value="Екатеринбург"></option>
-        <option value="Онлайн"></option>
-      </datalist>
+      >
+        <option value="" disabled>Выберите формат</option>
+        @for (format of formatOptions; track format) {
+        <option [value]="format">{{ format }}</option>
+        }
+      </select>
       @if (isInvalid("city")) {
       <span class="edit-field__error">{{ errorText("city") }}</span>
       }
