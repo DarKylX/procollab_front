@@ -521,6 +521,16 @@ export class DeatilComponent implements OnInit, OnDestroy {
     return this.info()?.registrationType === "external" ? "внешняя регистрация" : "на платформе";
   }
 
+  get programEventFormatLabel(): string {
+    const rawValue = String(this.info()?.city || "").trim().toLowerCase();
+
+    if (!rawValue) {
+      return "Онлайн";
+    }
+
+    return rawValue === "онлайн" || rawValue === "online" ? "Онлайн" : "Оффлайн";
+  }
+
   get programStatus(): ProgramStatus {
     return (this.info()?.status ?? "published") as ProgramStatus;
   }
@@ -1569,12 +1579,27 @@ export class DeatilComponent implements OnInit, OnDestroy {
       return this.getFallbackRegistrationFields();
     }
 
-    const normalizedFields = schemaFields
+    return schemaFields
       .map(([key, field]) => this.normalizeSchemaField(key, field))
       .filter((field): field is RegistrationField => Boolean(field))
-      .filter(field => !this.isOrganizerControlledConsentField(field));
+      .filter(field => !this.isOrganizerControlledConsentField(field))
+      .filter(field => !this.isSystemRegistrationDuplicate(field));
+  }
 
-    return normalizedFields.length ? normalizedFields : this.getFallbackRegistrationFields();
+  private isSystemRegistrationDuplicate(field: RegistrationField): boolean {
+    const key = field.key.trim().toLowerCase().replace(/[\s_-]/g, "");
+    const label = field.label.trim().toLowerCase();
+
+    const isFullName =
+      key === "fullname" ||
+      key === "fio" ||
+      label === "фио" ||
+      label.includes("фамилия имя") ||
+      label.includes("фамилия, имя");
+    const isEmail = key.includes("email") || label.includes("email") || label.includes("электронная почта");
+    const isPhone = key.includes("phone") || label.includes("телефон");
+
+    return isFullName || isEmail || isPhone;
   }
 
   private isOrganizerControlledConsentField(field: RegistrationField): boolean {
@@ -1599,7 +1624,10 @@ export class DeatilComponent implements OnInit, OnDestroy {
     if (Array.isArray(fieldsValue)) {
       return fieldsValue
         .filter((field): field is ProgramDataSchemaField => this.isSchemaField(field))
-        .map((field, index) => [`field_${index + 1}`, field]);
+        .map((field, index) => {
+          const fieldRecord = field as unknown as Record<string, unknown>;
+          return [this.readString(fieldRecord["name"]) || `field_${index + 1}`, field];
+        });
     }
 
     return Object.entries(schema)
