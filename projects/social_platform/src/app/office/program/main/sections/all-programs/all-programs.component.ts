@@ -1,11 +1,21 @@
 /** @format */
 
-import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from "@angular/core";
+import {
+  ChangeDetectionStrategy,
+  ChangeDetectorRef,
+  Component,
+  EventEmitter,
+  Input,
+  Output,
+  inject,
+} from "@angular/core";
 import { FormsModule } from "@angular/forms";
-import { RouterLink } from "@angular/router";
+import { Router, RouterLink } from "@angular/router";
 import { Program } from "@office/program/models/program.model";
+import { ProgramService } from "@office/program/services/program.service";
 import { ProgramCardComponent } from "../../../shared/program-card/program-card.component";
 import { ModalComponent } from "@ui/components/modal/modal.component";
+import { SnackbarService } from "@ui/services/snackbar.service";
 
 type RegistrationSort = "asc" | "desc" | "";
 type ProgramFilterShape = Program & {
@@ -24,6 +34,11 @@ type ProgramFilterShape = Program & {
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class AllProgramsComponent {
+  private readonly programService = inject(ProgramService);
+  private readonly router = inject(Router);
+  private readonly snackbar = inject(SnackbarService);
+  private readonly cdr = inject(ChangeDetectorRef);
+
   @Input() programs: Program[] = [];
   @Input() verifiedOnly = false;
   @Input() registrationOpenOnly = false;
@@ -37,6 +52,7 @@ export class AllProgramsComponent {
   inviteCodeModalOpen = false;
   inviteCode = "";
   inviteCodeError = "";
+  inviteCodeSubmitting = false;
 
   get filteredPrograms(): Program[] {
     const filtered = this.programs.filter(program => {
@@ -82,27 +98,60 @@ export class AllProgramsComponent {
   openInviteCodeModal(): void {
     this.inviteCode = "";
     this.inviteCodeError = "";
+    this.inviteCodeSubmitting = false;
     this.inviteCodeModalOpen = true;
   }
 
   closeInviteCodeModal(): void {
+    if (this.inviteCodeSubmitting) {
+      return;
+    }
+
     this.inviteCodeModalOpen = false;
     this.inviteCodeError = "";
   }
 
   continueInviteCode(): void {
-    if (!this.inviteCode.trim()) {
+    const token = this.inviteCode.trim();
+    if (!token) {
       this.inviteCodeError = "Введите код приглашения";
       return;
     }
 
-    this.closeInviteCodeModal();
+    this.inviteCodeSubmitting = true;
+    this.inviteCodeError = "";
+    this.programService.acceptInviteCode(token).subscribe({
+      next: response => {
+        this.inviteCodeSubmitting = false;
+        this.inviteCodeModalOpen = false;
+        this.inviteCode = "";
+        this.snackbar.success("Приглашение принято");
+        this.router.navigate(["/office/program", response.programId]);
+        this.cdr.markForCheck();
+      },
+      error: error => {
+        this.inviteCodeSubmitting = false;
+        this.inviteCodeError = this.formatInviteCodeError(error);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  private formatInviteCodeError(error: unknown): string {
+    const detail = (error as { error?: { detail?: unknown } })?.error?.detail;
+    if (typeof detail === "string") {
+      return detail;
+    }
+
+    return "Не удалось принять приглашение. Проверьте код и попробуйте еще раз.";
   }
 
   private isPublicProgram(program: Program): boolean {
     const item = program as ProgramFilterShape;
+    const isPrivate = Boolean(program.isPrivate ?? item.is_private);
+    const hasPrivateAccess = Boolean(program.isUserMember || program.isUserManager);
 
-    return (program.status ?? "published") === "published" && !(program.isPrivate ?? item.is_private);
+    return (program.status ?? "published") === "published" && (!isPrivate || hasPrivateAccess);
   }
 
   private isVerifiedProgram(program: Program): boolean {

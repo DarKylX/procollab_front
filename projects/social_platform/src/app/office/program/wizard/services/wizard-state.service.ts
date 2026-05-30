@@ -115,8 +115,6 @@ export class WizardStateService {
       state.name &&
         state.description &&
         state.datetimeStarted &&
-        state.datetimeRegistrationEnds &&
-        state.datetimeProjectSubmissionEnds &&
         state.datetimeFinished &&
         state.city
     );

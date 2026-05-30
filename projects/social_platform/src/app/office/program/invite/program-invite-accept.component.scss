@@ -1,0 +1,59 @@
+/** @format */
+
+:host {
+  display: block;
+  min-height: 100vh;
+  background: var(--light-background);
+}
+
+.program-invite {
+  display: grid;
+  min-height: 100vh;
+  padding: 24px;
+  place-items: center;
+
+  &__state {
+    display: grid;
+    gap: 12px;
+    width: min(420px, 100%);
+    padding: 28px;
+    text-align: center;
+    background: var(--white);
+    border: 1px solid var(--medium-grey-for-outline);
+    border-radius: 8px;
+
+    i {
+      margin: 0 auto;
+      color: var(--accent);
+    }
+
+    h1,
+    p {
+      margin: 0;
+    }
+
+    h1 {
+      font-size: 22px;
+      line-height: 1.25;
+      color: var(--black);
+    }
+
+    p {
+      font-size: 14px;
+      line-height: 1.45;
+      color: var(--grey-for-text);
+    }
+
+    a {
+      justify-self: center;
+      padding: 11px 18px;
+      margin-top: 6px;
+      font-size: 13px;
+      font-weight: 800;
+      color: var(--white);
+      text-decoration: none;
+      background: var(--accent);
+      border-radius: 999px;
+    }
+  }
+}

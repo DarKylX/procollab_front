@@ -32,18 +32,8 @@ export class BasicInfoStepComponent implements OnInit, OnDestroy {
   private readonly destroyRef = inject(DestroyRef);
   private readonly wizardState = inject(WizardStateService);
 
-  readonly descriptionMinLength = 180;
   readonly descriptionMaxLength = 1000;
-  readonly cityOptions = [
-    "Москва",
-    "Санкт-Петербург",
-    "Казань",
-    "Новосибирск",
-    "Екатеринбург",
-    "Нижний Новгород",
-    "Томск",
-    "Иннополис",
-  ];
+  readonly formatOptions = ["Онлайн", "Оффлайн"];
 
   readonly form = inject(FormBuilder).nonNullable.group(
     {
@@ -52,13 +42,10 @@ export class BasicInfoStepComponent implements OnInit, OnDestroy {
         "",
         [
           Validators.required,
-          Validators.minLength(this.descriptionMinLength),
           Validators.maxLength(this.descriptionMaxLength),
         ],
       ],
       datetimeStarted: ["", [Validators.required]],
-      datetimeRegistrationEnds: ["", [Validators.required]],
-      datetimeProjectSubmissionEnds: ["", [Validators.required]],
       datetimeFinished: ["", [Validators.required]],
       city: ["", [Validators.required]],
     },
@@ -77,10 +64,8 @@ export class BasicInfoStepComponent implements OnInit, OnDestroy {
         name: state.name,
         description: state.description,
         datetimeStarted: state.datetimeStarted,
-        datetimeRegistrationEnds: state.datetimeRegistrationEnds,
-        datetimeProjectSubmissionEnds: state.datetimeProjectSubmissionEnds,
         datetimeFinished: state.datetimeFinished,
-        city: state.city,
+        city: this.normalizeProgramFormat(state.city),
       },
       { emitEvent: false }
     );
@@ -132,7 +117,16 @@ export class BasicInfoStepComponent implements OnInit, OnDestroy {
   }
 
   private syncState(markDirty = true): void {
-    this.wizardState.updateBasicInfo(this.form.getRawValue(), markDirty);
+    const value = this.form.getRawValue();
+
+    this.wizardState.updateBasicInfo(
+      {
+        ...value,
+        datetimeRegistrationEnds: value.datetimeFinished,
+        datetimeProjectSubmissionEnds: value.datetimeFinished,
+      },
+      markDirty
+    );
   }
 
   private syncValidity(): void {
@@ -142,8 +136,6 @@ export class BasicInfoStepComponent implements OnInit, OnDestroy {
   private dateFlowValidator(): ValidatorFn {
     return (control: AbstractControl): ValidationErrors | null => {
       const started = control.get("datetimeStarted")?.value;
-      const registrationEnds = control.get("datetimeRegistrationEnds")?.value;
-      const projectSubmissionEnds = control.get("datetimeProjectSubmissionEnds")?.value;
       const finished = control.get("datetimeFinished")?.value;
       const errors: ValidationErrors = {};
 
@@ -151,15 +143,15 @@ export class BasicInfoStepComponent implements OnInit, OnDestroy {
         errors["startAfterFinish"] = true;
       }
 
-      if (registrationEnds && projectSubmissionEnds && registrationEnds > projectSubmissionEnds) {
-        errors["registrationAfterProjectSubmission"] = true;
-      }
-
-      if (projectSubmissionEnds && finished && projectSubmissionEnds > finished) {
-        errors["projectSubmissionAfterFinish"] = true;
-      }
-
       return Object.keys(errors).length ? errors : null;
     };
+  }
+
+  private normalizeProgramFormat(value: string): string {
+    const normalized = (value || "").trim().toLowerCase();
+    if (!normalized) {
+      return "";
+    }
+    return normalized === "онлайн" || normalized === "online" ? "Онлайн" : "Оффлайн";
   }
 }

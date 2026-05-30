@@ -608,6 +608,81 @@
   }
 }
 
+.registration-invites {
+  display: grid;
+  gap: 12px;
+
+  &__form {
+    display: grid;
+    grid-template-columns: minmax(180px, 260px) minmax(0, 1fr) auto;
+    gap: 12px;
+    align-items: end;
+  }
+
+  &__error {
+    margin: 0;
+    font-size: 12px;
+    color: var(--red);
+  }
+
+  &__list {
+    display: grid;
+    min-width: 0;
+    overflow: hidden;
+    border: 0.5px solid var(--medium-grey-for-outline);
+    border-radius: var(--rounded-md);
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: minmax(180px, 1fr) 110px 150px 128px;
+    gap: 10px;
+    align-items: center;
+    min-width: 0;
+    min-height: 38px;
+    padding: 0 10px;
+    font-size: 12px;
+    color: var(--black);
+    border-bottom: 0.5px solid var(--medium-grey-for-outline);
+
+    &:last-child {
+      border-bottom: 0;
+    }
+
+    &--head {
+      min-height: 34px;
+      font-size: 11px;
+      font-weight: 800;
+      color: var(--grey-for-text);
+      background: var(--light-background);
+    }
+  }
+
+  &__email {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__status {
+    display: inline-flex;
+    width: fit-content;
+    padding: 3px 8px;
+    font-style: normal;
+    font-weight: 800;
+    color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 8%, var(--white));
+    border-radius: var(--rounded-xxl);
+  }
+
+  &__actions {
+    display: inline-flex;
+    gap: 6px;
+    justify-content: flex-end;
+  }
+}
+
 @media (max-width: 1280px) {
   .registration-table {
     overflow-x: auto;
@@ -632,8 +707,17 @@
   .registration-methods,
   .field-editor__grid,
   .field-editor__toggles,
-  .registration-legal__documents {
+  .registration-legal__documents,
+  .registration-invites__form {
     grid-template-columns: 1fr;
+  }
+
+  .registration-invites__list {
+    overflow-x: auto;
+  }
+
+  .registration-invites__row {
+    min-width: 680px;
   }
 
   .registration-legal__terms {

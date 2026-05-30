@@ -132,7 +132,7 @@
           <tr>
             <td>
               <strong>{{ program.name }}</strong>
-              <span>{{ program.city || "Город не указан" }}</span>
+              <span>{{ programFormatLabel(program) }}</span>
             </td>
             <td>
               @if (primaryOrganizer(program); as organizer) {

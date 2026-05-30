@@ -47,19 +47,7 @@
     </div>
 
     <div class="summary__row">
-      <dt class="text-body-12-bold">Регистрация до</dt>
-      <dd class="text-body-14">{{ state.datetimeRegistrationEnds | date: "d MMMM yyyy" }}</dd>
-      <button class="summary__link" type="button" (click)="editStep(1)">Изменить</button>
-    </div>
-
-    <div class="summary__row">
-      <dt class="text-body-12-bold">Прием проектов до</dt>
-      <dd class="text-body-14">{{ state.datetimeProjectSubmissionEnds | date: "d MMMM yyyy" }}</dd>
-      <button class="summary__link" type="button" (click)="editStep(1)">Изменить</button>
-    </div>
-
-    <div class="summary__row">
-      <dt class="text-body-12-bold">Город</dt>
+      <dt class="text-body-12-bold">Формат проведения</dt>
       <dd class="text-body-14">{{ state.city || "Не указан" }}</dd>
       <button class="summary__link" type="button" (click)="editStep(1)">Изменить</button>
     </div>

@@ -1,0 +1,18 @@
+<!-- @format -->
+
+<section class="program-invite">
+  @if (loading) {
+  <div class="program-invite__state">
+    <i appIcon icon="spinner" appSquare="38"></i>
+    <h1>Принимаем приглашение</h1>
+    <p>Сейчас откроется страница закрытого чемпионата.</p>
+  </div>
+  } @else {
+  <div class="program-invite__state">
+    <i appIcon icon="error" appSquare="38"></i>
+    <h1>Приглашение не принято</h1>
+    <p>{{ error }}</p>
+    <a routerLink="/office/program">К витрине чемпионатов</a>
+  </div>
+  }
+</section>

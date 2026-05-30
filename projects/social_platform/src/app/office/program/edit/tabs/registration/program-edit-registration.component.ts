@@ -12,7 +12,7 @@ import {
 } from "@angular/core";
 import { takeUntilDestroyed } from "@angular/core/rxjs-interop";
 import { FormBuilder, ReactiveFormsModule, Validators } from "@angular/forms";
-import { map, Observable, switchMap, tap, throwError } from "rxjs";
+import { finalize, map, Observable, switchMap, tap, throwError } from "rxjs";
 import { ProgramDraftPayload } from "@office/program/models/program-draft.model";
 import {
   LegalDocument,
@@ -21,8 +21,9 @@ import {
   ProgramDataSchemaField,
   ProgramLegalSettings,
 } from "@office/program/models/program.model";
-import { ProgramService } from "@office/program/services/program.service";
+import { ProgramInvite, ProgramService } from "@office/program/services/program.service";
 import { ButtonComponent, IconComponent } from "@ui/components";
+import { SnackbarService } from "@ui/services/snackbar.service";
 import {
   ProgramEditStateService,
   ProgramEditTabController,
@@ -77,6 +78,7 @@ export class ProgramEditRegistrationComponent implements OnInit, OnDestroy {
   private readonly cdr = inject(ChangeDetectorRef);
   private readonly editState = inject(ProgramEditStateService);
   private readonly programService = inject(ProgramService);
+  private readonly snackbar = inject(SnackbarService);
   private readonly tabKey = "registration";
 
   readonly settingsForm = this.fb.nonNullable.group(
@@ -101,6 +103,11 @@ export class ProgramEditRegistrationComponent implements OnInit, OnDestroy {
     additionalTermsText: [""],
   });
 
+  readonly inviteForm = this.fb.nonNullable.group({
+    email: ["", [Validators.required, Validators.email]],
+    customMessage: ["", [Validators.maxLength(2000)]],
+  });
+
   readonly fieldTypes: Array<{ value: RegistrationFieldType; label: string }> = [
     { value: "text", label: "Текст" },
     { value: "email", label: "Email" },
@@ -122,9 +129,14 @@ export class ProgramEditRegistrationComponent implements OnInit, OnDestroy {
   editorOpen = false;
   editingFieldId: string | null = null;
   fieldFormSubmitted = false;
+  invites: ProgramInvite[] = [];
+  invitesLoading = false;
+  inviteSubmitting = false;
+  inviteError = "";
 
   private initialSnapshot = "";
   private fieldSeed = 0;
+  private invitesLoadedForProgramId: number | null = null;
 
   ngOnInit(): void {
     const snapshot =
@@ -140,6 +152,7 @@ export class ProgramEditRegistrationComponent implements OnInit, OnDestroy {
 
     this.settingsForm.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.syncState();
+      this.ensureInvitesLoaded();
       this.cdr.markForCheck();
     });
 
@@ -223,6 +236,17 @@ export class ProgramEditRegistrationComponent implements OnInit, OnDestroy {
     return Boolean(this.currentLegalSettings?.organizerTermsAcceptedAt);
   }
 
+  get canManageInvites(): boolean {
+    const status = this.program?.status;
+
+    return Boolean(
+      this.program?.id &&
+        status !== "pending_moderation" &&
+        status !== "frozen" &&
+        status !== "archived"
+    );
+  }
+
   getFieldPrivacyWarning(field: RegistrationField): string {
     if (field.system) {
       return "";
@@ -277,6 +301,129 @@ export class ProgramEditRegistrationComponent implements OnInit, OnDestroy {
       this.editState.updateProgram({ legalSettings: settings });
       this.cdr.markForCheck();
     });
+  }
+
+  loadInvites(force = false): void {
+    const programId = this.program?.id;
+    if (!programId || !this.settingsForm.controls.isPrivate.value) {
+      return;
+    }
+
+    if (!force && this.invitesLoadedForProgramId === programId) {
+      return;
+    }
+
+    this.invitesLoading = true;
+    this.inviteError = "";
+    this.programService
+      .getInvites(programId)
+      .pipe(
+        finalize(() => {
+          this.invitesLoading = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: invites => {
+          this.invites = invites;
+          this.invitesLoadedForProgramId = programId;
+        },
+        error: () => {
+          this.inviteError = "Не удалось загрузить приглашения";
+        },
+      });
+  }
+
+  createInvite(): void {
+    const programId = this.program?.id;
+    if (!programId || !this.canManageInvites || this.inviteForm.invalid) {
+      this.inviteForm.markAllAsTouched();
+      this.cdr.markForCheck();
+      return;
+    }
+
+    const value = this.inviteForm.getRawValue();
+    this.inviteSubmitting = true;
+    this.inviteError = "";
+    this.programService
+      .createInvites(programId, {
+        emails: [value.email.trim()],
+        customMessage: value.customMessage.trim() || undefined,
+      })
+      .pipe(
+        finalize(() => {
+          this.inviteSubmitting = false;
+          this.cdr.markForCheck();
+        })
+      )
+      .subscribe({
+        next: invites => {
+          this.upsertInvites(invites);
+          this.inviteForm.reset({ email: "", customMessage: "" });
+          this.snackbar.success("Приглашение создано");
+        },
+        error: error => {
+          this.inviteError = this.formatInviteError(error, "Не удалось создать приглашение");
+        },
+      });
+  }
+
+  copyInvite(invite: ProgramInvite): void {
+    const value = invite.acceptUrl || String(invite.token);
+    if (!navigator.clipboard) {
+      return;
+    }
+
+    navigator.clipboard.writeText(value).then(() => {
+      this.snackbar.success("Ссылка приглашения скопирована");
+    });
+  }
+
+  resendInvite(invite: ProgramInvite): void {
+    const programId = this.program?.id;
+    if (!programId || !this.canManageInvites) {
+      return;
+    }
+
+    this.inviteError = "";
+    this.programService.resendInvite(programId, invite.id).subscribe({
+      next: updated => {
+        this.upsertInvites([updated]);
+        this.snackbar.success("Приглашение отправлено повторно");
+      },
+      error: error => {
+        this.inviteError = this.formatInviteError(error, "Не удалось отправить приглашение");
+      },
+    });
+  }
+
+  revokeInvite(invite: ProgramInvite): void {
+    const programId = this.program?.id;
+    if (!programId || !this.canManageInvites) {
+      return;
+    }
+
+    this.inviteError = "";
+    this.programService.revokeInvite(programId, invite.id).subscribe({
+      next: updated => {
+        this.upsertInvites([updated]);
+        this.snackbar.success("Приглашение отозвано");
+      },
+      error: error => {
+        this.inviteError = this.formatInviteError(error, "Не удалось отозвать приглашение");
+      },
+    });
+  }
+
+  inviteStatusLabel(status: ProgramInvite["status"]): string {
+    const labels: Record<ProgramInvite["status"], string> = {
+      pending: "Ожидает",
+      used: "Принято",
+      expired: "Истекло",
+      revoked: "Отозвано",
+    };
+
+    return labels[status] ?? status;
   }
 
   selectRegistrationType(type: RegistrationType): void {
@@ -536,6 +683,7 @@ export class ProgramEditRegistrationComponent implements OnInit, OnDestroy {
     this.settingsForm.markAsPristine();
     this.legalForm.markAsPristine();
     this.fields = this.cloneFields(snapshot.fields);
+    this.ensureInvitesLoaded();
   }
 
   private createSnapshotFromProgram(program: Program | null): RegistrationSnapshot {
@@ -827,4 +975,26 @@ export class ProgramEditRegistrationComponent implements OnInit, OnDestroy {
     });
   }
 
+  private ensureInvitesLoaded(): void {
+    if (this.settingsForm.controls.isPrivate.value) {
+      this.loadInvites();
+    }
+  }
+
+  private upsertInvites(invites: ProgramInvite[]): void {
+    const byId = new Map(this.invites.map(invite => [invite.id, invite]));
+    invites.forEach(invite => byId.set(invite.id, invite));
+    this.invites = Array.from(byId.values()).sort((a, b) => {
+      return Date.parse(b.datetimeCreated || "") - Date.parse(a.datetimeCreated || "");
+    });
+  }
+
+  private formatInviteError(error: unknown, fallback: string): string {
+    const detail = (error as { error?: { detail?: unknown } })?.error?.detail;
+    if (typeof detail === "string") {
+      return detail;
+    }
+
+    return fallback;
+  }
 }

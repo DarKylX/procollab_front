@@ -45,30 +45,7 @@
     </label>
 
     <label class="field">
-      <span class="field__label text-body-12-bold">Окончание регистрации</span>
-      <input class="field__control" formControlName="datetimeRegistrationEnds" type="date" />
-      @if (isInvalid("datetimeRegistrationEnds")) {
-      <span class="field__error text-body-12">{{ errorText("datetimeRegistrationEnds") }}</span>
-      }
-    </label>
-  </div>
-
-  <div class="wizard-step__grid">
-    <label class="field">
-      <span class="field__label text-body-12-bold">Окончание подачи проектов</span>
-      <input class="field__control" formControlName="datetimeProjectSubmissionEnds" type="date" />
-      @if (isInvalid("datetimeProjectSubmissionEnds")) {
-      <span class="field__error text-body-12">{{
-        errorText("datetimeProjectSubmissionEnds")
-      }}</span>
-      }
-      <span class="field__hint text-body-12">
-        По умолчанию может совпадать с окончанием регистрации
-      </span>
-    </label>
-
-    <label class="field">
-      <span class="field__label text-body-12-bold">Дата завершения</span>
+      <span class="field__label text-body-12-bold">Дата окончания</span>
       <input class="field__control" formControlName="datetimeFinished" type="date" />
       @if (isInvalid("datetimeFinished")) {
       <span class="field__error text-body-12">{{ errorText("datetimeFinished") }}</span>
@@ -76,35 +53,28 @@
     </label>
   </div>
 
+  <p class="wizard-step__hint text-body-12">
+    Эти даты нужны для черновика. Дедлайны регистрации, сдачи проектов и оценки можно изменить перед
+    публикацией в разделе «Сроки и формат».
+  </p>
+
   <label class="field">
-    <span class="field__label text-body-12-bold">Город проведения</span>
-    <input
+    <span class="field__label text-body-12-bold">Формат проведения</span>
+    <select
       class="field__control"
       formControlName="city"
-      type="text"
-      list="program-wizard-cities"
-      placeholder="Город или онлайн-формат"
-    />
-    <datalist id="program-wizard-cities">
-      @for (city of cityOptions; track city) {
-      <option [value]="city"></option>
+    >
+      <option value="" disabled>Выберите формат</option>
+      @for (format of formatOptions; track format) {
+      <option [value]="format">{{ format }}</option>
       }
-    </datalist>
+    </select>
     @if (isInvalid("city")) {
     <span class="field__error text-body-12">{{ errorText("city") }}</span>
     }
-    <span class="field__hint text-body-12">Укажите город или онлайн-формат</span>
   </label>
 
   @if (hasDateError("startAfterFinish")) {
   <p class="wizard-step__error text-body-12">Дата начала не может быть позже даты завершения.</p>
-  } @if (hasDateError("registrationAfterProjectSubmission")) {
-  <p class="wizard-step__error text-body-12">
-    Окончание регистрации не может быть позже окончания подачи проектов.
-  </p>
-  } @if (hasDateError("projectSubmissionAfterFinish")) {
-  <p class="wizard-step__error text-body-12">
-    Окончание подачи проектов не может быть позже даты завершения чемпионата.
-  </p>
   }
 </form>

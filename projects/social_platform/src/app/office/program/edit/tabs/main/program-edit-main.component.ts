@@ -75,7 +75,7 @@ export class ProgramEditMainComponent implements OnInit, OnDestroy {
   private readonly snackbar = inject(SnackbarService);
   private readonly tabKey = "main";
 
-  readonly descriptionMinLength = 180;
+  readonly formatOptions = ["Онлайн", "Оффлайн"];
 
   readonly assetFields: AssetField[] = [
     {
@@ -104,7 +104,7 @@ export class ProgramEditMainComponent implements OnInit, OnDestroy {
     tag: [""],
     description: [
       "",
-      [Validators.required, Validators.minLength(this.descriptionMinLength), Validators.maxLength(5000)],
+      [Validators.required, Validators.maxLength(5000)],
     ],
     city: ["", [Validators.required]],
     coverImageAddress: [""],
@@ -301,7 +301,7 @@ export class ProgramEditMainComponent implements OnInit, OnDestroy {
         name: program.name ?? "",
         tag: program.tag ?? "",
         description: program.description ?? "",
-        city: program.city ?? "",
+        city: this.normalizeProgramFormat(program.city),
         coverImageAddress: program.coverImageAddress ?? "",
         mobileCoverImageAddress: program.mobileCoverImageAddress ?? "",
         imageAddress: program.imageAddress ?? "",
@@ -372,7 +372,7 @@ export class ProgramEditMainComponent implements OnInit, OnDestroy {
       name: program?.name ?? "",
       tag: program?.tag ?? "",
       description: program?.description ?? "",
-      city: program?.city ?? "",
+      city: this.normalizeProgramFormat(program?.city),
       coverImageAddress: program?.coverImageAddress ?? "",
       mobileCoverImageAddress: program?.mobileCoverImageAddress ?? "",
       imageAddress: program?.imageAddress ?? "",
@@ -386,5 +386,13 @@ export class ProgramEditMainComponent implements OnInit, OnDestroy {
       imageAddress: program?.imageAddress ?? "",
     };
     this.assetMeta = {};
+  }
+
+  private normalizeProgramFormat(value?: string): string {
+    const normalized = (value || "").trim().toLowerCase();
+    if (!normalized) {
+      return "";
+    }
+    return normalized === "онлайн" || normalized === "online" ? "Онлайн" : "Оффлайн";
   }
 }

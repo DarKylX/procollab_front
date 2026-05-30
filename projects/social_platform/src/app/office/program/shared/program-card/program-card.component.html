@@ -47,9 +47,9 @@
       <span>{{ program.datetimeStarted | date: "dd.MM.yyyy" }}</span>
       <span aria-hidden="true">-</span>
       <span>{{ program.datetimeFinished | date: "dd.MM.yyyy" }}</span>
-      @if (program.city) {
+      @if (programFormatLabel) {
       <span aria-hidden="true">•</span>
-      <span>{{ program.city }}</span>
+      <span>{{ programFormatLabel }}</span>
       }
       @if (!showProjectsAndExperts) {
       <span class="program-card__participants">

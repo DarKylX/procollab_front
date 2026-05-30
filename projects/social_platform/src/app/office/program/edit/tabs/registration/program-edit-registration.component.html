@@ -400,10 +400,107 @@
     </label>
 
     @if (settingsForm.controls.isPrivate.value) {
-    <p class="registration-access__hint">
-      Приглашения в закрытый чемпионат не настраиваются в рамках этой задачи.
-      Управление приглашениями будет доступно позже.
-    </p>
+    <div class="registration-invites">
+      @if (canManageInvites) {
+      <div class="registration-invites__form" [formGroup]="inviteForm">
+        <label class="edit-field">
+          <span class="edit-field__label">Email участника</span>
+          <input
+            class="edit-field__control"
+            type="email"
+            formControlName="email"
+            placeholder="participant@example.ru"
+          />
+        </label>
+
+        <label class="edit-field">
+          <span class="edit-field__label">Сообщение в письме</span>
+          <textarea
+            class="edit-field__control"
+            rows="3"
+            formControlName="customMessage"
+            placeholder="Короткое пояснение для приглашенного участника"
+          ></textarea>
+        </label>
+
+        <button
+          class="registration-primary-button"
+          type="button"
+          [disabled]="inviteSubmitting"
+          (click)="createInvite()"
+        >
+          Создать приглашение
+        </button>
+      </div>
+
+      @if (inviteError) {
+      <p class="registration-invites__error">{{ inviteError }}</p>
+      }
+
+      @if (invitesLoading) {
+      <p class="registration-access__hint registration-access__hint--muted">
+        Загружаем приглашения...
+      </p>
+      } @else if (invites.length) {
+      <div class="registration-invites__list" role="table" aria-label="Приглашения">
+        <div class="registration-invites__row registration-invites__row--head" role="row">
+          <span>Email</span>
+          <span>Статус</span>
+          <span>Действует до</span>
+          <span>Действия</span>
+        </div>
+
+        @for (invite of invites; track invite.id) {
+        <div class="registration-invites__row" role="row">
+          <span class="registration-invites__email">{{ invite.email }}</span>
+          <span>
+            <em class="registration-invites__status">{{ inviteStatusLabel(invite.status) }}</em>
+          </span>
+          <span>{{ invite.expiresAt | date: "d MMMM yyyy, HH:mm" }}</span>
+          <span class="registration-invites__actions">
+            <button
+              class="registration-icon-button"
+              type="button"
+              title="Скопировать ссылку"
+              (click)="copyInvite(invite)"
+            >
+              <i appIcon icon="link" appSquare="14"></i>
+            </button>
+            <button
+              class="registration-icon-button"
+              type="button"
+              title="Отправить повторно"
+              [disabled]="invite.status === 'used' || invite.status === 'revoked'"
+              (click)="resendInvite(invite)"
+            >
+              <i appIcon icon="message" appSquare="14"></i>
+            </button>
+            <button
+              class="registration-icon-button registration-icon-button--danger"
+              type="button"
+              title="Отозвать приглашение"
+              [disabled]="invite.status !== 'pending'"
+              (click)="revokeInvite(invite)"
+            >
+              <i appIcon icon="basket" appSquare="14"></i>
+            </button>
+          </span>
+        </div>
+        }
+      </div>
+      } @else {
+      <p class="registration-access__hint">
+        Приглашений пока нет. Создайте приглашение по email или скопируйте ссылку из списка после
+        создания.
+      </p>
+      }
+      } @else {
+      <p class="registration-access__hint">
+        После создания черновика добавьте приглашения или подготовьте ссылку доступа в разделе
+        редактирования.
+      </p>
+      }
+    </div>
     } @else {
     <p class="registration-access__hint registration-access__hint--muted">
       Регистрация открыта для всех пользователей, у которых есть доступ к странице чемпионата.

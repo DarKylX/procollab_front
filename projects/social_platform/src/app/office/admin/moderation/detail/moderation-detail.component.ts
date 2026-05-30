@@ -233,6 +233,14 @@ export class ModerationDetailComponent implements OnInit {
       : "Встроенная форма";
   }
 
+  programFormatLabel(program: ModerationProgramDetail): string {
+    const value = (program.city || "").trim().toLowerCase();
+    if (!value) {
+      return "Не указан";
+    }
+    return value === "онлайн" || value === "online" ? "Онлайн" : "Оффлайн";
+  }
+
   organizers(program: ModerationProgramDetail) {
     return program.organizers?.length ? program.organizers : program.managers ?? [];
   }
