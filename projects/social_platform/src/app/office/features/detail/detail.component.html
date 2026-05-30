@@ -105,14 +105,14 @@
           </div>
         </div>
 
-        @if (info().shortDescription && !isNotRegisteredProgramGuest) {
+        @if (info().shortDescription) {
         <p class="info__program-subtitle">{{ info().shortDescription }}</p>
         }
 
         <dl class="info__program-meta">
           <div>
-            <dt>Город</dt>
-            <dd>{{ info().city || "онлайн" }}</dd>
+            <dt>Формат проведения</dt>
+            <dd>{{ programEventFormatLabel }}</dd>
           </div>
           <div>
             <dt>Регистрация до</dt>
@@ -977,12 +977,12 @@
           <dd>{{ info().datetimeProjectSubmissionEnds | date: "d MMMM yyyy" }}</dd>
         </div>
         <div>
-          <dt>Формат</dt>
+          <dt>Регистрация</dt>
           <dd>{{ programFormatLabel }}</dd>
         </div>
         <div>
-          <dt>Город</dt>
-          <dd>{{ info().city || "онлайн" }}</dd>
+          <dt>Формат проведения</dt>
+          <dd>{{ programEventFormatLabel }}</dd>
         </div>
       </dl>
 
