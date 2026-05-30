@@ -398,7 +398,7 @@ export class ProgramDetailMainComponent implements OnInit, OnDestroy, AfterViewI
       return "Проект успешно отправлен";
     }
 
-    return "Подготовьте решение и сдайте проект";
+    return "Работайте над решением и сдайте проект";
   }
 
   get participantNextStepText(): string {
@@ -453,8 +453,8 @@ export class ProgramDetailMainComponent implements OnInit, OnDestroy, AfterViewI
             description: "Выберите проектную основу участия",
           },
           {
-            title: "Подготовьте решение",
-            description: "Оформите материалы проекта",
+            title: "Изучите материалы",
+            description: "После регистрации откроются материалы и условия участия",
           },
           {
             title: "Сдайте проект",
@@ -471,8 +471,8 @@ export class ProgramDetailMainComponent implements OnInit, OnDestroy, AfterViewI
             description: "Выберите проект для участия",
           },
           {
-            title: "Подготовка решения",
-            description: "Подготовьте и оформите решение",
+            title: "Работа над решением",
+            description: "Подготовьте материалы проекта по заданию",
           },
           {
             title: "Сдача проекта",

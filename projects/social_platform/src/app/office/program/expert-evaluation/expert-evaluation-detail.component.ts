@@ -461,7 +461,7 @@ export class ExpertEvaluationDetailComponent implements OnInit, OnDestroy {
 
   private flattenError(value: unknown): string[] {
     if (typeof value === "string") {
-      return [value];
+      return [this.translateBackendError(value)];
     }
 
     if (Array.isArray(value)) {
@@ -475,6 +475,29 @@ export class ExpertEvaluationDetailComponent implements OnInit, OnDestroy {
     }
 
     return [];
+  }
+
+  private translateBackendError(message: string): string {
+    const dictionary: Record<string, string> = {
+      "No numeric criteria are configured for scoring.":
+        "Для оценки не настроены числовые критерии.",
+      "All numeric criteria must be filled before submission.":
+        "Перед отправкой оценки заполните все числовые критерии.",
+      "Numeric criteria must have a positive max_value.":
+        "У числовых критериев должен быть положительный максимальный балл.",
+      "The sum of numeric criteria weights must be greater than 0.":
+        "Сумма весов числовых критериев должна быть больше нуля.",
+      "Criteria not found": "Критерии не найдены",
+      "All criteria must belong to the same program":
+        "Все критерии должны относиться к одному чемпионату",
+      "Project is not linked to the program": "Проект не привязан к этому чемпионату",
+      "you are not assigned to rate this project":
+        "Вы не назначены экспертом для оценки этого проекта",
+      "max project rates reached for this program":
+        "Достигнут лимит экспертных оценок для этого чемпионата",
+    };
+
+    return dictionary[message] ?? message;
   }
 
   private isBlank(value: ExpertEvaluationValue | undefined): boolean {
