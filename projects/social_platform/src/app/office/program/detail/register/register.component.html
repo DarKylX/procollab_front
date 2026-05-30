@@ -28,23 +28,31 @@
       </label>
 
       <p class="register__consent-text">
-        Ознакомлен(а) с
+        Ознакомлен(а) с документами:
         @if (legalDocumentHref("privacy_policy")) {
         <a [href]="legalDocumentHref('privacy_policy')" target="_blank" rel="noopener">
-          {{ legalDocumentTitle("privacy_policy", "политикой обработки персональных данных") }}
+          {{ legalDocumentTitle("privacy_policy", "Политика обработки персональных данных") }}
         </a>
         } @else {
-        <span>{{ legalDocumentTitle("privacy_policy", "политикой обработки персональных данных") }}</span>
+        <span>{{ legalDocumentTitle("privacy_policy", "Политика обработки персональных данных") }}</span>
         }
-        и
+        ,
         @if (legalDocumentHref("participant_consent")) {
         <a [href]="legalDocumentHref('participant_consent')" target="_blank" rel="noopener">
-          {{ legalDocumentTitle("participant_consent", "согласием на обработку персональных данных") }}
+          {{ legalDocumentTitle("participant_consent", "Согласие на обработку персональных данных") }}
         </a>
         } @else {
         <span>{{
-          legalDocumentTitle("participant_consent", "согласием на обработку персональных данных")
+          legalDocumentTitle("participant_consent", "Согласие на обработку персональных данных")
         }}</span>
+        }
+        и
+        @if (legalDocumentHref("participation_terms")) {
+        <a [href]="legalDocumentHref('participation_terms')" target="_blank" rel="noopener">
+          {{ legalDocumentTitle("participation_terms", "Общие правила участия") }}
+        </a>
+        } @else {
+        <span>{{ legalDocumentTitle("participation_terms", "Общие правила участия") }}</span>
         }.
       </p>
 
