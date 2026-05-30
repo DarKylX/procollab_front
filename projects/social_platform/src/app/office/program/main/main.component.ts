@@ -83,6 +83,7 @@ export class ProgramMainComponent implements OnInit, OnDestroy {
   activeTab: ProgramTab = "all";
   private currentSearch = "";
   private lastRequestKey = "";
+  private readonly programPageSize = 30;
   private readonly programsResponseCache = new Map<string, ApiPagination<Program>>();
 
   ngOnInit(): void {
@@ -129,7 +130,8 @@ export class ProgramMainComponent implements OnInit, OnDestroy {
           this.registrationOpenOnly.set(query.registrationOpenOnly);
           this.registrationSort.set(query.registrationSort);
 
-          const cachedResponse = this.programsResponseCache.get(requestKey);
+          const cachedResponse =
+            tab === "my" ? undefined : this.programsResponseCache.get(requestKey);
           if (cachedResponse) {
             this.lastRequestKey = requestKey;
             return of({
@@ -160,10 +162,14 @@ export class ProgramMainComponent implements OnInit, OnDestroy {
                   )
                 )
               : this.programService
-                  .getAll(0, 100, new HttpParams({ fromObject: query.filter }));
+                  .getAll(0, this.programPageSize, new HttpParams({ fromObject: query.filter }));
 
           return request$.pipe(
-            tap(response => this.programsResponseCache.set(requestKey, response)),
+            tap(response => {
+              if (tab !== "my") {
+                this.programsResponseCache.set(requestKey, response);
+              }
+            }),
             catchError(() =>
               of(this.programsResponseCache.get(requestKey) ?? this.emptyProgramsResponse())
             ),
