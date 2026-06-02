@@ -49,7 +49,7 @@ export class MyProgramsComponent implements OnChanges {
           program =>
             program.isUserManager && ["published", "frozen"].includes(program.status ?? "published")
         ),
-        showReadiness: true,
+        showReadiness: false,
       },
       {
         title: "Где я эксперт",

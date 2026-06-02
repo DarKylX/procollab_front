@@ -648,22 +648,51 @@ export class ProgramEditRegistrationComponent implements OnInit, OnDestroy {
 
         this.applySnapshot(savedSnapshot);
         this.initialSnapshot = this.serializeSnapshot(savedSnapshot);
+        const mergedProgram = this.mergeSavedProgramAfterRegistrationSave(
+          program,
+          legalSettings,
+          payload,
+          savedSnapshot
+        );
         this.editState.updateFormState(
           false,
           this.settingsForm.valid && this.legalForm.valid,
           this.isReadonly
         );
-        this.editState.updateProgram({
-          ...program,
-          registrationType: savedSnapshot.settings.registrationType,
-          registrationLink: payload.registrationLink,
-          isPrivate: savedSnapshot.settings.isPrivate,
-          dataSchema: payload.dataSchema,
-          legalSettings,
-        });
+        this.editState.updateProgram(mergedProgram);
       }),
-      map(({ program, legalSettings }) => ({ ...program, legalSettings }))
+      map(({ program, legalSettings }) =>
+        this.mergeSavedProgramAfterRegistrationSave(program, legalSettings, payload, {
+          ...snapshot,
+          settings: {
+            ...snapshot.settings,
+            registrationType: "internal",
+            registrationLink: "",
+          },
+        })
+      )
     );
+  }
+
+  private mergeSavedProgramAfterRegistrationSave(
+    program: Program,
+    legalSettings: ProgramLegalSettings,
+    payload: ProgramDraftPayload,
+    savedSnapshot: RegistrationSnapshot
+  ): Program {
+    const currentProgram = this.editState.savedProgram() ?? this.program ?? Program.default();
+
+    return {
+      ...currentProgram,
+      ...program,
+      registrationType: savedSnapshot.settings.registrationType,
+      registrationLink: payload.registrationLink,
+      isPrivate: savedSnapshot.settings.isPrivate,
+      dataSchema: payload.dataSchema,
+      legalDocuments:
+        program.legalDocuments ?? currentProgram.legalDocuments ?? this.program?.legalDocuments ?? [],
+      legalSettings,
+    } as Program;
   }
 
   private reset(): void {

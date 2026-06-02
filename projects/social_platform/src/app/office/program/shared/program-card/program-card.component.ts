@@ -5,7 +5,6 @@ import { Program } from "@office/program/models/program.model";
 import { AvatarComponent } from "@ui/components/avatar/avatar.component";
 import { DatePipe } from "@angular/common";
 import { ReadinessWidgetComponent } from "../../readiness-widget/readiness-widget.component";
-import { ReadinessChecklist, ReadinessData } from "../../models/readiness.model";
 import {
   ProgramStatus,
   ProgramStatusBadgeComponent,
@@ -68,7 +67,6 @@ export class ProgramCardComponent implements OnInit, OnChanges {
   @Input() showRegistrationDeadline = false;
   @Input() showProjectsAndExperts = true;
   @Input() showStatus = true;
-  readinessData: ReadinessData | null = null;
 
   ngOnInit(): void {
     this.updateDerivedState();
@@ -82,7 +80,6 @@ export class ProgramCardComponent implements OnInit, OnChanges {
     if (this.program) {
       this.registerDateExpired = Date.now() > Date.parse(this.program.datetimeRegistrationEnds);
     }
-    this.readinessData = this.buildReadinessData();
   }
 
   registerDateExpired?: boolean;
@@ -173,39 +170,6 @@ export class ProgramCardComponent implements OnInit, OnChanges {
     return this.formatCount(this.program?.expertsCount ?? this.program?.experts?.length);
   }
 
-  private buildReadinessData(): ReadinessData | null {
-    const checklist = this.program?.readiness;
-
-    if (!checklist) {
-      return null;
-    }
-
-    const requiredKeys = ["basic_info", "dates", "registration", "legal_terms"];
-    const percentage = this.weightedReadinessPercentage(checklist);
-    const moderationPercentage = this.readinessPercentage(checklist, requiredKeys);
-    const missingRequiredSections = requiredKeys.filter(key => checklist[key] !== true);
-
-    return {
-      readinessPercent: percentage,
-      readiness_percent: percentage,
-      percentage,
-      checklist,
-      labels: {},
-      missingRequiredSections,
-      missing_required_sections: missingRequiredSections,
-      canSubmitToModeration: false,
-      can_submit_to_moderation: false,
-      readinessToModeration: {
-        percentage: moderationPercentage,
-        checklist,
-        requiredKeys,
-        missingRequiredSections,
-        missing_required_sections: missingRequiredSections,
-        isReady: requiredKeys.every(key => checklist[key] === true),
-      },
-    };
-  }
-
   private formatCount(value?: number): string {
     return String(value ?? 0);
   }
@@ -234,30 +198,5 @@ export class ProgramCardComponent implements OnInit, OnChanges {
     const numericValues = values.filter((value): value is number => typeof value === "number");
 
     return numericValues.find(value => value > 0) ?? numericValues[0] ?? 0;
-  }
-
-  private readinessPercentage(checklist: ReadinessChecklist, requiredKeys: string[]): number {
-    const completed = requiredKeys.filter(key => checklist[key] === true).length;
-
-    return Math.round((completed / requiredKeys.length) * 100);
-  }
-
-  private weightedReadinessPercentage(checklist: ReadinessChecklist): number {
-    const weights: Record<string, number> = {
-      basic_info: 20,
-      dates: 15,
-      registration: 15,
-      legal_terms: 15,
-      materials: 10,
-      criteria_experts: 10,
-      visual_assets: 5,
-      verification: 5,
-      certificate_template: 5,
-    };
-
-    return Object.entries(weights).reduce((sum, [key, weight]) => {
-      const value = checklist[key];
-      return value === true || value === "not_applicable" ? sum + weight : sum;
-    }, 0);
   }
 }
