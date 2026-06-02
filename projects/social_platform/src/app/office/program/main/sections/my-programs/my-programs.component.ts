@@ -22,6 +22,7 @@ interface ProgramSection {
 })
 export class MyProgramsComponent implements OnChanges {
   @Input() programs: Program[] = [];
+  @Input() loading = false;
   showArchive = false;
   activeSections: ProgramSection[] = [];
   archivePrograms: Program[] = [];

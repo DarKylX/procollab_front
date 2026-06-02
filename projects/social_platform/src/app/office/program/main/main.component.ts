@@ -120,7 +120,7 @@ export class ProgramMainComponent implements OnInit, OnDestroy {
           this.currentSearch = query.search;
           const requestKey = JSON.stringify({ tab, filter: query.filter });
           const shouldLoadPrograms = requestKey !== this.lastRequestKey || !this.hasLoadedPrograms();
-          this.isLoadingPrograms.set(shouldLoadPrograms && !this.programs.length);
+          this.isLoadingPrograms.set(shouldLoadPrograms);
           this.syncSearchControl(query.search);
           this.isPparticipating.set(query.filter["participating"] === "true");
           if (this.route.snapshot.queryParamMap.get("participating") === "false") {
@@ -150,7 +150,7 @@ export class ProgramMainComponent implements OnInit, OnDestroy {
           this.lastRequestKey = requestKey;
           const request$: Observable<ApiPagination<Program>> =
             tab === "my"
-              ? this.programService.getMyPrograms().pipe(
+              ? this.programService.getMyPrograms(this.programPageSize).pipe(
                   map(
                     results =>
                       ({

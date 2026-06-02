@@ -40,6 +40,53 @@
     border: 1px solid var(--medium-grey-for-outline);
     border-radius: var(--rounded-xxl);
   }
+
+  &__loading {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  &__skeleton {
+    display: grid;
+    grid-template-columns: 52px minmax(0, 1fr);
+    gap: 14px;
+    min-height: 132px;
+    padding: 18px;
+    background: var(--white);
+    border: 0.5px solid var(--medium-grey-for-outline);
+    border-radius: var(--rounded-lg);
+  }
+
+  &__skeleton-avatar,
+  &__skeleton-line {
+    display: block;
+    background: linear-gradient(90deg, #f1eef8 0%, #faf9fd 52%, #f1eef8 100%);
+    background-size: 220% 100%;
+    animation: my-programs-skeleton 1.2s ease-in-out infinite;
+  }
+
+  &__skeleton-avatar {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+  }
+
+  &__skeleton-line {
+    grid-column: 2;
+    height: 12px;
+    border-radius: var(--rounded-xxl);
+  }
+
+  &__skeleton-line--title {
+    width: min(260px, 70%);
+    height: 16px;
+    margin-top: 4px;
+  }
+
+  &__skeleton-line--short {
+    width: min(180px, 48%);
+  }
 }
 
 .create-card {
@@ -140,5 +187,19 @@
     &__grid {
       grid-template-columns: 1fr;
     }
+  }
+
+  .my-programs__loading {
+    grid-template-columns: 1fr;
+  }
+}
+
+@keyframes my-programs-skeleton {
+  0% {
+    background-position: 120% 0;
+  }
+
+  100% {
+    background-position: -120% 0;
   }
 }
