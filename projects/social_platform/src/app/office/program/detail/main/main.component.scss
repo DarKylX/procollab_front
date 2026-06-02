@@ -1014,6 +1014,7 @@
   align-items: start;
 
   .program-news-panel {
+    order: 0;
     grid-column: 1 / 3;
   }
 }
@@ -1025,6 +1026,7 @@
 }
 
 .program-management-column {
+  order: 1;
   grid-column: 3;
   min-width: 0;
 }

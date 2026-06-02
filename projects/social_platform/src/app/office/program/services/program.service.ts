@@ -270,8 +270,8 @@ export class ProgramService {
     return this.apiService.get<Partial<ProgramStats>>(`${this.PROGRAMS_URL}/${programId}/stats/`);
   }
 
-  getMyPrograms(): Observable<Program[]> {
-    return this.getAll(0, 100, new HttpParams({ fromObject: { my: "true" } })).pipe(
+  getMyPrograms(limit = 30): Observable<Program[]> {
+    return this.getAll(0, limit, new HttpParams({ fromObject: { my: "true" } })).pipe(
       map(response => response.results ?? [])
     );
   }

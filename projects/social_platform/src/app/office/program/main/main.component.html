@@ -35,7 +35,7 @@
   </nav>
 
   @if (activeTab === "my") {
-  <app-my-programs [programs]="searchedPrograms"></app-my-programs>
+  <app-my-programs [programs]="searchedPrograms" [loading]="isLoadingPrograms()"></app-my-programs>
   } @else {
   <app-all-programs
     [programs]="searchedPrograms"

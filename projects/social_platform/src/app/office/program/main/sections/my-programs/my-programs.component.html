@@ -1,7 +1,9 @@
 <!-- @format -->
 
 <section class="my-programs">
+  @if (!loading) {
   <app-verification-banner [programs]="programs"></app-verification-banner>
+  }
 
   <a class="create-card" routerLink="/office/program/new">
     <span class="create-card__plus" aria-hidden="true">+</span>
@@ -13,6 +15,18 @@
     <span class="create-card__new">NEW</span>
   </a>
 
+  @if (loading) {
+  <section class="my-programs__loading" aria-live="polite" aria-label="Загрузка чемпионатов">
+    @for (item of [1, 2, 3, 4]; track item) {
+    <article class="my-programs__skeleton">
+      <span class="my-programs__skeleton-avatar"></span>
+      <span class="my-programs__skeleton-line my-programs__skeleton-line--title"></span>
+      <span class="my-programs__skeleton-line"></span>
+      <span class="my-programs__skeleton-line my-programs__skeleton-line--short"></span>
+    </article>
+    }
+  </section>
+  } @else {
   @if (isEmpty) {
   <div class="my-programs__empty">
     <h2 class="text-heading-2-bold">У вас пока нет чемпионатов</h2>
@@ -50,5 +64,5 @@
       }
     </div>
   </section>
-  } }
+  } } }
 </section>
