@@ -93,9 +93,9 @@
       </section>
 
       <section class="moderation-detail__preview">
-        @if (p.coverImageAddress || p.imageAddress) {
+        @if (p.imageAddress || p.coverImageAddress) {
         <img
-          [src]="p.coverImageAddress || p.imageAddress"
+          [src]="p.imageAddress || p.coverImageAddress"
           [alt]="p.name"
           loading="lazy"
           decoding="async"
