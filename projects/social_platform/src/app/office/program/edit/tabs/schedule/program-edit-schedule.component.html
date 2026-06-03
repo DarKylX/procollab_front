@@ -106,69 +106,15 @@
   </section>
 
   <section class="schedule-panel">
-    <h2 class="schedule-panel__title">Конкурсный режим и оценка</h2>
+    <h2 class="schedule-panel__title">Публикация проектов</h2>
 
-    <div class="competition-settings">
-      <div class="competition-settings__toggles">
-        <label class="schedule-switch">
-          <input type="checkbox" formControlName="isCompetitive" />
-          <span class="schedule-switch__track"></span>
-          <span>
-            <strong>Конкурсная программа</strong>
-            <em>Участники подают проекты, которые оцениваются экспертами</em>
-          </span>
-        </label>
-
-        <label
-          class="schedule-switch"
-          [class.schedule-switch--disabled]="!isDistributedVisible || isReadonly"
-        >
-          <input
-            type="checkbox"
-            formControlName="isDistributedEvaluation"
-            [disabled]="!isDistributedVisible || isReadonly"
-          />
-          <span class="schedule-switch__track"></span>
-          <span>
-            <strong>Распределенная оценка</strong>
-            <em>Каждый проект оценивается несколькими экспертами независимо друг от друга</em>
-          </span>
-        </label>
-
-        <label class="schedule-switch">
-          <input type="checkbox" formControlName="publishProjectsAfterFinish" />
-          <span class="schedule-switch__track"></span>
-          <span>
-            <strong>Публиковать проекты после завершения</strong>
-            <em>Проекты станут доступны после окончания чемпионата</em>
-          </span>
-        </label>
-      </div>
-
-      <div class="competition-settings__fields">
-        <label class="schedule-field">
-          <span class="schedule-field__label">Количество оценок на проект</span>
-          <input
-            class="schedule-field__control"
-            type="number"
-            min="1"
-            max="99"
-            formControlName="maxProjectRates"
-            [disabled]="!form.controls.isDistributedEvaluation.value || isReadonly"
-          />
-          @if (isInvalid("maxProjectRates")) {
-          <span class="schedule-field__error">Укажите число от 1 до 99</span>
-          }
-        </label>
-
-        <label class="schedule-field">
-          <span class="schedule-field__label">Видимость результатов</span>
-          <select class="schedule-field__control" formControlName="projectsAvailability">
-            <option value="all_users">Всем пользователям</option>
-            <option value="experts_only">Только экспертам и организаторам</option>
-          </select>
-        </label>
-      </div>
-    </div>
+    <label class="schedule-switch">
+      <input type="checkbox" formControlName="publishProjectsAfterFinish" />
+      <span class="schedule-switch__track"></span>
+      <span>
+        <strong>Публиковать проекты после завершения</strong>
+        <em>Проекты станут доступны после окончания чемпионата</em>
+      </span>
+    </label>
   </section>
 </form>

@@ -56,10 +56,6 @@ interface ScheduleFormValue {
   datetimeProjectSubmissionEnds: string;
   datetimeEvaluationEnds: string;
   datetimeFinished: string;
-  isCompetitive: boolean;
-  isDistributedEvaluation: boolean;
-  maxProjectRates: number;
-  projectsAvailability: string;
   publishProjectsAfterFinish: boolean;
   participationFormat: ParticipationFormat;
   projectTeamMinSize: number;
@@ -93,10 +89,6 @@ export class ProgramEditScheduleComponent implements OnInit, OnDestroy {
       datetimeProjectSubmissionEnds: [""],
       datetimeEvaluationEnds: [""],
       datetimeFinished: ["", [Validators.required]],
-      isCompetitive: [false],
-      isDistributedEvaluation: [false],
-      maxProjectRates: [1, [Validators.min(1), Validators.max(99)]],
-      projectsAvailability: ["all_users"],
       publishProjectsAfterFinish: [false],
       participationFormat: ["team" as ParticipationFormat, [Validators.required]],
       projectTeamMinSize: [1, [Validators.min(1), Validators.max(99)]],
@@ -173,18 +165,6 @@ export class ProgramEditScheduleComponent implements OnInit, OnDestroy {
     this.editState.registerController(this.controller);
     this.syncState();
 
-    this.form.controls.isCompetitive.valueChanges
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe(isCompetitive => {
-        if (!isCompetitive) {
-          this.form.controls.isDistributedEvaluation.setValue(false);
-          this.form.controls.maxProjectRates.setValue(1);
-        }
-
-        this.syncState();
-        this.cdr.markForCheck();
-      });
-
     this.form.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.syncState();
       this.cdr.markForCheck();
@@ -206,10 +186,6 @@ export class ProgramEditScheduleComponent implements OnInit, OnDestroy {
 
   get isReadonly(): boolean {
     return this.computeReadonly();
-  }
-
-  get isDistributedVisible(): boolean {
-    return this.form.controls.isCompetitive.value;
   }
 
   get isTeamFormat(): boolean {
@@ -260,11 +236,6 @@ export class ProgramEditScheduleComponent implements OnInit, OnDestroy {
 
   hasDateError(error: string): boolean {
     return Boolean(this.form.errors?.[error] && (this.form.dirty || this.form.touched));
-  }
-
-  isInvalid(controlName: keyof typeof this.form.controls): boolean {
-    const control = this.form.controls[controlName];
-    return control.invalid && (control.dirty || control.touched);
   }
 
   fieldControl(controlName: ScheduleDateControlName) {
@@ -323,11 +294,6 @@ export class ProgramEditScheduleComponent implements OnInit, OnDestroy {
         ? this.toDateTime(value.datetimeEvaluationEnds, "23:59")
         : null,
       datetimeFinished: this.toDateTime(value.datetimeFinished, "23:59"),
-      isCompetitive: value.isCompetitive,
-      isDistributedEvaluation: value.isCompetitive ? value.isDistributedEvaluation : false,
-      maxProjectRates:
-        value.isCompetitive && value.isDistributedEvaluation ? value.maxProjectRates : 1,
-      projectsAvailability: value.projectsAvailability as "all_users" | "experts_only",
       publishProjectsAfterFinish: value.publishProjectsAfterFinish,
       participationFormat: value.participationFormat,
       projectTeamMinSize: value.participationFormat === "team" ? value.projectTeamMinSize : 1,
@@ -362,11 +328,6 @@ export class ProgramEditScheduleComponent implements OnInit, OnDestroy {
         datetimeProjectSubmissionEnds: this.toDateInput(program.datetimeProjectSubmissionEnds),
         datetimeEvaluationEnds: this.toDateInput(program.datetimeEvaluationEnds),
         datetimeFinished: this.toDateInput(program.datetimeFinished),
-        isCompetitive: Boolean(program.isCompetitive),
-        isDistributedEvaluation: Boolean(program.isDistributedEvaluation),
-        maxProjectRates: program.maxProjectRates ?? 1,
-        projectsAvailability:
-          program.projectsAvailability === "experts_only" ? "experts_only" : "all_users",
         publishProjectsAfterFinish: Boolean(program.publishProjectsAfterFinish),
         participationFormat: program.participationFormat ?? "team",
         projectTeamMinSize: program.projectTeamMinSize ?? 1,
@@ -425,11 +386,6 @@ export class ProgramEditScheduleComponent implements OnInit, OnDestroy {
         ? this.toDateTime(value.datetimeEvaluationEnds, "23:59")
         : "",
       datetimeFinished: this.toDateTime(value.datetimeFinished, "23:59"),
-      isCompetitive: value.isCompetitive,
-      isDistributedEvaluation: value.isCompetitive ? value.isDistributedEvaluation : false,
-      maxProjectRates:
-        value.isCompetitive && value.isDistributedEvaluation ? value.maxProjectRates : 1,
-      projectsAvailability: value.projectsAvailability as "all_users" | "experts_only",
       publishProjectsAfterFinish: value.publishProjectsAfterFinish,
       participationFormat: value.participationFormat,
       projectTeamMinSize: value.participationFormat === "team" ? value.projectTeamMinSize : 1,
@@ -445,11 +401,6 @@ export class ProgramEditScheduleComponent implements OnInit, OnDestroy {
       datetimeProjectSubmissionEnds: this.toDateInput(program?.datetimeProjectSubmissionEnds),
       datetimeEvaluationEnds: this.toDateInput(program?.datetimeEvaluationEnds),
       datetimeFinished: this.toDateInput(program?.datetimeFinished),
-      isCompetitive: Boolean(program?.isCompetitive),
-      isDistributedEvaluation: Boolean(program?.isDistributedEvaluation),
-      maxProjectRates: program?.maxProjectRates ?? 1,
-      projectsAvailability:
-        program?.projectsAvailability === "experts_only" ? "experts_only" : "all_users",
       publishProjectsAfterFinish: Boolean(program?.publishProjectsAfterFinish),
       participationFormat: program?.participationFormat ?? "team",
       projectTeamMinSize: program?.projectTeamMinSize ?? 1,
